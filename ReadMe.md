@@ -14,7 +14,7 @@ An example, including spectrum files and a shell script, can be downloaded from 
 
 The main functionality of MaRaCluster is provided by the `maracluster` command. This command has several sub-commands to execute different parts of the clustering and merging. The most important ones are `maracluster batch` and `maracluster consensus`. The first takes a list of ms2 spectra as input and outputs a list of clusters, the second takes one of these outputs and creates consensus spectra for each cluster.
 
-To run `maracluster batch`, a flat text file with the absolute/relative path to each of the ms2 spectrum files (one per line) is needed. Any ms2 spectrum format readable by ProteoWizard can be used as input. Use the following command to start clustering:
+To run `maracluster batch`, a flat text file with the absolute/relative path to each of the ms2 spectrum files (one per line) is needed. Such a file can easily be generated using a `ls -1` command, *e.g.* `ls -1 ms2/* > files.txt`. Any ms2 spectrum format readable by ProteoWizard can be used as input. Use the following command to start clustering:
 ```
 maracluster batch -b files.txt
 ```
