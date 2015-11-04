@@ -1,13 +1,15 @@
 #!/bin/bash
 
 echo "Download source code for ProteoWizard from their SVN repository"
-
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+lib_dir=${script_dir}/../libs
 #sudo apt-get -y install subversion
-mkdir -p ../libs
-svn co -r 7692 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ../libs/proteowizard
+
+mkdir -p ${lib_dir}
+svn co -r 7692 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ${lib_dir}/proteowizard
 
 # install and keep libraries in the libs folder of this project for linking
-cd ../libs/proteowizard
+cd ${lib_dir}/proteowizard
 ./clean.sh
 
 echo "Building ProteoWizard and Boost, this may take some time.."
@@ -43,5 +45,5 @@ find pwiz/ -type f | grep -i '.h$\|.hpp$' | xargs -i cp --parents {} ../include/
 
 cd libraries/boost_1_56_0/
 find boost/ -type f | grep -i '.h$\|.hpp$' | xargs -i cp --parents {} ../../../include/
-cd ../../
+#cd ../../
 
