@@ -21,11 +21,11 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
   while (ss.good()) {
     std::string tmp;
     ss >> tmp;
-    if (tmp.substr(0,4) == "scan")
+    if (tmp.substr(0,5) == "scan=")
       return atoi(tmp.substr(5).c_str());
 
     if (tmp.substr(0,6) == "index=")
-      return atoi(tmp.substr(7).c_str());
+      return atoi(tmp.substr(6).c_str());
   }
   std::cerr << "Warning: could not extract scannr. Returning scannr 0 (" << s->id << ")" << std::endl;
   return 0;
