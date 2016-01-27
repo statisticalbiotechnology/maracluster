@@ -41,7 +41,7 @@ void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs,
     if (!boost::filesystem::exists(partFileFN)) { 
         std::cerr << "Ignoring missing result file \"" << 
                 partFileFN << "\" does not exist." << std::endl;
-        continue;
+        //continue;
     }
     
     filterAndSortSingleFile(partFileFN, removeUnidirected);
@@ -148,7 +148,7 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
       if (!boost::filesystem::exists(partFileFN)) { 
         std::cerr << "Ignoring missing result file \"" << 
             partFileFN << "\" does not exist." << std::endl;
-        continue;
+        //continue;
       }
       
       boost::iostreams::mapped_file mmap(partFileFN, 
