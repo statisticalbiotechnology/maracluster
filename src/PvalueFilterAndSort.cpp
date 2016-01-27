@@ -36,6 +36,14 @@ void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs,
       std::cerr << "Sorting and filtering bin " << bin+1 << "/" << numFiles << " (" << (bin+1)*100/numFiles << "%)" << std::endl;
     }
     std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(bin);
+    
+    // ignore files that do not exist
+    if (!boost::filesystem::exists(partFileFN)) { 
+        std::cerr << "Ignoring missing result file \"" << 
+                partFileFN << "\" does not exist." << std::endl;
+        //continue;
+    }
+    
     filterAndSortSingleFile(partFileFN, removeUnidirected);
   }
   
@@ -135,6 +143,14 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
     
     for (int bin = 0; bin < numFiles; ++bin) {
       std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(bin);
+      
+      // ignore files that do not exist
+      if (!boost::filesystem::exists(partFileFN)) { 
+        std::cerr << "Ignoring missing result file \"" << 
+            partFileFN << "\" does not exist." << std::endl;
+        //continue;
+      }
+      
       boost::iostreams::mapped_file mmap(partFileFN, 
             boost::iostreams::mapped_file::readonly);
       
@@ -196,6 +212,7 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
 void PvalueFilterAndSort::writeBufferToPartFiles(std::vector<PvalueTriplet>& buffer, int numFiles, const std::string& resultFN) {
   std::vector< std::vector<PvalueTriplet> > hashBins(numFiles);
   BOOST_FOREACH (PvalueTriplet t, buffer) {
+    // TODO: this function might not work correctly
     int hashBin = ((t.scannr1.scannr % numFiles) + (t.scannr2.scannr % numFiles)) % numFiles;
     hashBins[hashBin].push_back(t);
   }
@@ -324,7 +341,7 @@ bool PvalueFilterAndSort::unitTest() {
   std::string pvalFN = "/media/storage/mergespec/data/batchtest/1300.ms2.pvalues_subset.tsv";
   //std::string pvalFN = "/media/storage/mergespec/data/batchcluster/Linfeng/Linfeng.pval_matrix_triplets.tsv";
   std::string resultFN = pvalFN + ".sorted.tsv";
-  
+ 
   bool removeUnidirected = true;
   bool tsvInput = true;
   std::vector<std::string> pvalFNs;

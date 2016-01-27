@@ -32,6 +32,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
+#include <boost/filesystem.hpp>
+
 #include "PvalueTriplet.h"
 #include "BinaryInterface.h"
 
