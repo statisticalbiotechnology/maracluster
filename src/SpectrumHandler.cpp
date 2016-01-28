@@ -25,10 +25,10 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
       return atoi(tmp.substr(5).c_str());
 
     if (tmp.substr(0,6) == "index=")
-      return atoi(tmp.substr(7).c_str());
+      return atoi(tmp.substr(6).c_str());    
   }
-  std::cerr << "Warning: could not extract scannr. Returning scannr 0 (" << s->id << ")" << std::endl;
-  return 0;
+  std::cerr << "Warning: could not extract scannr. Returning index " << s->index << " (" << s->id << ")" << std::endl;
+  return s->index;
 }
 
 double SpectrumHandler::interpolateIntensity(MZIntensityPair p1, MZIntensityPair p2, double mz) {
