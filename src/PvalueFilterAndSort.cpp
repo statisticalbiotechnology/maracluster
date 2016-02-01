@@ -37,13 +37,6 @@ void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs,
     }
     std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(bin);
     
-    // ignore files that do not exist
-    if (!boost::filesystem::exists(partFileFN)) { 
-        std::cerr << "Ignoring missing result file \"" << 
-                partFileFN << "\" does not exist." << std::endl;
-        //continue;
-    }
-    
     filterAndSortSingleFile(partFileFN, removeUnidirected);
   }
   
@@ -143,13 +136,6 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
     
     for (int bin = 0; bin < numFiles; ++bin) {
       std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(bin);
-      
-      // ignore files that do not exist
-      if (!boost::filesystem::exists(partFileFN)) { 
-        std::cerr << "Ignoring missing result file \"" << 
-            partFileFN << "\" does not exist." << std::endl;
-        //continue;
-      }
       
       boost::iostreams::mapped_file mmap(partFileFN, 
             boost::iostreams::mapped_file::readonly);

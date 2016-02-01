@@ -17,7 +17,7 @@
 #include "SpectrumHandler.h"
 
 unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
-  /*
+  
   std::stringstream ss(s->id);
   while (ss.good()) {
     std::string tmp;
@@ -29,7 +29,7 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
       return atoi(tmp.substr(6).c_str());    
   }
   std::cerr << "Warning: could not extract scannr. Returning index " << s->index << " (" << s->id << ")" << std::endl;
-  */
+  
   // using the spectrum index should be more robust and
   // independet of the input format's indexing system
   return s->index;

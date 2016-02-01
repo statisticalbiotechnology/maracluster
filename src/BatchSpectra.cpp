@@ -30,6 +30,11 @@ void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN,
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Reading in spectra from " << spectrumFN << std::endl;
   }
+
+  if ( !boost::filesystem::exists( spectrumFN ) ) {
+    std::cerr << "Ignoring missing file " << spectrumFN << std::endl;
+    return;
+  }
   
   pwiz::msdata::SpectrumListPtr specList;
 
@@ -92,6 +97,11 @@ void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Reading in spectra from " << batchSpectraFN << std::endl;
   }
+
+  if ( !boost::filesystem::exists( batchSpectraFN ) ) {
+    std::cerr << "Ignoring missing file " << batchSpectraFN << std::endl;
+    return;
+  } 
   
   BinaryInterface::read<BatchSpectrum>(batchSpectraFN, spectra_);
   
