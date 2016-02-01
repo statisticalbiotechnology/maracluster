@@ -59,7 +59,7 @@ void MSFileHandler::writeMSData(MSData& msd, const std::string& outputFN) {
   } else if (outputFormat == "mzxml") {
     MSDataFile::write(msd, outputFN, MSDataFile::Format_mzXML); 
   } else {
-    std::cerr << "ERROR: Could not write spectra, unknown output format:" << outputFormat << "." << std::endl;
+    std::cerr << "ERROR: Could not write spectra, unknown output format: " << outputFormat << "." << std::endl;
   }
   
   std::cerr << "Finished writing file " << outputFN << std::endl;
@@ -81,6 +81,11 @@ void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN) {
     SpectrumHandler::getMassChargeCandidates(s, mccs);
     unsigned int scannr = SpectrumHandler::getScannr(s);
     addSpectrumWithMccs(s, mccs, scannr, slNew);
+  }
+  
+  size_t idx = 0;
+  BOOST_FOREACH (SpectrumPtr& s, slNew->spectra) {
+    s->index = idx++;
   }
   
   MSDataFile msdNew(spectrumInFN);

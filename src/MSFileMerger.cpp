@@ -448,9 +448,9 @@ void MSFileMerger::writeClusterBins(unsigned int batchIdx,
       continue; // in case there are so few spectra that not all bins are filled
     }
     
-    int idx = -1;
+    size_t idx = 0;
     BOOST_FOREACH (SpectrumPtr& s, spectrumLists[i]->spectra) {
-      s->index = ++idx;
+      s->index = idx++;
     }
     
     MSData msdMerged;
