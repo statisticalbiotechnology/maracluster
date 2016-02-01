@@ -21,6 +21,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/filesystem.hpp>
+
 #include "pwiz/data/msdata/MSDataFile.hpp"
 
 #include "BatchGlobals.h"

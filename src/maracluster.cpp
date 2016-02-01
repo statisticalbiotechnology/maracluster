@@ -397,6 +397,12 @@ int main(int argc, char* argv[]) {
             peakCounts.readFromFile(peakCountFN_);
             
             for (size_t i = 0; i < datFNs.size(); ++i) {
+              // make sure the file exists
+              if (!BatchGlobals::fileExists(datFNs[i])) {
+                std::cerr << "Ignoring missing data file " << datFNs[i] << std::endl;
+                continue;
+              }
+
               std::string datFN = datFNs[i];
               std::string pvalueVectorsBaseFN = datFN + ".pvalue_vectors";
               if (i < datFNs.size() - 1) {

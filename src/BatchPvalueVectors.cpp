@@ -154,7 +154,7 @@ void BatchPvalueVectors::writePvalueVectors(
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Writing pvalue vectors" << std::endl;
   }
-  
+
   std::vector<BatchPvalueVector> headList, tailList, allList;
   double headOverlapLimit = pvalVecCollection_.front().precMass *
                              (1 + massRangePPM_*1e-6);
@@ -165,6 +165,7 @@ void BatchPvalueVectors::writePvalueVectors(
     if (i % 100000 == 0 && BatchGlobals::VERB > 2) {
       std::cerr << "Writing pvalue vector " << i << "/" << n << std::endl;
     }
+
     insert(pvalVecCollection_[i], allList);
     if (pvalVecCollection_[i].precMass < headOverlapLimit) {
       insert(pvalVecCollection_[i], headList);
@@ -173,7 +174,7 @@ void BatchPvalueVectors::writePvalueVectors(
       insert(pvalVecCollection_[i], tailList);
     }
   }
-  
+
   bool append = false;
   BinaryInterface::write<BatchPvalueVector>(allList, pvalueVectorsFN, append);
   BinaryInterface::write<BatchPvalueVector>(headList, pvalueVectorsHeadFN, append);
@@ -212,6 +213,12 @@ void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsF
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Reading in pvalue vectors from " << pvalueVectorsFN << std::endl;
   }
+
+  if (!BatchGlobals::fileExists(pvalueVectorsFN)) {
+    std::cerr << "Ignoring missing file " << pvalueVectorsFN << std::endl;
+    return;
+  }
+
   boost::iostreams::mapped_file mmap(pvalueVectorsFN,
             boost::iostreams::mapped_file::readonly);
   
