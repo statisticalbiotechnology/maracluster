@@ -27,6 +27,7 @@
 #include <fstream>
 #include <cerrno>
 #include <cstdio>
+#include <ctime>
 
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -82,6 +83,7 @@ class PvalueFilterAndSort {
   }
                          
  private:
+  static void reportProgress(time_t& startTime, clock_t& startClock);
   static int splitByHash(const std::vector<std::string>& pvalFNs, 
       const std::string& resultFN, bool tsvInput);
   

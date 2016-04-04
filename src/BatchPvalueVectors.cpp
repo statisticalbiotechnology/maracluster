@@ -17,9 +17,6 @@
 #include "BatchPvalueVectors.h"
 #include "BatchSpectra.h"
 
-double BatchPvalueVectors::massRangePPM_ = 20.0; // in ppm
-double BatchPvalueVectors::dbPvalThreshold_ = -5.0; // logPval
-
 void BatchPvalueVectors::initPvecRow(const MassChargeCandidate& mcc, 
                                     const BatchSpectrum& spec,
                                     PvalueVectorsDbRow& pvecRow) {
@@ -156,10 +153,8 @@ void BatchPvalueVectors::writePvalueVectors(
   }
 
   std::vector<BatchPvalueVector> headList, tailList, allList;
-  double headOverlapLimit = pvalVecCollection_.front().precMass *
-                             (1 + massRangePPM_*1e-6);
-  double tailOverlapLimit = pvalVecCollection_.back().precMass *
-                             (1 - massRangePPM_*1e-6);
+  double headOverlapLimit = getLowerBound(pvalVecCollection_.front().precMass);
+  double tailOverlapLimit = getUpperBound(pvalVecCollection_.back().precMass);
   size_t n = pvalVecCollection_.size();
   for (size_t i = 0; i < n; ++i) {
     if (i % 100000 == 0 && BatchGlobals::VERB > 2) {
@@ -295,7 +290,7 @@ void BatchPvalueVectors::processOverlapFiles(
   }
   clearPvalueVectors();
   
-  PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
+  //PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
 }
 
 void BatchPvalueVectors::parsePvalueVectorFile(const std::string& pvalVecInFileFN) {
@@ -329,8 +324,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
                    i*100/n << "%)." << std::endl;
       BatchGlobals::reportProgress(startTime, startClock, i, n);
     }
-    double precLimit = pvalVecCollection_[i].precMass * 
-                       (1 + massRangePPM_*1e-6);
+    double precLimit = getUpperBound(pvalVecCollection_[i].precMass);
     std::vector<PvalueTriplet> pvalBuffer;                       
     for (size_t j = i+1; j < n; ++j) {
       if (pvalVecCollection_[j].precMass < precLimit) { 
@@ -350,7 +344,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
     std::cerr << "Finished calculating pvalues." << std::endl;
   }
   
-  PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
+  //PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
 }
 
 /* This function presumes that the pvalue vectors are sorted by precursor
@@ -377,10 +371,8 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
       BatchGlobals::reportProgress(startTime, startClock, i, n);
     }
     std::vector<PvalueTriplet> pvalBuffer;
-    double precLimitLower = pvalVecCollection_[i].precMass * 
-                         (1 - massRangePPM_*1e-6);
-    double precLimitUpper = pvalVecCollection_[i].precMass * 
-                         (1 + massRangePPM_*1e-6);
+    double precLimitLower = getLowerBound(pvalVecCollection_[i].precMass);
+    double precLimitUpper = getUpperBound(pvalVecCollection_[i].precMass);
     for (size_t j = 0; j < querySpectra.size(); ++j) {
       if (querySpectra[j].precMass < precLimitLower) {
         continue;
@@ -400,7 +392,7 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
     std::cerr << "Finished calculating pvalues." << std::endl;
   }
   
-  PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
+  //PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
 }
 
 void BatchPvalueVectors::readFingerprints(
@@ -450,7 +442,7 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
   bfm.setCutoff(simCutoff);
   bfm.setBlockSize(blockSize);
   bfm.setVerbosityLevel(6);
-  bfm.setPpmThresh(massRangePPM_);
+  bfm.setPpmThresh(precursorTolerance_);
   bfm.setLibraryFeatures(lib_features);
   bfm.initInvertedIndicesWithPrecMasses(lib_prec_masses);
   
@@ -484,9 +476,9 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
     if (tmpPvalBuffer.size() > 0) {
       //std::cerr << i << " cand " << tmpPvalBuffer.size() << std::endl;
       
+      double lowerBound = getLowerBound(pvalVecCollection_[t.scannr2.scannr].precMass);
       BOOST_FOREACH(const PvalueTriplet& t, tmpPvalBuffer) {
-        if (pvalVecCollection_[t.scannr1.scannr].precMass > 
-            pvalVecCollection_[t.scannr2.scannr].precMass * (1 - massRangePPM_*1e-6)) {
+        if (pvalVecCollection_[t.scannr1.scannr].precMass > lowerBound) {
           calculatePvalues(pvalVecCollection_[t.scannr1.scannr], 
                            pvalVecCollection_[t.scannr2.scannr], pvalBuffer);
           ++fingerPrintPairCandidatesLocal;
@@ -521,7 +513,7 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
               << "/" << fingerPrintComparisons << std::endl;
   }
   
-  PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
+  //PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
 }
 #endif
 
@@ -538,8 +530,7 @@ void BatchPvalueVectors::batchCalculatePvaluesOverlap(
     if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n1 << std::endl;
     }
-    double precLimit = pvalVecCollectionTail[i].precMass * 
-                       (1 + massRangePPM_*1e-6);
+    double precLimit = getUpperBound(pvalVecCollectionTail[i].precMass);
     std::vector<PvalueTriplet> pvalBuffer;
     for (size_t j = 0; j < n2; ++j) {
       //std::cerr << pvalVecCollectionHead[j].precMass << " " << precLimit << std::endl;
@@ -602,20 +593,20 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
   }
   double cosDist = -100.0 * dotProduct / numerator;
   if (cosDist < dbPvalThreshold_) {
-    pvalBuffer.push_back(PvalueTriplet(pvecRow.scannr, queryPvecRow.scannr, 
+    pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
+                                       std::max(pvecRow.scannr, queryPvecRow.scannr),
                                        cosDist));
-    pvalBuffer.push_back(PvalueTriplet(queryPvecRow.scannr, pvecRow.scannr, 
-                                       cosDist));
+    //pvalBuffer.push_back(PvalueTriplet(queryPvecRow.scannr, pvecRow.scannr, cosDist));
   }
 #else  
   double queryPval = queryPvecRow.pvalCalc.computePvalPolyfit(pvecRow.peakBins);
   if (queryPval < dbPvalThreshold_) {
     double targetPval = pvecRow.pvalCalc.computePvalPolyfit(queryPvecRow.peakBins);
     if (targetPval < dbPvalThreshold_) {
-      pvalBuffer.push_back(PvalueTriplet(pvecRow.scannr, queryPvecRow.scannr, 
-                                         targetPval));
-      pvalBuffer.push_back(PvalueTriplet(queryPvecRow.scannr, pvecRow.scannr, 
-                                         queryPval));
+      pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
+                                         std::max(pvecRow.scannr, queryPvecRow.scannr),
+                                         std::max(targetPval, queryPval)));
+      //pvalBuffer.push_back(PvalueTriplet(queryPvecRow.scannr, pvecRow.scannr, queryPval));
     }
   }
 #endif

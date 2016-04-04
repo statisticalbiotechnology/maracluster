@@ -43,16 +43,22 @@
 
 class BatchSpectrumFiles {
  public:
-  BatchSpectrumFiles() : precMassFileFolder_("") {}
+  BatchSpectrumFiles() : precMassFileFolder_(""), chargeUncertainty_(0) {}
   BatchSpectrumFiles(const std::string& precMassFileFolder) : 
-      precMassFileFolder_(precMassFileFolder) {}
+      precMassFileFolder_(precMassFileFolder), chargeUncertainty_(0) {}
+  BatchSpectrumFiles(const std::string& precMassFileFolder, 
+                     const int chargeUncertainty) : 
+      precMassFileFolder_(precMassFileFolder), 
+      chargeUncertainty_(chargeUncertainty) {}
   
   void splitByPrecursorMass(SpectrumFileList& fileList,
       std::vector<std::string>& datFNs, const std::string& peakCountFN,
-      const std::string& scanNrsFN);
+      const std::string& scanNrsFN, double precursorTolerance, 
+      bool precursorToleranceDa);
   void splitByPrecursorMass(SpectrumFileList& fileList,
       const std::string& datFNFile, const std::string& peakCountFN,
-      const std::string& scanNrsFN);
+      const std::string& scanNrsFN, double precursorTolerance, 
+      bool precursorToleranceDa);
   
   void writeDatFNsToFile(std::vector<std::string>& datFNs,
     const std::string& datFNFile);
@@ -67,13 +73,15 @@ class BatchSpectrumFiles {
   
  protected:
   std::string precMassFileFolder_;
+  int chargeUncertainty_;
   
   void writePrecMasses(const std::vector<double>& precMasses);
   void readPrecMasses(const std::string& precMassFN,
                              std::vector<double>& precMasses);
   
   void getPrecMassLimits(std::vector<double>& precMasses, 
-                                std::vector<double>& limits);
+    std::vector<double>& limits, double precursorTolerance, 
+    bool precursorToleranceDa);
   int getPrecMassBin(double precMass, std::vector<double>& limits);
   
   void getPeakCountsAndPrecursorMasses(SpectrumFileList& fileList,

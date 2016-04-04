@@ -135,7 +135,8 @@ void MSFileExtractor::extractToBatchSpectrumList(
       double retentionTime = SpectrumHandler::getRetentionTime(s);
       
       std::vector<MassChargeCandidate> mccs;
-      SpectrumHandler::getMassChargeCandidates(s, mccs);
+      int chargeUncertainty = 0;
+      SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty);
       
       BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
         int minCharge = (std::max)(static_cast<int>(mcc.charge) - static_cast<int>(chargeErrorTolerance_), 1);

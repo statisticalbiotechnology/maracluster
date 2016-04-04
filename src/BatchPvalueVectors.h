@@ -59,10 +59,10 @@ struct PvalueVectorsDbRow {
 
 class BatchPvalueVectors {
  public:
-  BatchPvalueVectors(const std::string& pvaluesFN) : pvalues_(pvaluesFN) {}
-  
-  static double massRangePPM_;
-  static double dbPvalThreshold_;
+  BatchPvalueVectors(const std::string& pvaluesFN, double precursorTolerance, 
+    bool precursorToleranceDa, double dbPvalThreshold) : 
+      pvalues_(pvaluesFN), precursorTolerance_(precursorTolerance), 
+      precursorToleranceDa_(precursorToleranceDa), dbPvalThreshold_(dbPvalThreshold) {}
   
   void insertMassChargeCandidate(
       MassChargeCandidate& mcc, BatchSpectrum& spec);
@@ -93,10 +93,29 @@ class BatchPvalueVectors {
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionHead);
   
+  static inline double getLowerBound(double precMass, double precursorTolerance, 
+      bool precursorToleranceDa) {
+    if (precursorToleranceDa) {
+      return precMass - precursorTolerance;
+    } else {
+      return precMass*(1 - precursorTolerance*1e-6);
+    }
+  }
+  static inline double getUpperBound(double precMass, double precursorTolerance, 
+      bool precursorToleranceDa) {
+    if (precursorToleranceDa) {
+      return precMass + precursorTolerance;
+    } else {
+      return precMass*(1 + precursorTolerance*1e-6);
+    }
+  }
   static void readPvalueVectorsFile(const std::string& pvalueVectorsFN,
       std::vector<PvalueVectorsDbRow>& pvalVecCollection);
- protected:  
+ protected:
   BatchPvalues pvalues_;
+  double precursorTolerance_;
+  bool precursorToleranceDa_;
+  double dbPvalThreshold_;
   std::vector<PvalueVectorsDbRow> pvalVecBatch_, pvalVecCollection_;
   
   void initPvalCalc(PvalueCalculator& pvalCalc, 
@@ -119,6 +138,13 @@ class BatchPvalueVectors {
   void calculatePvalue(PvalueVectorsDbRow& pvecRow, 
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
+  
+  inline double getLowerBound(double mass) { 
+    return getLowerBound(mass, precursorTolerance_, precursorToleranceDa_);
+  }
+  inline double getUpperBound(double mass) { 
+    return getUpperBound(mass, precursorTolerance_, precursorToleranceDa_);
+  }
   
   inline static std::string getPvalCalcKey(const std::string& uuidString, 
                                            const int charge) {

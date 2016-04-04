@@ -62,7 +62,7 @@ class SpectrumHandler {
     static void getMZIntensityPairs(pwiz::msdata::SpectrumPtr s, std::vector<MZIntensityPair>& mziPairs);
     static void setMZIntensityPairs(pwiz::msdata::SpectrumPtr s, std::vector<MZIntensityPair>& mziPairs);
     
-    static void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, std::vector<MassChargeCandidate>& mcc);
+    static void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, std::vector<MassChargeCandidate>& mcc, int chargeUncertainty = 0);
     static unsigned int getCharge(pwiz::msdata::SpectrumPtr s);
     static double getPrecMz(pwiz::msdata::SpectrumPtr s);
     static double getRetentionTime(pwiz::msdata::SpectrumPtr s);

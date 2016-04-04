@@ -37,7 +37,9 @@
 
 class BatchSpectra {
  public:
-  BatchSpectra(const std::string& pvaluesFN) : pvecs_(pvaluesFN) {}
+  BatchSpectra(const std::string& pvaluesFN, double precursorTolerance, 
+    bool precursorToleranceDa, double dbPvalThreshold) : 
+    pvecs_(pvaluesFN, precursorTolerance, precursorToleranceDa, dbPvalThreshold) {}
   
   // methods to import spectra
   void setBatchSpectra(std::vector<BatchSpectrum>& spectra) {

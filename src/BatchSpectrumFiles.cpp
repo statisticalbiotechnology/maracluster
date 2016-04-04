@@ -29,7 +29,8 @@ using pwiz::msdata::SelectedIon;
 
 void BatchSpectrumFiles::splitByPrecursorMass(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
-    const std::string& peakCountFN, const std::string& scanNrsFN) {
+    const std::string& peakCountFN, const std::string& scanNrsFN,
+    double precursorTolerance, bool precursorToleranceDa) {
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Splitting spectra by precursor mass" << std::endl;
   }
@@ -41,16 +42,19 @@ void BatchSpectrumFiles::splitByPrecursorMass(
   //readPrecMasses(peakCountFN_, precMassesAccumulated);
   
   std::vector<double> limits;
-  getPrecMassLimits(precMassesAccumulated, limits);
+  getPrecMassLimits(precMassesAccumulated, limits, precursorTolerance, 
+                    precursorToleranceDa);
   getDatFNs(limits, datFNs);
   writeSplittedPrecursorMassFiles(fileList, limits, datFNs, scanNrsFN);
 }
 
 void BatchSpectrumFiles::splitByPrecursorMass(SpectrumFileList& fileList,
     const std::string& datFNFile, const std::string& peakCountFN,
-    const std::string& scanNrsFN) {  
+    const std::string& scanNrsFN, double precursorTolerance, 
+    bool precursorToleranceDa) {  
   std::vector<std::string> datFNs;
-  splitByPrecursorMass(fileList, datFNs, peakCountFN, scanNrsFN);
+  splitByPrecursorMass(fileList, datFNs, peakCountFN, scanNrsFN, 
+                       precursorTolerance, precursorToleranceDa);
   
   writeDatFNsToFile(datFNs, datFNFile);
 }
@@ -93,7 +97,7 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMasses(
       SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
       
       std::vector<MassChargeCandidate> mccs;
-      SpectrumHandler::getMassChargeCandidates(s, mccs); // returns mccs sorted by charge
+      SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_); // returns mccs sorted by charge
       unsigned int lastCharge = 0;
       BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
         precMasses.push_back(mcc.mass);
@@ -191,7 +195,7 @@ void BatchSpectrumFiles::writeSplittedPrecursorMassFiles(
       globalScanNrs[i] = globalIdx;
       
       std::vector<MassChargeCandidate> mccs;
-      SpectrumHandler::getMassChargeCandidates(s, mccs);
+      SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_);
       
       BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
         for (int isotopeTolerance = 0; isotopeTolerance <= 0; ++isotopeTolerance) {
@@ -302,22 +306,23 @@ void BatchSpectrumFiles::readPrecMasses(const std::string& precMassFN,
 }
 
 void BatchSpectrumFiles::getPrecMassLimits(std::vector<double>& precMasses, 
-                                           std::vector<double>& limits) {
+    std::vector<double>& limits, double precursorTolerance, 
+    bool precursorToleranceDa) {
   float pvecCost = 0.7f; // computation time for 1 p-value vector in ms on 1 core
   float pvalCost = 0.001f; // computation time for 1 p-value pair in ms on 1 core
   float maxCost = 120.0f*60.0f*1000.0f; // max computation time = 120 CPU minutes
   float curCost = 0.0f;
-  // calculate p-value if prec masses within x ppm
-  unsigned int ppmBound = BatchPvalueVectors::massRangePPM_;
   
-  unsigned long numComparisons = 0uL;
+  unsigned long long numComparisons = 0uL;
   
   if (precMasses.size() > 0) {
-    int lowerBoundIdx = 0;
+    size_t lowerBoundIdx = 0;
     limits.push_back(precMasses[0]);
-    for (int idx = 0; idx < precMasses.size(); ++idx) {
+    for (size_t idx = 0; idx < precMasses.size(); ++idx) {
       curCost += pvecCost;
-      while (precMasses[lowerBoundIdx] < precMasses[idx]*(1-ppmBound*1e-6)) {
+      double lowerBound = BatchPvalueVectors::getLowerBound(precMasses[idx], 
+          precursorTolerance, precursorToleranceDa);
+      while (precMasses[lowerBoundIdx] < lowerBound) {
         ++lowerBoundIdx;
       }
       numComparisons += (idx - lowerBoundIdx);
@@ -377,7 +382,7 @@ bool BatchSpectrumFiles::limitsUnitTest() {
   BatchSpectrumFiles spectrumFiles("");
   
   spectrumFiles.readPrecMasses(precMassFN, precMassesAccumulated);
-  spectrumFiles.getPrecMassLimits(precMassesAccumulated, limits);
+  spectrumFiles.getPrecMassLimits(precMassesAccumulated, limits, 20.0, false);
   /*
   BOOST_FOREACH (double l, limits) {
     std::cerr << l << std::endl;

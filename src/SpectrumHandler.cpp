@@ -120,22 +120,28 @@ void SpectrumHandler::setMZIntensityPairs(pwiz::msdata::SpectrumPtr s, std::vect
   s->setMZIntensityPairs(MSDataMziPairs, pwiz::cv::MS_number_of_detector_counts);
 }
 
-void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, std::vector<MassChargeCandidate>& mcc) {
+void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
+    std::vector<MassChargeCandidate>& mcc, int chargeUncertainty) {
   mcc.clear();
   std::vector<pwiz::msdata::SelectedIon>& ions = s->precursors.at(0).selectedIons;
   
   for (std::vector<pwiz::msdata::SelectedIon>::iterator it = ions.begin(); it != ions.end(); ++it) {
-    unsigned int charge = it->cvParam(pwiz::cv::MS_charge_state).valueAs<unsigned int>();
+    int charge = it->cvParam(pwiz::cv::MS_charge_state).valueAs<int>();
     double precMz = it->cvParam(pwiz::cv::MS_selected_ion_m_z).valueAs<double>();
     if (charge == 0) {
-      charge = it->cvParam(pwiz::cv::MS_possible_charge_state).valueAs<unsigned int>();
+      charge = it->cvParam(pwiz::cv::MS_possible_charge_state).valueAs<int>();
       if (charge == 0) charge = 2;
     }
-    double mass = calcMass(precMz, charge);
-    if (it->hasCVParam(pwiz::cv::MS_accurate_mass_OBSOLETE)) {
-      mass = it->cvParam(pwiz::cv::MS_accurate_mass_OBSOLETE).valueAs<double>();
+    for (int chargeState = std::max(charge - chargeUncertainty, 1); 
+          chargeState <= charge + chargeUncertainty; ++chargeState) {
+      double mass = calcMass(precMz, chargeState);
+      /*
+      if (it->hasCVParam(pwiz::cv::MS_accurate_mass_OBSOLETE)) {
+        mass = it->cvParam(pwiz::cv::MS_accurate_mass_OBSOLETE).valueAs<double>();
+      }
+      */
+      mcc.push_back(MassChargeCandidate(chargeState, precMz, mass));
     }
-    mcc.push_back(MassChargeCandidate(charge, precMz, mass));
   }
   
   std::sort(mcc.begin(), mcc.end(), MassChargeCandidate::lessChargeMass);

@@ -50,6 +50,7 @@
 enum Mode { BATCH, PVALUE, UNIT_TEST, INDEX, CLUSTER, CONSENSUS, SEARCH };
 Mode mode_;
 
+std::string call_ = "";
 std::string percOutFN_ = "";
 std::string fnPrefix_ = "MaRaCluster";
 std::string scanDescFN_ = "";
@@ -72,8 +73,21 @@ std::string matrixFN_ = "";
 std::string resultTreeFN_ = "";
 bool skipFilterAndSort_ = false;
 std::vector<double> clusterThresholds_;
+double precursorTolerance_ = 20.0;
+bool precursorToleranceDa_ = false;
+double dbPvalThreshold_ = -5.0; // logPval
+int chargeUncertainty_;
 
 bool parseOptions(int argc, char **argv) {
+  std::ostringstream callStream;
+  callStream << argv[0];
+  for (int i = 1; i < argc; i++) {
+    callStream << " " << argv[i];
+  }
+  callStream << endl;
+  call_ = callStream.str();
+  call_ = call_.substr(0,call_.length()-1); // trim ending carriage return
+  
   std::ostringstream intro;
   intro << "Usage:\n";
   intro << "  maracluster batch -b <msfile_list> [-f <output_folder>]\n";
@@ -150,9 +164,13 @@ bool parseOptions(int argc, char **argv) {
       "",
       TRUE_IF_SET);
   cmd.defineOption("p",
-      "precursorTolerancePpm",
-      "Set precursor ppm tolerance (default: 20.0).",
-      "double");
+      "precursorTolerance",
+      "Set precursor tolerance in units of ppm or Da. If no unit is specified ppm is assumed. The units have to be \"Da\" or \"ppm\", case sensitive. (default: 20.0ppm).",
+      "string");
+  cmd.defineOption("C",
+      "chargeUncertainty",
+      "Set charge uncertainty, i.e. if set to 1, then for a spectrum with precursor ion charge C, also precursor ion charges C-1 and C+1 are considered (default: 0).",
+      "int");
   cmd.defineOption("t",
       "pvalThreshold",
       "Set log(p-value) threshold for database insertion (default: -5.0).",
@@ -254,8 +272,19 @@ bool parseOptions(int argc, char **argv) {
   if (cmd.optionSet("z")) spectrumLibraryFN_ = cmd.options["z"];
   
   // general options
-  if (cmd.optionSet("t")) BatchPvalueVectors::dbPvalThreshold_ = cmd.getDouble("t", -1000.0, 0.0);
-  if (cmd.optionSet("p")) BatchPvalueVectors::massRangePPM_ = cmd.getDouble("p", 0.0, 1e6);
+  if (cmd.optionSet("t")) dbPvalThreshold_ = cmd.getDouble("t", -1000.0, 0.0);
+  if (cmd.optionSet("p")) {
+    std::string precursorToleranceString = cmd.options["p"];
+    size_t unitIdx = precursorToleranceString.find("Da");
+    if (unitIdx != std::string::npos) {
+      precursorTolerance_ = atof(precursorToleranceString.substr(0, unitIdx).c_str());
+      precursorToleranceDa_ = true;
+    } else {
+      unitIdx = precursorToleranceString.find("ppm");
+      precursorTolerance_ = atof(precursorToleranceString.substr(0, unitIdx).c_str());
+    }
+  }
+  if (cmd.optionSet("C")) chargeUncertainty_ = cmd.getInt("C", 0, 5);
   if (cmd.optionSet("v")) BatchGlobals::VERB = cmd.getInt("v", 0, 5);
 
   return true;
@@ -263,7 +292,8 @@ bool parseOptions(int argc, char **argv) {
 
 int createIndex(const std::string& outputFolder, const std::string& fnPrefix, 
     const std::string& spectrumBatchFileFN, std::string& peakCountFN,
-    std::string& scanNrsFN, std::string& datFNFile) {
+    std::string& scanNrsFN, std::string& datFNFile, int chargeUncertainty,
+    double precursorTolerance, bool precursorToleranceDa) {
   if (spectrumBatchFileFN.size() == 0) {
     std::cerr << "Error: no batch file specified with -b flag" << std::endl;
     return EXIT_FAILURE;
@@ -280,15 +310,16 @@ int createIndex(const std::string& outputFolder, const std::string& fnPrefix,
   fileList.initFromFile(spectrumBatchFileFN);
   
   if (!BatchGlobals::fileExists(datFNFile)) {    
-    BatchSpectrumFiles spectrumFiles(outputFolder);
-    spectrumFiles.splitByPrecursorMass(fileList, datFNFile, peakCountFN, scanNrsFN);
+    BatchSpectrumFiles spectrumFiles(outputFolder, chargeUncertainty);
+    spectrumFiles.splitByPrecursorMass(fileList, datFNFile, peakCountFN, 
+        scanNrsFN, precursorTolerance, precursorToleranceDa);
   } else {
     std::cerr << "Read dat-files from " << datFNFile << 
         ". Remove this file to generate new dat-files." << std::endl;
   }
   
   if (!BatchGlobals::fileExists(scanNrsFN)) {    
-    BatchSpectrumFiles spectrumFiles(outputFolder);
+    BatchSpectrumFiles spectrumFiles(outputFolder, chargeUncertainty);
     spectrumFiles.writeScannrs(fileList, scanNrsFN);
   } else {
     std::cerr << "Read scan numbers from " << scanNrsFN << 
@@ -340,7 +371,7 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
     matrix.setMergeOffset(fileList.getMergeOffset());
     matrix.initMatrix(matrixFN);
     matrix.setClusterPairFN(resultTreeFN);
-    matrix.doClustering(std::min(BatchPvalueVectors::dbPvalThreshold_, clusterThresholds.back())); 
+    matrix.doClustering(std::min(dbPvalThreshold_, clusterThresholds.back())); 
   } else {
     std::cerr << "Previous clustering results are available in " << 
         resultTreeFN << ". Remove this file to redo the clustering." << std::endl;
@@ -356,6 +387,14 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
 int main(int argc, char* argv[]) {
   try {
     if (parseOptions(argc, argv)) {
+      time_t startTime;
+      clock_t startClock;
+      time(&startTime);
+      startClock = clock();
+      
+      std::cerr << "Issued command:" << std::endl << call_ << std::endl;
+      std::cerr << "Started " << ctime(&startTime) << std::endl;
+      
       boost::filesystem::path rootPath (outputFolder_);
       boost::system::error_code returnedError;
       boost::filesystem::create_directories( rootPath, returnedError );
@@ -380,12 +419,13 @@ int main(int argc, char* argv[]) {
           
           int error = createIndex(outputFolder_, fnPrefix_, 
                                   spectrumBatchFileFN_, peakCountFN_, 
-                                  scanNrsFN_, datFNFile_);
+                                  scanNrsFN_, datFNFile_, chargeUncertainty_,
+                                  precursorTolerance_, precursorToleranceDa_);
           if (error != EXIT_SUCCESS) return EXIT_FAILURE;
           
           std::vector<std::string> datFNs;
           {
-            BatchSpectrumFiles spectrumFiles(outputFolder_);
+            BatchSpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
             spectrumFiles.readDatFNsFromFile(datFNFile_, datFNs);
           }
           
@@ -414,7 +454,7 @@ int main(int argc, char* argv[]) {
               std::string pvaluesFN = datFN + ".pvalues.dat";
               
               if (!BatchGlobals::fileExists(pvaluesFN)) {
-                BatchSpectra spectra(pvaluesFN);
+                BatchSpectra spectra(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
                 spectra.readBatchSpectra(datFN);
                 spectra.calculatePvalueVectors(peakCounts);
                 spectra.writePvalueVectors(pvalueVectorsBaseFN);
@@ -430,7 +470,7 @@ int main(int argc, char* argv[]) {
           std::string pvaluesFN = outputFolder_ + "/overlaps.pvalues.dat";
           if (overlapFNs.size() > 0) {
             if (!BatchGlobals::fileExists(pvaluesFN)) {
-              BatchPvalueVectors pvecs(pvaluesFN);
+              BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
               pvecs.processOverlapFiles(overlapFNs);
             } else {
               std::cerr << "Using p-values from " << pvaluesFN << 
@@ -450,14 +490,25 @@ int main(int argc, char* argv[]) {
           fileList.initFromFile(spectrumBatchFileFN_);
           error = doClustering(outputFolder_, fnPrefix_, pvalFNs, scanNrsFN_, scanDescFN_,
                               clusterThresholds_, fileList, skipFilterAndSort_, 
-                              matrixFN_, resultTreeFN_);          
+                              matrixFN_, resultTreeFN_); 
+          
+          time_t endTime;
+          clock_t endClock = clock();
+          time(&endTime);
+          double diff_time = difftime(endTime, startTime);
+          
+          std::cerr << "Running MaRaCluster took: "
+            << ((double)(endClock - startClock)) / (double)CLOCKS_PER_SEC
+            << " cpu seconds or " << diff_time << " seconds wall time" << std::endl;
+                     
           return error;
         }
         case INDEX:
         {
           // maracluster index -b /media/storage/mergespec/data/batchcluster/Linfeng/all.txt
           return createIndex(outputFolder_, fnPrefix_, spectrumBatchFileFN_, 
-                             peakCountFN_, scanNrsFN_, datFNFile_);
+                             peakCountFN_, scanNrsFN_, datFNFile_, chargeUncertainty_,
+                             precursorTolerance_, precursorToleranceDa_);
         }
         case PVALUE:
         {
@@ -468,13 +519,13 @@ int main(int argc, char* argv[]) {
             // direct input of p-value vector file
             // maracluster pvalue -y /media/storage/mergespec/data/batchtest/1300.ms2.pvalue_vectors.tsv
             
-            BatchPvalueVectors pvecs(pvaluesFN_);
+            BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             pvecs.parsePvalueVectorFile(pvalVecInFileFN_);
             pvecs.batchCalculatePvalues();
           } else if (overlapBatchFileFN_.size() > 0) { 
             // calculate p-values in overlap between two windows
             // maracluster pvalue -w data/batchcluster/overlap_files.txt
-            BatchPvalueVectors pvecs(pvaluesFN_);
+            BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             std::vector< std::pair<std::string, std::string> > overlapFNs;
             pvecs.parseBatchOverlapFile(overlapBatchFileFN_, overlapFNs);
             pvecs.processOverlapFiles(overlapFNs);
@@ -497,7 +548,7 @@ int main(int argc, char* argv[]) {
             
             std::cerr << "Read " << batchSpectra.size() << " spectra." << std::endl;
             
-            BatchSpectra spectra(pvaluesFN_);
+            BatchSpectra spectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             spectra.setBatchSpectra(batchSpectra);
             spectra.calculatePvalueVectors(peakCounts);
             spectra.calculatePvalues();
@@ -526,7 +577,7 @@ int main(int argc, char* argv[]) {
             SpectrumFileList fileList;
             fileList.initFromFile(spectrumBatchFileFN_);
             
-            BatchSpectra spectra(pvaluesFN_);
+            BatchSpectra spectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             if (spectrumInFN_.substr(spectrumInFN_.size() - 3) == "dat") {
               spectra.readBatchSpectra(spectrumInFN_);
             } else {
@@ -597,7 +648,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Finished reading peak counts" << std::endl;
             
             // read in the query spectra
-            BatchSpectra querySpectra("");
+            BatchSpectra querySpectra("", precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             SpectrumFileList fileList;
             if (spectrumInFN_.size() > 0) {
               querySpectra.convertToBatchSpectra(spectrumInFN_, fileList);
@@ -607,7 +658,7 @@ int main(int argc, char* argv[]) {
             }
             
             // read in the library spectra
-            BatchSpectra librarySpectra(pvaluesFN_);
+            BatchSpectra librarySpectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             librarySpectra.convertToBatchSpectra(spectrumLibraryFN_, fileList);
             librarySpectra.calculatePvalueVectors(peakCounts);
             

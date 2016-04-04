@@ -16,7 +16,7 @@
  
 #include "PvalueFilterAndSort.h"
 
-int PvalueFilterAndSort::maxPvalsPerFile_ = 5000000;
+int PvalueFilterAndSort::maxPvalsPerFile_ = 50000000; // 20 bytes per p-value
 
 void PvalueFilterAndSort::filterAndSort(const std::string& pvalFN) {
   bool tsvInput = false;
@@ -28,9 +28,15 @@ void PvalueFilterAndSort::filterAndSort(const std::string& pvalFN) {
 
 void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs, 
     const std::string& resultFN, bool tsvInput, bool removeUnidirected) {
+  time_t startTime;
+  time(&startTime);
+  clock_t startClock = clock();
+  
   int numFiles = splitByHash(pvalFNs, resultFN, tsvInput);
-
-#pragma omp parallel for schedule(dynamic, 1)  
+  
+  reportProgress(startTime, startClock);
+  
+#pragma omp parallel for schedule(static, 1)  
   for (int bin = 0; bin < numFiles; ++bin) {
     if (bin % 10 == 0) {
       std::cerr << "Sorting and filtering bin " << bin+1 << "/" << numFiles << " (" << (bin+1)*100/numFiles << "%)" << std::endl;
@@ -40,7 +46,28 @@ void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs,
     filterAndSortSingleFile(partFileFN, removeUnidirected);
   }
   
-  externalMergeSort(resultFN, numFiles);  
+  reportProgress(startTime, startClock);
+  
+  externalMergeSort(resultFN, numFiles); 
+  
+  reportProgress(startTime, startClock);
+}
+
+void PvalueFilterAndSort::reportProgress(time_t& startTime, clock_t& startClock) {
+  time_t elapsedTime;
+  time(&elapsedTime);
+  clock_t elapsedClock = clock();
+  
+  double diff = difftime(elapsedTime, startTime);
+  
+  unsigned int timeElapsedMin = static_cast<unsigned int>(diff/60);
+  unsigned int timeElapsedSecMod = 
+      static_cast<unsigned int>(diff - timeElapsedMin * 60);
+  
+  double elapsedCpuTime = (elapsedClock - startClock) / (double)CLOCKS_PER_SEC;
+  std::cerr << "  Elapsed time: " << elapsedCpuTime << " cpu seconds " <<
+               "or " << timeElapsedMin << " min " << timeElapsedSecMod << 
+               " sec wall time." << std::endl;
 }
 
 int PvalueFilterAndSort::splitByHash(const std::vector<std::string>& pvalFNs,
@@ -76,11 +103,9 @@ int PvalueFilterAndSort::splitByHash(const std::vector<std::string>& pvalFNs,
           f += sizeof(tmp);
         }
         buffer.push_back(tmp);
-        //std::cerr << tmp.scannr1 << " " << tmp.scannr2 << " " << tmp.pval << std::endl;
         if (++i % maxPvalsPerFile_ == 0) {
           std::cerr << "Hashing p-value " << i << " (" << i*100/numPvals << "%)" << std::endl;
           writeBufferToPartFiles(buffer, numFiles, resultFN);
-          //std::cerr << "Written p-value " << i << "/" << numPvals << std::endl;
           buffer.clear();
           buffer.reserve(maxPvalsPerFile_);
         }
@@ -104,12 +129,14 @@ void PvalueFilterAndSort::filterAndSortSingleFile(const std::string& partFileFN,
   //std::cerr << "Read " << numPvals << " p-values" << std::endl;
   
   removeDirectedDuplicates(buffer, filteredBuffer);
-  
+  /*
   if (removeUnidirected) {
     removeUndirectedDuplicates(filteredBuffer, buffer);
   } else {
     buffer.swap(filteredBuffer);
   }
+  */
+  buffer.swap(filteredBuffer);
   
   //std::cerr << "Removed " << numPvals - buffer.size() << " duplicate entries" << std::endl;
   
@@ -125,13 +152,13 @@ void PvalueFilterAndSort::filterAndSortSingleFile(const std::string& partFileFN,
 void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int numFiles) {
   //size_t pageSize = boost::mapped_region::get_page_size();
   
-  int numOpenFiles = numFiles;  
+  std::set<int> closedFiles;
   std::vector<PvalueTriplet> pvecBuffer;
   std::vector<long long> offsets(numFiles);
   int maxPvalSort = maxPvalsPerFile_;
   bool first = true;
   long long numPvals = 0, numWrittenPvals = 0;
-  while (numOpenFiles > 0) {
+  while (closedFiles.size() < numFiles) {
     float maxMinPval = 0.0;
     
     for (int bin = 0; bin < numFiles; ++bin) {
@@ -163,17 +190,15 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
         }
       }
       
-      if (!(f && f <= (l-sizeof(PvalueTriplet)))) --numOpenFiles;
+      if (!(f && f <= (l-sizeof(PvalueTriplet)))) closedFiles.insert(bin);
     }
-    
-    if (first) first = false;
     
     std::sort(pvecBuffer.begin(), pvecBuffer.end(), lowerPval);
     
     std::vector<PvalueTriplet> pvec;
     int numPvalsToErase = 0;
     BOOST_FOREACH (PvalueTriplet p, pvecBuffer) {
-      if (numOpenFiles == 0 || p.pval <= maxMinPval) {
+      if (closedFiles.size() == numFiles || p.pval <= maxMinPval) {
         pvec.push_back(p);
         ++numPvalsToErase;
       } else {
@@ -186,6 +211,11 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
     std::cerr << "Writing p-value " << numWrittenPvals << "/" << numPvals << " (" << numWrittenPvals*100/numPvals << "%)"<< std::endl;
     
     bool append = true;
+    if (first) {
+      first = false;
+      append = false;
+    }
+    
     BinaryInterface::write<PvalueTriplet>(pvec, resultFN, append);
   }
   
@@ -195,9 +225,12 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
   }
 }
 
-void PvalueFilterAndSort::writeBufferToPartFiles(std::vector<PvalueTriplet>& buffer, int numFiles, const std::string& resultFN) {
+void PvalueFilterAndSort::writeBufferToPartFiles(
+    std::vector<PvalueTriplet>& buffer, int numFiles, 
+    const std::string& resultFN) {
   std::vector< std::vector<PvalueTriplet> > hashBins(numFiles);
-  BOOST_FOREACH (PvalueTriplet t, buffer) {
+  
+  BOOST_FOREACH (PvalueTriplet& t, buffer) {
     // TODO: this function might not work correctly
     int hashBin = ((t.scannr1.scannr % numFiles) + (t.scannr2.scannr % numFiles)) % numFiles;
     hashBins[hashBin].push_back(t);
@@ -207,7 +240,7 @@ void PvalueFilterAndSort::writeBufferToPartFiles(std::vector<PvalueTriplet>& buf
   
   int j = 0;
   typedef std::vector<PvalueTriplet> PvalTripletVector;
-  BOOST_FOREACH (PvalTripletVector pvec, hashBins) {
+  BOOST_FOREACH (PvalTripletVector& pvec, hashBins) {
     if (pvec.size() > 0) {
       std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(j);
       bool append = true;
@@ -215,6 +248,8 @@ void PvalueFilterAndSort::writeBufferToPartFiles(std::vector<PvalueTriplet>& buf
     }
     ++j;
   }
+  
+  //std::cerr << "Finished writing p-values" << std::endl;
 }
 
 long long PvalueFilterAndSort::estimateNumPvals(const std::vector<std::string>& pvalFNs, bool tsvInput) {
@@ -276,7 +311,7 @@ void PvalueFilterAndSort::removeDirectedDuplicates(
       lastScannr1 = it->scannr1;
       lastScannr2 = it->scannr2;
     }
-  }  
+  }
 }
 
 // keep only the highest p-value per undirected pair
@@ -289,14 +324,13 @@ void PvalueFilterAndSort::removeUndirectedDuplicates(
   pvecOut.reserve(pvecIn.size());
   
   ScanId lastScannr1, lastScannr2;
-  pvecOut.reserve(pvecIn.size());
   for (std::vector<PvalueTriplet>::iterator it = pvecIn.begin(); it != pvecIn.end(); ++it) {
     if (!(it->scannr1 == lastScannr2 && it->scannr2 == lastScannr1)) {
       pvecOut.push_back(*it);
       lastScannr1 = it->scannr1;
       lastScannr2 = it->scannr2;
     }
-  }  
+  }
 }
 
 // TODO: check if file exists before reading
@@ -317,7 +351,7 @@ void PvalueFilterAndSort::convertBinaryPvalToTsv(std::string& binaryPvalFN,
 
 void PvalueFilterAndSort::writePvalsTsv(std::ofstream& outfile, std::vector<PvalueTriplet>& pvec) {
   if (outfile.is_open()) {
-    BOOST_FOREACH (PvalueTriplet t, pvec) {
+    BOOST_FOREACH (PvalueTriplet& t, pvec) {
       outfile << t << "\n";
     }
   }
