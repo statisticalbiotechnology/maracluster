@@ -22,12 +22,8 @@ void SparseClustering::initMatrix(const std::string& matrixFN) {
 
 void SparseClustering::minInsert(const ScanId row, const ScanId col, 
                                  const double value) {
-  //edgeList_.push(SparseEdge(value, row, col));
-  //inMatrix_[row][col] = (std::min)(value, inMatrix_[row][col]);
-  //matrix[col][row] = (std::min)(value, matrix[col][row]);
   matrix_[row][col] = value;
   matrix_[col][row] = value;
-  // initialize the cluster scannr list if not initialized previously
   clusterInit(row, col);
 }
 
@@ -165,56 +161,43 @@ void SparseClustering::addNewEdges(
 // of edges. If the number of edges reaches complete linkage, the edge is added 
 // to the priority queue
 void SparseClustering::pruneEdges() {
-  std::vector<unsigned int> limits;
-  limits.push_back(0);
   std::cerr << "  Sorting " << missingEdges_.size() << " edges." << std::endl;
   std::sort(missingEdges_.begin(), missingEdges_.end(), lowerEdge);
-  // make sure that identical edges end up in the same limit bin
-  for (unsigned int i = 100000; i < missingEdges_.size(); i += 100000) {
-    while (missingEdges_[i].col == missingEdges_[i+1].col && missingEdges_[i].row == missingEdges_[i+1].row) {
-      ++i;
-    }
-    if (i < missingEdges_.size()) limits.push_back(i+1);
-  }
-  limits.push_back(missingEdges_.size());
   
   std::cerr << "  Adding new edges." << std::endl;
-  // indices indicating where the last collapsed edge was inserted in missingEdges_ for each limit bin
-  std::vector<size_t> collapsingIndices; 
-#pragma omp parallel for schedule(dynamic, 1) 
-  for (unsigned int i = 0; i < limits.size() - 1; ++i) {    
-    SparseMissingEdge lastEdge = missingEdges_[limits[i]];
+  size_t batchSize = 100000;
+  size_t collapsedIdx = 0;
+#pragma omp parallel for schedule(dynamic, 1) ordered 
+  for (size_t i = 0; i < missingEdges_.size(); i += batchSize) {    
+    SparseMissingEdge lastEdge = missingEdges_[i];
     lastEdge.numEdges = 0;
-    size_t tmpIdx = limits[i];
-    for (unsigned j = limits[i]; j < limits[i+1]; ++j) {
-      if (lastEdge.col == missingEdges_[j].col && lastEdge.row == missingEdges_[j].row) {
+    size_t insertionIdx = i;
+    size_t startIdx = i;
+    for (size_t j = i; j < std::min(i + batchSize, missingEdges_.size()); ++j) {
+      if (lastEdge.sameEdge(missingEdges_[j])) {
         lastEdge.numEdges += missingEdges_[j].numEdges;
       } else {
-        addNewEdge(lastEdge, tmpIdx);
+        addNewEdge(lastEdge, insertionIdx);
         lastEdge = missingEdges_[j];
       }
     }
-    addNewEdge(lastEdge, tmpIdx);
-  #pragma omp critical (tmp_edges_idx_insert)
+    addNewEdge(lastEdge, insertionIdx);
+  #pragma omp ordered
     {
-      collapsingIndices.push_back(tmpIdx);
+      // make sure that identical edges spilling over the batches are joined as well
+      if (collapsedIdx > 0 && missingEdges_[startIdx].sameEdge(missingEdges_[collapsedIdx-1])) {
+        --collapsedIdx;
+        missingEdges_[collapsedIdx].numEdges += missingEdges_[startIdx].numEdges;
+        addNewEdge(missingEdges_[collapsedIdx], collapsedIdx);
+        ++startIdx;
+      }
+      for (size_t j = startIdx; j < insertionIdx; ++j) {
+        missingEdges_[collapsedIdx++] = missingEdges_[j]; // swapping is not faster
+      }
     }
   }
   
-  std::cerr << "  Collapsing missing edges." << std::endl;
-  std::sort(collapsingIndices.begin(), collapsingIndices.end());
-  size_t curIdx = collapsingIndices.at(0);
-  for (size_t i = 1; i < collapsingIndices.size(); ++i) {
-    if (limits.at(i) != curIdx && limits.at(i+1) != collapsingIndices.at(i)) {
-    // check if we will not accidentally overwrite data that should be moved first, otherwise execute sequentially
-    #pragma omp parallel for schedule(dynamic, 1000) if (limits.at(i) - curIdx > collapsingIndices.at(i) - limits.at(i))
-      for (size_t j = limits.at(i); j < collapsingIndices.at(i); ++j) {
-        missingEdges_[curIdx + j - limits.at(i)] = missingEdges_.at(j);
-      }
-    }
-    curIdx += collapsingIndices.at(i) - limits.at(i);
-  }
-  missingEdges_.resize(curIdx);
+  missingEdges_.resize(collapsedIdx);
 }
 
 void SparseClustering::addNewEdge(const SparseMissingEdge& edge, size_t& idx) {

@@ -12,6 +12,6 @@ cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 #-----make------
 echo -n "make maracluster (this will take few minutes).....";
 make -j 4;
-#make -j 4 package;
+make -j 4 package;
 sudo make install;
 

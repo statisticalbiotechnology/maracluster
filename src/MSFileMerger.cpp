@@ -319,12 +319,14 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
         SpectrumPtr s = sl->spectrum(j, true);
         unsigned int scannr = SpectrumHandler::getScannr(s);
         ScanId globalScannr = fileList_.getScanId(filePath, scannr);
-        ScanId mergedScannr = scannrToMergedScannr[globalScannr];
-        
-        // since vectors are zero based and scannrs start at 1, we subtract 1
-        unsigned int clusterBin = (mergedScannr.scannr-1) % numClusterBins_; 
-        s->id = "scan=" + boost::lexical_cast<std::string>(hash_value(globalScannr));
-        spectrumLists[clusterBin]->spectra.push_back(s);
+        if (scannrToMergedScannr.find(globalScannr) != scannrToMergedScannr.end()) {
+          ScanId mergedScannr = scannrToMergedScannr[globalScannr];
+          
+          // since vectors are zero based and scannrs start at 1, we subtract 1
+          unsigned int clusterBin = (mergedScannr.scannr-1) % numClusterBins_; 
+          s->id = "scan=" + boost::lexical_cast<std::string>(hash_value(globalScannr));
+          spectrumLists[clusterBin]->spectra.push_back(s);
+        }
       }
     #pragma omp critical (merge_speclists)
       {

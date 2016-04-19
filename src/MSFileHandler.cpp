@@ -149,6 +149,8 @@ size_t MSFileHandler::getSpectrumIdxFromScannr(SpectrumListPtr sl,
         "scan=" + boost::lexical_cast<std::string>(scannr));
     if (indexList.size() > 0) {
       result = indexList[0];
+    } else {
+      result = scannr;
     }
   }
   return result;

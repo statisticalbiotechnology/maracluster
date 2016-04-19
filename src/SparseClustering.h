@@ -50,6 +50,10 @@ struct SparseEdge {
       || (value == r2.value && row < r2.row)
       || (value == r2.value && row == r2.row && col < r2.col);
   }
+  
+  bool sameEdge(const SparseEdge& r2) {
+    return (row == r2.row && col == r2.col);
+  }
 };
 
 struct SparseMissingEdge : public SparseEdge {

@@ -28,5 +28,5 @@ std::ostream& operator<<(std::ostream& stream, const ScanId& si) {
 
 std::size_t hash_value(ScanId const& si) {
   boost::hash<int> hasher;
-  return hasher(si.fileIdx * 1000000 + si.scannr);
+  return hasher((si.fileIdx+1) * 1000000 + si.scannr);
 }

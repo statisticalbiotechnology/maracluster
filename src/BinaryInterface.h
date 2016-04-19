@@ -21,6 +21,7 @@
 #include <cerrno>
 #include <fstream>
 
+#include "MyException.h"
 #include <boost/iostreams/device/mapped_file.hpp>
 
 // TODO: add exception handling
@@ -58,6 +59,12 @@ class BinaryInterface {
       memcpy(&tmp, f, sizeof(tmp));
       f += sizeof(tmp);
       vec.push_back(tmp);
+    }
+    
+    if (errno != 0) {
+      std::stringstream ss;
+      ss << "(BinaryInterface.h) error in writing binary file " << inputFN << std::endl;
+      throw MyException(ss);
     }
   }
 };
