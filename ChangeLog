@@ -1,0 +1,8 @@
+v0.01
+* Fixed segmentation fault during clustering on sample data
+* Fixed duplicate p-value writing during filter-sort procedure
+* Switched to undirected p-value edges to save disk space
+* Use spectrum indices if scan numbers are not available or cannot be parsed from the title (mzML, mgf)
+* Fixed bug in CPack.txt in RedHat related REGEX command (jgriss)
+* Added guard to detect insufficient disk space while writing binary files
+* Added support for precursor window in `Da`, in addition to the default `ppm`
