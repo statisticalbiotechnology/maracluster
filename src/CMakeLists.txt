@@ -9,9 +9,15 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE( STATUS "Checking packages:" )
 
-#set(Boost_INCLUDE_DIRS ${BOOST_INCLUDEDIR})
-#set(Boost_LIBRARIES boost_filesystem-mt-s boost_iostreams-mt-s boost_regex-mt-s boost_date_time-mt-s boost_thread-mt-s boost_serialization-mt-s boost_system-mt-s)
-find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS filesystem iostreams regex thread serialization system chrono REQUIRED)
+if(MSVC)
+  add_definitions(-DPWIZ_READER_THERMO)
+  add_definitions(-DBOOST_ALL_NO_LIB)
+  set(BOOST_NOWIDE "nowide")
+else(MSVC)
+  set(BOOST_NOWIDE "")
+endif(MSVC)
+
+find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS filesystem iostreams regex thread serialization system chrono ${BOOST_NOWIDE} REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Package Boost found at: ${Boost_INCLUDE_DIRS}")
 else(Boost_FOUND)
@@ -55,6 +61,10 @@ add_library(batchlibrary STATIC BatchGlobals.cpp BatchPvalues.cpp BatchPvalueVec
 #add_executable(msgffixmzml msgfFixMzML.cpp)
 
 add_executable(maracluster maracluster.cpp)
+if(MSVC)
+  add_executable(extractraw extractRAWSpectra.cpp)
+endif(MSVC)
+
 
 if(APPLE)
   set_property(TARGET maracluster PROPERTY LINK_SEARCH_START_STATIC FALSE)
@@ -82,8 +92,14 @@ set(COMMON_LIBRARIES ${PWIZ_LIBRARIES} ${Boost_LIBRARIES} ${ZLIB_LIBRARY} ${CMAK
 #target_link_libraries(msgffixmzml maraclusterlibrary ${COMMON_LIBRARIES})
 
 target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
-
+if(MSVC)
+  target_link_libraries(extractraw batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
+endif(MSVC)
 # INSTALL MARACLUSTER
 #install(TARGETS extractspec msgffixmzml maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
-install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+if(MSVC)
+  install(TARGETS extractraw maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+else(MSVC)
+  install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+endif(MSVC)
 

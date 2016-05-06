@@ -644,7 +644,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Reading peak counts" << std::endl;
             PeakCounts peakCounts;
             peakCounts.readFromFile(peakCountFN_);
-            peakCounts.setSmoothingMode(1);
+            //peakCounts.setSmoothingMode(1);
             std::cerr << "Finished reading peak counts" << std::endl;
             
             // read in the query spectra
@@ -658,6 +658,7 @@ int main(int argc, char* argv[]) {
             }
             
             // read in the library spectra
+            PvalueCalculator::kMinScoringPeaks = 5u;
             BatchSpectra librarySpectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             librarySpectra.convertToBatchSpectra(spectrumLibraryFN_, fileList);
             librarySpectra.calculatePvalueVectors(peakCounts);

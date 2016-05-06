@@ -24,7 +24,7 @@ struct PvalueTriplet {
   float pval;
   
   PvalueTriplet() : scannr1(), scannr2(), pval(0.0) {}
-  PvalueTriplet(ScanId _scannr1, ScanId _scannr2, double _pval) :
+  PvalueTriplet(ScanId _scannr1, ScanId _scannr2, float _pval) :
     scannr1(_scannr1), scannr2(_scannr2), pval(_pval) {}
   
   void readFromString(const char* f, char** next);

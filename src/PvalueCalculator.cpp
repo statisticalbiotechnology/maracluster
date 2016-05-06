@@ -28,7 +28,7 @@ Adapted from https://code.google.com/p/in-silico-mass-fingerprinting/
 unsigned int PvalueCalculator::probDiscretizationLevels_ = 100;
 const double PvalueCalculator::kMinProb = 1e-10;
 const double PvalueCalculator::kMaxProb = 0.4;
-const unsigned int PvalueCalculator::kMinScoringPeaks = 15u;
+unsigned int PvalueCalculator::kMinScoringPeaks = 15u;
 const bool PvalueCalculator::kVariableScoringPeaks = false;
 
 unsigned long PvalueCalculator::seed_ = 1;
@@ -71,9 +71,9 @@ void PvalueCalculator::initFromPeakBins(
 }
 
 void PvalueCalculator::binaryMatchPeakBins(const std::vector<unsigned int>& queryPeakBins, std::vector<bool>& d) {
-  int candIdx = 0;
+  size_t candIdx = 0;
   
-  for (int i = 0; i < peakBins_.size(); ++i) {
+  for (size_t i = 0; i < peakBins_.size(); ++i) {
     if (candIdx >= queryPeakBins.size()) break;
     while (peakBins_[i] > queryPeakBins[candIdx]) {
       if (++candIdx >= queryPeakBins.size()) break;

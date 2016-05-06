@@ -39,7 +39,6 @@ class SpectrumFileList {
       return scanId.scannr; 
     }
     inline std::string getFilePath(const ScanId& scanId) const {
-      unsigned int bin;
       if (scanId.fileIdx < fileIndexVector_.size()) {
         return fileIndexVector_[scanId.fileIdx]; 
       } else {

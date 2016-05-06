@@ -295,10 +295,10 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
     for (size_t k = 0; k < numClusterBins_; ++k) {
       spectrumListsAcc[k] = SpectrumListSimplePtr(new SpectrumListSimple);
     }
-    size_t startIdx = batchNr*numMSFilePtrsPerBatch_;
-    size_t endIdx = (std::min)((batchNr+1)*numMSFilePtrsPerBatch_, fileList_.size());
+    int startIdx = batchNr*numMSFilePtrsPerBatch_;
+    int endIdx = (std::min)((batchNr+1)*numMSFilePtrsPerBatch_, fileList_.size());
   #pragma omp parallel for schedule(dynamic, 1)
-    for (size_t i = startIdx; i < endIdx; ++i) {
+    for (int i = startIdx; i < endIdx; ++i) {
       std::string filePath = fileList_.getFilePath(i);
       if (filePath == spectrumOutFN_) continue;
       std::cerr << "Splitting " << filePath
@@ -428,7 +428,7 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin,
   }
   std::cerr << "  Merging spectra" << std::endl;
 #pragma omp parallel for schedule(dynamic, 100)
-  for (size_t k = 0; k < spectra.size(); ++k) {
+  for (int k = 0; k < spectra.size(); ++k) {
     if (spectra[k].first.size() > 0) {
       mergeSpectraSetMSCluster(spectra[k].first, spectra[k].second, mergedSpectra);
     }
@@ -445,7 +445,7 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin,
 void MSFileMerger::writeClusterBins(unsigned int batchIdx,
     std::vector<SpectrumListSimplePtr>& spectrumLists) {
 #pragma omp parallel for schedule(dynamic, 1)
-  for (unsigned int i = 0; i < numClusterBins_; ++i) {
+  for (int i = 0; i < numClusterBins_; ++i) {
     if (spectrumLists[i]->spectra.size() == 0) {
       continue; // in case there are so few spectra that not all bins are filled
     }

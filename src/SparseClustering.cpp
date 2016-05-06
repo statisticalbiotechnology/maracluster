@@ -127,7 +127,7 @@ void SparseClustering::addNewEdges(
   missingEdges_.resize(missingEdges_.size() + numNewEdges);
 #endif
 #pragma omp parallel for schedule(dynamic, 10000) 
-  for (unsigned int i = 0; i < numNewEdges; ++i) {
+  for (int i = 0; i < numNewEdges; ++i) {
     ScanId row = pvec[i].scannr1;
     ScanId col = pvec[i].scannr2;
     
@@ -168,7 +168,7 @@ void SparseClustering::pruneEdges() {
   size_t batchSize = 100000;
   size_t collapsedIdx = 0;
 #pragma omp parallel for schedule(dynamic, 1) ordered 
-  for (size_t i = 0; i < missingEdges_.size(); i += batchSize) {    
+  for (int i = 0; i < missingEdges_.size(); i += batchSize) {    
     SparseMissingEdge lastEdge = missingEdges_[i];
     lastEdge.numEdges = 0;
     size_t insertionIdx = i;

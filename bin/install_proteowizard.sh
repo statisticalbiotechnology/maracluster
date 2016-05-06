@@ -6,7 +6,11 @@ lib_dir=${script_dir}/../libs
 #sudo apt-get -y install subversion
 
 mkdir -p ${lib_dir}
-svn co -r 7692 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ${lib_dir}/proteowizard
+lib_dir=./
+rev=9393
+svn co -r ${rev} --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ${lib_dir}/proteowizard
+svn update -r ${rev} --set-depth infinity ${lib_dir}/proteowizard/pwiz
+svn update -r ${rev} --set-depth infinity ${lib_dir}/proteowizard/libraries
 
 # install and keep libraries in the libs folder of this project for linking
 cd ${lib_dir}/proteowizard

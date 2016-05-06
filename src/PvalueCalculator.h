@@ -47,7 +47,8 @@ class PvalueCalculator {
   static unsigned int probDiscretizationLevels_;
   static const unsigned int kPolyfitDegree = 5u;
   static const double kMinProb, kMaxProb;
-  static const unsigned int kMaxScoringPeaks = 40u, kMinScoringPeaks;
+  static const unsigned int kMaxScoringPeaks = 40u;
+  static unsigned int kMinScoringPeaks;
   static const bool kVariableScoringPeaks;
   
   inline unsigned int getNumScoringPeaks() const { return peakBins_.size(); }

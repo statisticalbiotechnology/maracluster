@@ -80,7 +80,7 @@ void BatchPvalueVectors::batchInsert(PeakCounts& peakCounts, bool forceInsert) {
     }
     //std::cerr << "Calculating " << pvalVecBatch_.size() << " p-value vectors" << std::endl;
   #pragma omp parallel for schedule(dynamic, 100)
-    for (size_t i = 0; i < pvalVecBatch_.size(); ++i) {
+    for (int i = 0; i < pvalVecBatch_.size(); ++i) {
       calculatePvalueVector(pvalVecBatch_[i], peakCounts);
     }
     pvalVecBatch_.clear();
@@ -318,7 +318,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
   
   //long long numPvalsNoThresh = 0;
 #pragma omp parallel for schedule(dynamic, 1000)
-  for (size_t i = 0; i < n; ++i) {
+  for (int i = 0; i < n; ++i) {
     if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n << " (" <<
                    i*100/n << "%)." << std::endl;
@@ -364,7 +364,7 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
   //long long numPvalsNoThresh = 0;
   int k = 0;
 #pragma omp parallel for schedule(dynamic, 1000)
-  for (size_t i = 0; i < n; ++i) {
+  for (int i = 0; i < n; ++i) {
     if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n << " (" <<
                    i*100/n << "%)." << std::endl;
@@ -377,7 +377,7 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
       if (querySpectra[j].precMass < precLimitLower) {
         continue;
       }
-      if (querySpectra[j].precMass < precLimitUpper) { 
+      if (querySpectra[j].precMass < precLimitUpper) {
         calculatePvalue(pvalVecCollection_[i], querySpectra[j], pvalBuffer);
       } else {
         break;
@@ -461,7 +461,7 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
   //long long numPvalsNoThresh = 0;
   long long fingerPrintPairs = 0, fingerPrintComparisons = 0, pvaluePairsPassed = 0, fingerPrintPairCandidates = 0;
 #pragma omp parallel for schedule(dynamic, 100)
-  for (size_t i = 0; i < numBlockPairs; ++i) {
+  for (int i = 0; i < numBlockPairs; ++i) {
     int col = std::floor(std::sqrt(2 * i + 0.25) - 0.5);
     int row = i - ((col * col + col) / 2);
     if (col % 100 == 0 && row == 0 && BatchGlobals::VERB > 2) {
@@ -592,7 +592,7 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
     }
   }
   double cosDist = -100.0 * dotProduct / numerator;
-  if (cosDist < dbPvalThreshold_) {
+  if (cosDist <= dbPvalThreshold_) {
     pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
                                        std::max(pvecRow.scannr, queryPvecRow.scannr),
                                        cosDist));
@@ -600,9 +600,9 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
   }
 #else  
   double queryPval = queryPvecRow.pvalCalc.computePvalPolyfit(pvecRow.peakBins);
-  if (queryPval < dbPvalThreshold_) {
+  if (queryPval <= dbPvalThreshold_) {
     double targetPval = pvecRow.pvalCalc.computePvalPolyfit(queryPvecRow.peakBins);
-    if (targetPval < dbPvalThreshold_) {
+    if (targetPval <= dbPvalThreshold_) {
       pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
                                          std::max(pvecRow.scannr, queryPvecRow.scannr),
                                          std::max(targetPval, queryPval)));
@@ -632,7 +632,7 @@ void BatchPvalueVectors::calculatePvalue(PvalueVectorsDbRow& pvecRow,
   }
   
   double targetPval = pvecRow.pvalCalc.computePvalPolyfit(peakBins);
-  if (targetPval < dbPvalThreshold_) {
+  if (targetPval <= dbPvalThreshold_) {
     pvalBuffer.push_back(PvalueTriplet(pvecRow.scannr, querySpectrum.scannr, 
                                        targetPval));
   }
