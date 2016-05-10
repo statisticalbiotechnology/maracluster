@@ -20,8 +20,7 @@
 #include "PvalueCalculator.h"
 
 struct BatchPvalueVector {
-  double precMass;
-  double retentionTime;
+  double precMass, precMz, retentionTime;
   double polyfit[PvalueCalculator::kPolyfitDegree + 1];
   short peakBins[PvalueCalculator::kMaxScoringPeaks];
   short peakScores[PvalueCalculator::kMaxScoringPeaks];

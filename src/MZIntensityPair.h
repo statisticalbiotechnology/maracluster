@@ -19,7 +19,7 @@
 
 #include <vector>
 #include <iostream>
-#include <boost/foreach.hpp>
+
 #include "pwiz/data/msdata/MSData.hpp"
 
 struct MZIntensityPair : public pwiz::msdata::MZIntensityPair {

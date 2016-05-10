@@ -22,8 +22,9 @@
 #include <algorithm>
 #include <cmath>
 #include <ostream>
+
 #include <boost/foreach.hpp>
-#include "pwiz/data/msdata/MSData.hpp"
+
 #include "SpectrumHandler.h"
 #include "BinSpectra.h"
 #include "MZIntensityPair.h"

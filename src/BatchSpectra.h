@@ -21,10 +21,6 @@
 #include <vector>
 #include <string>
 
-#include <boost/filesystem.hpp>
-
-#include "pwiz/data/msdata/MSDataFile.hpp"
-
 #include "BatchGlobals.h"
 #include "BatchSpectrumFiles.h"
 #include "BatchSpectrum.h"
@@ -72,11 +68,15 @@ class BatchSpectra {
   
   inline static bool lessPrecMass(const BatchSpectrum& a, 
     const BatchSpectrum& b) { return (a.precMass < b.precMass) || (a.precMass == b.precMass && a.scannr < b.scannr); }
+  
+  inline static bool lessPrecMz(const BatchSpectrum& a, 
+    const BatchSpectrum& b) { return (a.precMz < b.precMz) || (a.precMz == b.precMz && a.scannr < b.scannr); }
  protected:
   BatchPvalueVectors pvecs_;
   std::vector<BatchSpectrum> spectra_;
   
   void sortSpectraByPrecMass();
+  void sortSpectraByPrecMz();
 };
 
 #endif // BATCH_SPECTRA_H

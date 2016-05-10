@@ -44,7 +44,7 @@
 #endif
 
 struct PvalueVectorsDbRow {
-  double precMass;
+  double precMass, precMz;
   int charge;
   ScanId scannr;
   std::vector<unsigned int> peakBins;
@@ -53,7 +53,7 @@ struct PvalueVectorsDbRow {
   PvalueCalculator pvalCalc;
   
   inline bool operator<(const PvalueVectorsDbRow& other) const {
-    return precMass < other.precMass || (precMass == other.precMass && scannr < other.scannr);
+    return precMz < other.precMz || (precMz == other.precMz && scannr < other.scannr);
   }
 };
 

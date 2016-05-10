@@ -27,44 +27,44 @@ using pwiz::msdata::SpectrumPtr;
 using pwiz::msdata::Spectrum;
 using pwiz::msdata::SelectedIon;
 
-void BatchSpectrumFiles::splitByPrecursorMass(
+void BatchSpectrumFiles::splitByPrecursorMz(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
     const std::string& peakCountFN, const std::string& scanNrsFN,
     double precursorTolerance, bool precursorToleranceDa) {
   if (BatchGlobals::VERB > 1) {
-    std::cerr << "Splitting spectra by precursor mass" << std::endl;
+    std::cerr << "Splitting spectra by precursor Mz" << std::endl;
   }
   
-  std::vector<double> precMassesAccumulated;
-  getPeakCountsAndPrecursorMasses(fileList, precMassesAccumulated, peakCountFN);
+  std::vector<double> precMzsAccumulated;
+  getPeakCountsAndPrecursorMzs(fileList, precMzsAccumulated, peakCountFN);
   
-  //writePrecMasses(precMassesAccumulated);
-  //readPrecMasses(peakCountFN_, precMassesAccumulated);
+  //writePrecMzs(precMzsAccumulated);
+  //readPrecMzs(peakCountFN_, precMzsAccumulated);
   
   std::vector<double> limits;
-  getPrecMassLimits(precMassesAccumulated, limits, precursorTolerance, 
+  getPrecMzLimits(precMzsAccumulated, limits, precursorTolerance, 
                     precursorToleranceDa);
   getDatFNs(limits, datFNs);
-  writeSplittedPrecursorMassFiles(fileList, limits, datFNs, scanNrsFN);
+  writeSplittedPrecursorMzFiles(fileList, limits, datFNs, scanNrsFN);
 }
 
-void BatchSpectrumFiles::splitByPrecursorMass(SpectrumFileList& fileList,
+void BatchSpectrumFiles::splitByPrecursorMz(SpectrumFileList& fileList,
     const std::string& datFNFile, const std::string& peakCountFN,
     const std::string& scanNrsFN, double precursorTolerance, 
     bool precursorToleranceDa) {  
   std::vector<std::string> datFNs;
-  splitByPrecursorMass(fileList, datFNs, peakCountFN, scanNrsFN, 
+  splitByPrecursorMz(fileList, datFNs, peakCountFN, scanNrsFN, 
                        precursorTolerance, precursorToleranceDa);
   
   writeDatFNsToFile(datFNs, datFNFile);
 }
 
-void BatchSpectrumFiles::getPeakCountsAndPrecursorMasses(
+void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
     SpectrumFileList& fileList, 
-    std::vector<double>& precMassesAccumulated,
+    std::vector<double>& precMzsAccumulated,
     const std::string& peakCountFN) {
   if (BatchGlobals::VERB > 1) {
-    std::cerr << "Accumulating peak counts and precursor masses" << std::endl;
+    std::cerr << "Accumulating peak counts and precursor Mzs" << std::endl;
   }
   
   PeakCounts peakCountsAccumulated;
@@ -85,7 +85,7 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMasses(
       specList = msd.run.spectrumListPtr;
     }
     PeakCounts peakCounts;
-    std::vector<double> precMasses;
+    std::vector<double> precMzs;
     
     size_t numSpectra = specList->size();
     //size_t numSpectra = 2;
@@ -100,7 +100,7 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMasses(
       SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_); // returns mccs sorted by charge
       unsigned int lastCharge = 0;
       BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
-        precMasses.push_back(mcc.mass);
+        precMzs.push_back(mcc.precMz);
         unsigned int charge = (std::min)(mcc.charge, peakCounts.getMaxCharge());
         if (charge != lastCharge) {
           // in the last bin we do not truncate the spectrum
@@ -114,12 +114,12 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMasses(
   #pragma omp critical (add_to_peakcount)  
     {
       peakCountsAccumulated.add(peakCounts);
-      precMassesAccumulated.insert( precMassesAccumulated.end(), precMasses.begin(), precMasses.end() );
+      precMzsAccumulated.insert( precMzsAccumulated.end(), precMzs.begin(), precMzs.end() );
     }
   }
   writePeakCounts(peakCountsAccumulated, peakCountFN);
   
-  std::sort(precMassesAccumulated.begin(), precMassesAccumulated.end());
+  std::sort(precMzsAccumulated.begin(), precMzsAccumulated.end());
 }
 
 void BatchSpectrumFiles::writeScannrs(SpectrumFileList& fileList,
@@ -151,7 +151,7 @@ void BatchSpectrumFiles::writeScannrs(SpectrumFileList& fileList,
   }
 }
 
-void BatchSpectrumFiles::writeSplittedPrecursorMassFiles(
+void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
     SpectrumFileList& fileList, 
     std::vector<double>& limits,
     std::vector<std::string>& datFNs,
@@ -170,56 +170,18 @@ void BatchSpectrumFiles::writeSplittedPrecursorMassFiles(
           " (" << (fileIdx+1)*100/spectrumFNs.size() << "%)." << std::endl;
     }
     
-    SpectrumListPtr specList;    
-  #pragma omp critical (create_msdata)
-    {  
-      MSDataFile msd(spectrumFN);
-      specList = msd.run.spectrumListPtr;
-    }
+    std::vector<BatchSpectrum> localSpectra;
+    getBatchSpectra(spectrumFN, fileList, localSpectra);
     
+    std::vector<ScanId> scanIds;
     std::vector< std::vector<BatchSpectrum> > batchSpectra(limits.size());
-    size_t numSpectra = specList->size();
-    //size_t numSpectra = 2;
-    std::vector<ScanId> globalScanNrs(numSpectra);
-    
-    for (size_t i = 0; i < numSpectra; ++i) {
-      SpectrumPtr s = specList->spectrum(i, true);
-      
-      std::vector<MZIntensityPair> mziPairs;
-      SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
-      
-      double retentionTime = SpectrumHandler::getRetentionTime(s);
-      unsigned int scannr = SpectrumHandler::getScannr(s);
-      ScanId globalIdx = fileList.getScanId(spectrumFN, scannr);
-      
-      globalScanNrs[i] = globalIdx;
-      
-      std::vector<MassChargeCandidate> mccs;
-      SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_);
-      
-      BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
-        for (int isotopeTolerance = 0; isotopeTolerance <= 0; ++isotopeTolerance) {
-          double mass = mcc.mass + isotopeTolerance;
-          std::vector<unsigned int> peakBins;
-          unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(mass);
-          BinSpectra::binBinaryTruncated(mziPairs, peakBins, 
-            numScoringPeaks, mcc.mass);
-          
-          if (peakBins.size() >= PvalueCalculator::getMinScoringPeaks(mass)) {
-            BatchSpectrum bs;
-            peakBins.resize(BATCH_SPECTRUM_NUM_STORED_PEAKS, 0u);
-            std::copy(peakBins.begin(), peakBins.end(), bs.fragBins);
-            bs.precMass = mass;
-            bs.retentionTime = retentionTime;
-            bs.charge = mcc.charge;
-            bs.scannr = globalIdx;
-            
-            int precBin = getPrecMassBin(mass, limits);
-            batchSpectra[precBin].push_back(bs);
-          }
-        }
-      }
+    BOOST_FOREACH (BatchSpectrum& bs, localSpectra) {
+      int precBin = getPrecMzBin(bs.precMz, limits);
+      batchSpectra[precBin].push_back(bs);
+      if (scanIds.empty() || !(bs.scannr == scanIds.back())) 
+        scanIds.push_back(bs.scannr); // assumes sorted by scannr
     }
+    
   #pragma omp critical (add_to_datfiles)
     {
       appendBatchSpectra(batchSpectra, datFNs);
@@ -227,7 +189,62 @@ void BatchSpectrumFiles::writeSplittedPrecursorMassFiles(
   #pragma omp critical (write_scannrs)
     {
       bool append = true;
-      BinaryInterface::write<ScanId>(globalScanNrs, scanNrsFN, append);
+      BinaryInterface::write<ScanId>(scanIds, scanNrsFN, append);
+    }
+  }
+}
+
+
+void BatchSpectrumFiles::getBatchSpectra(
+    const std::string& spectrumFN, SpectrumFileList& fileList,
+    std::vector<BatchSpectrum>& localSpectra) {
+  if ( !boost::filesystem::exists( spectrumFN ) ) {
+    std::cerr << "Ignoring missing file " << spectrumFN << std::endl;
+    return;
+  }
+   
+  SpectrumListPtr specList;
+#pragma omp critical (create_msdata)
+  {  
+    MSDataFile msd(spectrumFN);
+    specList = msd.run.spectrumListPtr;
+  }
+  
+  size_t numSpectra = specList->size();
+  for (size_t i = 0; i < numSpectra; ++i) {
+    SpectrumPtr s = specList->spectrum(i, true);
+    
+    std::vector<MZIntensityPair> mziPairs;
+    SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
+    
+    double retentionTime = SpectrumHandler::getRetentionTime(s);
+    unsigned int scannr = SpectrumHandler::getScannr(s);
+    ScanId globalIdx = fileList.getScanId(spectrumFN, scannr);
+    
+    std::vector<MassChargeCandidate> mccs;
+    SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_);
+    
+    BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
+      for (int isotopeTolerance = 0; isotopeTolerance <= 0; ++isotopeTolerance) {
+        double mass = mcc.mass + isotopeTolerance;
+        std::vector<unsigned int> peakBins;
+        unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(mass);
+        BinSpectra::binBinaryTruncated(mziPairs, peakBins, 
+          numScoringPeaks, mcc.mass);
+        
+        if (peakBins.size() >= PvalueCalculator::getMinScoringPeaks(mass)) {
+          BatchSpectrum bs;
+          peakBins.resize(BATCH_SPECTRUM_NUM_STORED_PEAKS, 0u);
+          std::copy(peakBins.begin(), peakBins.end(), bs.fragBins);
+          bs.precMass = mass;
+          bs.precMz = SpectrumHandler::calcPrecMz(mass, mcc.charge);
+          bs.retentionTime = retentionTime;
+          bs.charge = mcc.charge;
+          bs.scannr = globalIdx;
+          
+          localSpectra.push_back(bs);
+        }
+      }
     }
   }
 }
@@ -247,7 +264,7 @@ void BatchSpectrumFiles::getDatFNs(std::vector<double>& limits,
   int counter = 0;
   BOOST_FOREACH (double limit, limits) {
     int intLimit = static_cast<int>(limit);
-    std::string filepath = precMassFileFolder_ + "/" + 
+    std::string filepath = precMzFileFolder_ + "/" + 
         boost::lexical_cast<std::string>(intLimit);
     if (intLimit == lastLimit) {
       filepath += "_" + boost::lexical_cast<std::string>(++counter);
@@ -285,51 +302,50 @@ void BatchSpectrumFiles::writeDatFNsToFile(std::vector<std::string>& datFNs,
   }
 }
 
-void BatchSpectrumFiles::writePrecMasses(const std::vector<double>& precMasses) {
-  BOOST_FOREACH (const double precMass, precMasses) {
-    std::cout << precMass << std::endl;
+void BatchSpectrumFiles::writePrecMzs(const std::vector<double>& precMzs) {
+  BOOST_FOREACH (const double precMz, precMzs) {
+    std::cout << precMz << std::endl;
   }
 }
 
-void BatchSpectrumFiles::readPrecMasses(const std::string& precMassFN,
-    std::vector<double>& precMasses) {
-  std::ifstream precMassStream;
-  precMassStream.open(precMassFN.c_str(), std::ios::in | std::ios::binary);
-  if (!precMassStream.is_open()) {
-    std::cerr << "Could not open file " << precMassFN << std::endl;
+void BatchSpectrumFiles::readPrecMzs(const std::string& precMzFN,
+    std::vector<double>& precMzs) {
+  std::ifstream precMzStream;
+  precMzStream.open(precMzFN.c_str(), std::ios::in | std::ios::binary);
+  if (!precMzStream.is_open()) {
+    std::cerr << "Could not open file " << precMzFN << std::endl;
   } else {
     std::string line;
-    while (getline(precMassStream, line)) {
-      precMasses.push_back(boost::lexical_cast<double>(line));
+    while (getline(precMzStream, line)) {
+      precMzs.push_back(boost::lexical_cast<double>(line));
     }
   }
 }
 
-void BatchSpectrumFiles::getPrecMassLimits(std::vector<double>& precMasses, 
+void BatchSpectrumFiles::getPrecMzLimits(std::vector<double>& precMzs, 
     std::vector<double>& limits, double precursorTolerance, 
     bool precursorToleranceDa) {
   float pvecCost = 0.7f; // computation time for 1 p-value vector in ms on 1 core
   float pvalCost = 0.001f; // computation time for 1 p-value pair in ms on 1 core
   float maxCost = 120.0f*60.0f*1000.0f; // max computation time = 120 CPU minutes
-  float curCost = 0.0f;
   
   unsigned long long numComparisons = 0uL;
-  
-  if (precMasses.size() > 0) {
+  if (precMzs.size() > 0) {
     size_t lowerBoundIdx = 0;
-    limits.push_back(precMasses[0]);
-    for (size_t idx = 0; idx < precMasses.size(); ++idx) {
+    limits.push_back(precMzs[0]);
+    float curCost = 0.0f;
+    for (size_t idx = 0; idx < precMzs.size(); ++idx) {
       curCost += pvecCost;
-      double lowerBound = BatchPvalueVectors::getLowerBound(precMasses[idx], 
+      double lowerBound = BatchPvalueVectors::getLowerBound(precMzs[idx], 
           precursorTolerance, precursorToleranceDa);
-      while (precMasses[lowerBoundIdx] < lowerBound) {
+      while (precMzs[lowerBoundIdx] < lowerBound) {
         ++lowerBoundIdx;
       }
       numComparisons += (idx - lowerBoundIdx);
       curCost += (idx - lowerBoundIdx)*pvalCost;
-      if (curCost > maxCost) {
+      if (curCost > maxCost && lowerBound > limits.back()) {
         curCost = 0.0f;
-        limits.push_back(precMasses[idx]);
+        limits.push_back(precMzs[idx]);
       }
     } 
   }
@@ -340,8 +356,8 @@ void BatchSpectrumFiles::getPrecMassLimits(std::vector<double>& precMasses,
   }
 }
 
-int BatchSpectrumFiles::getPrecMassBin(double precMass, std::vector<double>& limits) {
-  int bin = std::upper_bound(limits.begin(), limits.end(), precMass) - limits.begin() - 1;
+int BatchSpectrumFiles::getPrecMzBin(double precMz, std::vector<double>& limits) {
+  int bin = std::upper_bound(limits.begin(), limits.end(), precMz) - limits.begin() - 1;
   return std::min(std::max(bin, 0), static_cast<int>(limits.size()) - 1);
 }
 
@@ -374,42 +390,42 @@ std::string BatchSpectrumFiles::getFilename(const std::string& filepath) {
 }
 
 bool BatchSpectrumFiles::limitsUnitTest() {
-  std::string precMassFN = "/home/matthew/mergespec/data/unit_testing/Linfeng.prec_masses.txt";
+  std::string precMzFN = "/home/matthew/mergespec/data/unit_testing/Linfeng.prec_Mzs.txt";
   
-  std::vector<double> precMassesAccumulated;
+  std::vector<double> precMzsAccumulated;
   std::vector<double> limits;
   
   BatchSpectrumFiles spectrumFiles("");
   
-  spectrumFiles.readPrecMasses(precMassFN, precMassesAccumulated);
-  spectrumFiles.getPrecMassLimits(precMassesAccumulated, limits, 20.0, false);
+  spectrumFiles.readPrecMzs(precMzFN, precMzsAccumulated);
+  spectrumFiles.getPrecMzLimits(precMzsAccumulated, limits, 20.0, false);
   /*
   BOOST_FOREACH (double l, limits) {
     std::cerr << l << std::endl;
   }
   */
   int bin = -1;
-  if ((bin = spectrumFiles.getPrecMassBin(precMassesAccumulated[0], limits)) != 0) {
+  if ((bin = spectrumFiles.getPrecMzBin(precMzsAccumulated[0], limits)) != 0) {
     std::cerr << bin << " " << 0 << std::endl;
     return false;
   }
   
-  if ((bin = spectrumFiles.getPrecMassBin(precMassesAccumulated[0]+1.0, limits)) != 0) {
+  if ((bin = spectrumFiles.getPrecMzBin(precMzsAccumulated[0]+1.0, limits)) != 0) {
     std::cerr << bin << " " << 0 << std::endl;
     return false;
   }
   
-  if ((bin = spectrumFiles.getPrecMassBin(923.4f, limits)) != 1) {
+  if ((bin = spectrumFiles.getPrecMzBin(923.4f, limits)) != 1) {
     std::cerr << bin << " " << 0 << std::endl;
     return false;
   }
   
-  if ((bin = spectrumFiles.getPrecMassBin(precMassesAccumulated[precMassesAccumulated.size()-1]-1.0, limits)) != 26) {
+  if ((bin = spectrumFiles.getPrecMzBin(precMzsAccumulated[precMzsAccumulated.size()-1]-1.0, limits)) != 26) {
     std::cerr << bin << " " << 0 << std::endl;
     return false;
   }
   
-  if ((bin = spectrumFiles.getPrecMassBin(precMassesAccumulated[precMassesAccumulated.size()-1], limits)) != 26) {
+  if ((bin = spectrumFiles.getPrecMzBin(precMzsAccumulated[precMzsAccumulated.size()-1], limits)) != 26) {
     std::cerr << bin << " " << 0 << std::endl;
     return false;
   }

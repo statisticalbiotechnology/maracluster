@@ -24,7 +24,7 @@
 struct BatchSpectrum {
   ScanId scannr;
   unsigned int charge;
-  float precMass, retentionTime;
+  float precMass, precMz, retentionTime;
   short fragBins[BATCH_SPECTRUM_NUM_STORED_PEAKS];
 };
 

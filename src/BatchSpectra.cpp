@@ -30,58 +30,10 @@ void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN,
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Reading in spectra from " << spectrumFN << std::endl;
   }
-
-  if ( !boost::filesystem::exists( spectrumFN ) ) {
-    std::cerr << "Ignoring missing file " << spectrumFN << std::endl;
-    return;
-  }
   
-  pwiz::msdata::SpectrumListPtr specList;
-
-#pragma omp critical(load_msdata)
-  {
-    pwiz::msdata::MSDataFile msd(spectrumFN);
-    specList = msd.run.spectrumListPtr;
-  }
-  size_t numSpectra = specList->size();
-  //size_t numSpectra = 2;
-  
+  BatchSpectrumFiles specFiles;
   std::vector<BatchSpectrum> localSpectra;
-  for (size_t i = 0; i < numSpectra; ++i) {
-    pwiz::msdata::SpectrumPtr s = specList->spectrum(i, true);
-    
-    std::vector<MZIntensityPair> mziPairs;
-    SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
-    
-    double retentionTime = SpectrumHandler::getRetentionTime(s);
-    unsigned int scannr = SpectrumHandler::getScannr(s);
-    ScanId globalIdx = fileList.getScanId(spectrumFN, scannr);
-    
-    std::vector<MassChargeCandidate> mccs;
-    SpectrumHandler::getMassChargeCandidates(s, mccs);
-    
-    BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
-      for (int isotopeTolerance = 0; isotopeTolerance <= 0; ++isotopeTolerance) {
-        double mass = mcc.mass + isotopeTolerance;
-        std::vector<unsigned int> peakBins;
-        unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(mass);
-        BinSpectra::binBinaryTruncated(mziPairs, peakBins, 
-          numScoringPeaks, mcc.mass);
-        
-        if (peakBins.size() >= PvalueCalculator::getMinScoringPeaks(mass)) {
-          BatchSpectrum bs;
-          peakBins.resize(BATCH_SPECTRUM_NUM_STORED_PEAKS, 0u);
-          std::copy(peakBins.begin(), peakBins.end(), bs.fragBins);
-          bs.precMass = mass;
-          bs.retentionTime = retentionTime;
-          bs.charge = mcc.charge;
-          bs.scannr = globalIdx;
-          
-          localSpectra.push_back(bs);
-        }
-      }
-    }
-  }
+  specFiles.getBatchSpectra(spectrumFN, fileList, localSpectra);
   
 #pragma omp critical(append_spectra)
   {
@@ -110,8 +62,8 @@ void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
   }
 }
 
-void BatchSpectra::sortSpectraByPrecMass() {
-  std::sort(spectra_.begin(), spectra_.end(), lessPrecMass);
+void BatchSpectra::sortSpectraByPrecMz() {
+  std::sort(spectra_.begin(), spectra_.end(), lessPrecMz);
 }
 
 void BatchSpectra::calculatePvalueVectors(SpectrumFileList& fileList, 
@@ -120,7 +72,7 @@ void BatchSpectra::calculatePvalueVectors(SpectrumFileList& fileList,
     std::cerr << "Inserting spectra into database" << std::endl;
   }
   
-  sortSpectraByPrecMass();
+  sortSpectraByPrecMz();
   
   size_t numSpectra = spectra_.size();
   //size_t numSpectra = 20000;
@@ -134,8 +86,7 @@ void BatchSpectra::calculatePvalueVectors(SpectrumFileList& fileList,
       std::cerr << "Global scannr " << spectra_[i].scannr << std::endl;
     }
     
-    double precMz = SpectrumHandler::calcPrecMz(spectra_[i].precMass, spectra_[i].charge);
-    MassChargeCandidate mcc(spectra_[i].charge, precMz, spectra_[i].precMass);
+    MassChargeCandidate mcc(spectra_[i].charge, spectra_[i].precMz, spectra_[i].precMass);
     pvecs_.insertMassChargeCandidate(mcc, spectra_[i]);
     
     bool forceInsert = false;
@@ -175,7 +126,7 @@ void BatchSpectra::calculatePvalues() {
 }
 
 void BatchSpectra::librarySearch(BatchSpectra& querySpectra) {
-  querySpectra.sortSpectraByPrecMass();
+  querySpectra.sortSpectraByPrecMz();
   pvecs_.batchCalculatePvaluesLibrarySearch(querySpectra.spectra_);
 }
 
@@ -196,7 +147,7 @@ bool BatchSpectra::readFingerprints(
   size_t numSpectra = spectra_.size();
   //size_t numSpectra = 100000;
   
-  sortSpectraByPrecMass();
+  sortSpectraByPrecMz();
   
   unsigned int mol_count = 0;
   for (size_t i = 0; i < numSpectra; ++i) {

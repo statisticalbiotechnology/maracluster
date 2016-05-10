@@ -42,6 +42,7 @@ class PvalueFilterAndSort {
  public:
   static int maxPvalsPerFile_;
   
+  static void filterAndSort(std::vector<PvalueTriplet>& buffer);
   static void filterAndSort(const std::string& pvalFN);
   static void filterAndSort(const std::vector<std::string>& pvalFNs, 
       const std::string& resultFN, bool tsvInput, bool removeUnidirected);

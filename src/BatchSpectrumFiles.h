@@ -43,19 +43,19 @@
 
 class BatchSpectrumFiles {
  public:
-  BatchSpectrumFiles() : precMassFileFolder_(""), chargeUncertainty_(0) {}
-  BatchSpectrumFiles(const std::string& precMassFileFolder) : 
-      precMassFileFolder_(precMassFileFolder), chargeUncertainty_(0) {}
-  BatchSpectrumFiles(const std::string& precMassFileFolder, 
+  BatchSpectrumFiles() : precMzFileFolder_(""), chargeUncertainty_(0) {}
+  BatchSpectrumFiles(const std::string& precMzFileFolder) : 
+      precMzFileFolder_(precMzFileFolder), chargeUncertainty_(0) {}
+  BatchSpectrumFiles(const std::string& precMzFileFolder, 
                      const int chargeUncertainty) : 
-      precMassFileFolder_(precMassFileFolder), 
+      precMzFileFolder_(precMzFileFolder), 
       chargeUncertainty_(chargeUncertainty) {}
   
-  void splitByPrecursorMass(SpectrumFileList& fileList,
+  void splitByPrecursorMz(SpectrumFileList& fileList,
       std::vector<std::string>& datFNs, const std::string& peakCountFN,
       const std::string& scanNrsFN, double precursorTolerance, 
       bool precursorToleranceDa);
-  void splitByPrecursorMass(SpectrumFileList& fileList,
+  void splitByPrecursorMz(SpectrumFileList& fileList,
       const std::string& datFNFile, const std::string& peakCountFN,
       const std::string& scanNrsFN, double precursorTolerance, 
       bool precursorToleranceDa);
@@ -66,27 +66,29 @@ class BatchSpectrumFiles {
   void readDatFNsFromFile(const std::string& datFNFile,
     std::vector<std::string>& datFNs);
   
+  void getBatchSpectra(const std::string& spectrumFN, 
+    SpectrumFileList& fileList, std::vector<BatchSpectrum>& localSpectra);
   void writeScannrs(SpectrumFileList& fileList, 
                     const std::string& scanNrsFN);
   
   static bool limitsUnitTest();
   
  protected:
-  std::string precMassFileFolder_;
+  std::string precMzFileFolder_;
   int chargeUncertainty_;
   
-  void writePrecMasses(const std::vector<double>& precMasses);
-  void readPrecMasses(const std::string& precMassFN,
-                             std::vector<double>& precMasses);
+  void writePrecMzs(const std::vector<double>& PrecMzs);
+  void readPrecMzs(const std::string& precMzFN,
+                             std::vector<double>& PrecMzs);
   
-  void getPrecMassLimits(std::vector<double>& precMasses, 
+  void getPrecMzLimits(std::vector<double>& precMzs, 
     std::vector<double>& limits, double precursorTolerance, 
     bool precursorToleranceDa);
-  int getPrecMassBin(double precMass, std::vector<double>& limits);
+  int getPrecMzBin(double precMz, std::vector<double>& limits);
   
-  void getPeakCountsAndPrecursorMasses(SpectrumFileList& fileList,
-    std::vector<double>& precMassesAccumulated, const std::string& peakCountFN);
-  void writeSplittedPrecursorMassFiles(SpectrumFileList& fileList, 
+  void getPeakCountsAndPrecursorMzs(SpectrumFileList& fileList,
+    std::vector<double>& precMzsAccumulated, const std::string& peakCountFN);
+  void writeSplittedPrecursorMzFiles(SpectrumFileList& fileList, 
     std::vector<double>& limits, std::vector<std::string>& datFNs,
     const std::string& scanNrsFN);
   

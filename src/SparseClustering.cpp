@@ -20,18 +20,6 @@ void SparseClustering::initMatrix(const std::string& matrixFN) {
   matrixLoader_.initStream(matrixFN);
 }
 
-void SparseClustering::minInsert(const ScanId row, const ScanId col, 
-                                 const double value) {
-  matrix_[row][col] = value;
-  matrix_[col][row] = value;
-  clusterInit(row, col);
-}
-
-void SparseClustering::clusterInit(const ScanId row, const ScanId col) {
-  clusterInit(row);
-  clusterInit(col);
-}
-
 void SparseClustering::clusterInit(const ScanId row) {
 #pragma omp critical (new_cluster)
   {
@@ -42,12 +30,11 @@ void SparseClustering::clusterInit(const ScanId row) {
   }
 }
 
-void SparseClustering::loadNextEdges(
-    boost::unordered_map<ScanId, ScanId>& mergeRoots) {
+void SparseClustering::loadNextEdges() {
   boost::unordered_map<ScanId, ScanId> clusterMemberships;
   getClusterMemberships(clusterMemberships);
 #ifndef SINGLE_LINKAGE
-  updateMissingEdges(clusterMemberships, mergeRoots);
+  updateMissingEdges(clusterMemberships);
 #endif
   addNewEdges(clusterMemberships);
   
@@ -77,32 +64,22 @@ void SparseClustering::getClusterMemberships(
 }
 
 void SparseClustering::updateMissingEdges(
-    boost::unordered_map<ScanId, ScanId>& clusterMemberships, 
-    boost::unordered_map<ScanId, ScanId>& mergeRoots) {
+    boost::unordered_map<ScanId, ScanId>& clusterMemberships) {
   std::cerr << "  Updating incomplete edges (" << missingEdges_.size() << ")." << std::endl;
 #pragma omp parallel for schedule(dynamic, 10000) 
   for (int i = 0; i < missingEdges_.size(); ++i) {
     ScanId row = missingEdges_[i].row;
     ScanId col = missingEdges_[i].col;
-    ScanId r,c;
-    if (row.fileIdx >= mergeOffset_) {
-      r = mergeRoots[row];
-    } else {
-      r = row;
-    }
+    ScanId r = getRoot(row);
+    ScanId c = getRoot(col);
     boost::unordered_map<ScanId, ScanId>::iterator it;
     if ((it = clusterMemberships.find(r)) != clusterMemberships.end()) {
       r = it->second;
     }
-    if (col.fileIdx >= mergeOffset_) {
-      c = mergeRoots[col];
-    } else {
-      c = col;
-    }
     if ((it = clusterMemberships.find(c)) != clusterMemberships.end()) {
       c = it->second;
     }
-    if (!(r == row && c == col)) {
+    if (r != row || c != col) {
       ScanId s1 = (std::min)(r,c);
       ScanId s2 = (std::max)(r,c);
       
@@ -147,7 +124,7 @@ void SparseClustering::addNewEdges(
     ScanId s1 = (std::min)(row, col);
     ScanId s2 = (std::max)(row, col);
 #ifdef SINGLE_LINKAGE
-    if (!(row == col)) {
+    if (row != col) {
       size_t idx = 0;
       addNewEdge(SparseMissingEdge(pvec[i].pval, s1, s2, clusters_[s1].size()*clusters_[s2].size()), idx);
     }
@@ -186,10 +163,8 @@ void SparseClustering::pruneEdges() {
     {
       // make sure that identical edges spilling over the batches are joined as well
       if (collapsedIdx > 0 && missingEdges_[startIdx].sameEdge(missingEdges_[collapsedIdx-1])) {
-        --collapsedIdx;
-        missingEdges_[collapsedIdx].numEdges += missingEdges_[startIdx].numEdges;
+        missingEdges_[--collapsedIdx].numEdges += missingEdges_[startIdx++].numEdges;
         addNewEdge(missingEdges_[collapsedIdx], collapsedIdx);
-        ++startIdx;
       }
       for (size_t j = startIdx; j < insertionIdx; ++j) {
         missingEdges_[collapsedIdx++] = missingEdges_[j]; // swapping is not faster
@@ -201,15 +176,9 @@ void SparseClustering::pruneEdges() {
 }
 
 void SparseClustering::addNewEdge(const SparseMissingEdge& edge, size_t& idx) {
-  if (!(edge.row == edge.col)) {
+  if (edge.row != edge.col) {
     if (edge.numEdges == clusters_[edge.row].size()*clusters_[edge.col].size()) {
-      SparseEdge se(edge.value, edge.row, edge.col);
-    #pragma omp critical (pq_edges_insert)
-      {
-        matrix_[edge.row][edge.col] = edge.value;
-        matrix_[edge.col][edge.row] = edge.value;
-        edgeList_.push(se);
-      }
+      insertEdge(edge.row, edge.col, edge.value);
     }
 #ifndef SINGLE_LINKAGE
     missingEdges_[idx++] = edge;
@@ -217,22 +186,65 @@ void SparseClustering::addNewEdge(const SparseMissingEdge& edge, size_t& idx) {
   }
 }
 
-void SparseClustering::updateEntry(const ScanId row, const ScanId col, 
+void SparseClustering::insertEdge(const ScanId row, const ScanId col, 
                                    const double value) {
-  edgeList_.push(SparseEdge(value, row, col));
-  matrix_[row][col] = value;
-  matrix_[col][row] = value;
+#pragma omp critical (pq_edges_insert)
+  {
+    edgeList_.push(SparseEdge(value, row, col));
+    matrix_[row][col] = value;
+    matrix_[col][row] = value;
+  }
+}
+
+void SparseClustering::popEdge() {
+  edgeList_.pop();
+  if (edgeList_.size() == 0 && matrixLoader_.hasEdgesAvailable()) {
+    loadNextEdges();
+  }
+}
+
+void SparseClustering::joinClusters(const ScanId& minRow, const ScanId& minCol,
+    const ScanId& mergeScanId) { 
+  clusters_[mergeScanId].swap(clusters_[minRow]);
+  clusters_[mergeScanId].insert(clusters_[mergeScanId].end(), 
+      clusters_[minCol].begin(), clusters_[minCol].end());
+  
+  clusters_.erase(minRow);
+  clusters_.erase(minCol);
+}
+
+void SparseClustering::updateMatrix(const ScanId& minRow, const ScanId& minCol,
+    const ScanId& mergeScanId) {
+  typedef std::pair<ScanId, double> ColValPair;
+  BOOST_FOREACH (const ColValPair& colValPair, matrix_[minRow]) {
+    ScanId col = colValPair.first;
+    if (col == minCol || col == minRow || !isAlive_[col]) continue;
+    if (matrix_[minCol].find(col) != matrix_[minCol].end()) {
+      //double value = (colValPair.second * n + matrix_[minCol][col] * m)/(n+m); // UPGMA
+#ifdef SINGLE_LINKAGE
+      double value = (std::min)(colValPair.second, matrix_[minCol][col]); // single linkage
+#else
+      double value = (std::max)(colValPair.second, matrix_[minCol][col]); // complete linkage
+#endif
+      insertEdge(mergeScanId, col, value);
+    }
+  }
+  
+  matrix_.erase(minRow);
+  matrix_.erase(minCol);
+}
+
+ScanId SparseClustering::getRoot(const ScanId& si) {
+  if (si.fileIdx >= mergeOffset_) {
+    return mergeRoots_[si];
+  } else {
+    return si;
+  } 
 }
 
 // Based on http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2718652/
 void SparseClustering::doClustering(double cutoff) {  
   std::cerr << "Starting MinHeap clustering" << std::endl;
-  
-  unsigned int itNr = 0;
-  unsigned int mergeCnt = 0;
-  
-  typedef std::pair<ScanId, double> ColValPair;
-  boost::unordered_map<ScanId, ScanId> mergeRoots;
   
   // decide if we write the results to a file or stdout
   std::ofstream resultFNStream;
@@ -247,113 +259,45 @@ void SparseClustering::doClustering(double cutoff) {
   clock_t startClock = clock(), elapsedClock;
   
   if (matrixLoader_.hasEdgesAvailable()) {
-    loadNextEdges(mergeRoots);
+    loadNextEdges();
   } else {
     std::cerr << "Could not read edges from input file." << std::endl;
     return;
   }
-  while (edgeList_.top().value < cutoff) {
+  
+  unsigned int mergeCnt = 0u;
+  while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
-    while (!isAlive_[minEdge.row] || !isAlive_[minEdge.col]) {
-      if (edgeList_.size() > 0) {
-        edgeList_.pop();
-        minEdge = edgeList_.top();
-        if (minEdge.value >= cutoff) break;
-      } else {
-        break;
+    if (isAlive_[minEdge.row] && isAlive_[minEdge.col]) {
+      isAlive_[minEdge.row] = false;
+      isAlive_[minEdge.col] = false;
+      
+      if (mergeCnt % 10000 == 0) {
+        std::cerr << "It. " << mergeCnt << ": minRow = " << minEdge.row 
+                  << ", minCol = " << minEdge.col 
+                  << ", minEl = " << minEdge.value << std::endl;
       }
-    }
-    if (minEdge.value >= cutoff) break;
-    if (edgeList_.size() == 0) {
-      if (matrixLoader_.hasEdgesAvailable()) {
-        loadNextEdges(mergeRoots);
-        continue;
-      } else {
-        break;
+      
+      ScanId minRowRoot = getRoot(minEdge.row);
+      ScanId mergeScanId(mergeOffset_, mergeCnt++);
+      mergeRoots_[mergeScanId] = minRowRoot;
+      isAlive_[mergeScanId] = true;
+      
+      if (writeTree) {
+        ScanId minColRoot = getRoot(minEdge.col);
+        PvalueTriplet tmp(minRowRoot, minColRoot, minEdge.value);
+        resultFNStream << tmp << "\n";
       }
+      
+      joinClusters(minEdge.row, minEdge.col, mergeScanId);
+      updateMatrix(minEdge.row, minEdge.col, mergeScanId);
     }
-    
-    ScanId minRow = minEdge.row;
-    ScanId minCol = minEdge.col;
-    
-    if (itNr % 10000 == 0) {
-      std::cerr << "It. " << itNr << ": minRow = " << minRow << ", minCol = " << minCol << ", minEl = " << minEdge.value << std::endl;
-    }
-    
-    ScanId minColRoot = minCol;
-    if (minColRoot.fileIdx >= mergeOffset_) {
-      minColRoot = mergeRoots[minCol];
-    }
-    
-    ScanId minRowRoot = minRow;
-    if (minRowRoot.fileIdx >= mergeOffset_) {
-      minRowRoot = mergeRoots[minRow];
-    }
-    ScanId mergeScanId(mergeOffset_, mergeCnt);
-    mergeRoots[mergeScanId] = minRowRoot;
-    
-    if (writeTree) {
-      PvalueTriplet tmp(minRowRoot, minColRoot, minEdge.value);
-      resultFNStream << tmp << "\n";
-    }
-    
-    // add scans from second cluster to first one
-    clusters_[mergeScanId].swap(clusters_[minRow]);
-    clusters_[mergeScanId].insert(clusters_[mergeScanId].end(), 
-        clusters_[minCol].begin(), clusters_[minCol].end());
-    
-    BOOST_FOREACH (const ColValPair & colValPair, matrix_[minRow]) {
-      ScanId col = colValPair.first;
-      if (col == minCol || col == minRow || !isAlive_[col]) continue;
-      if (matrix_[minCol].find(col) != matrix_[minCol].end()) {
-        //double value = (colValPair.second * n + matrix_[minCol][col] * m)/(n+m); // UPGMA
-#ifdef SINGLE_LINKAGE
-        double value = (std::min)(colValPair.second, matrix_[minCol][col]); // single linkage
-#else
-        double value = (std::max)(colValPair.second, matrix_[minCol][col]); // complete linkage
-#endif
-        updateEntry(mergeScanId, col, value);
-      }
-    }
-    
-    edgeList_.pop();
-    isAlive_[minRow] = false;
-    isAlive_[minCol] = false;
-    isAlive_[mergeScanId] = true;
-    
-    // TODO: make this a batch clean up (say every 1000 iterations) to increase speed
-    clusters_.erase(minRow);
-    clusters_.erase(minCol);
-    matrix_.erase(minRow);
-    matrix_.erase(minCol);
-    
-    ++mergeCnt;
-    ++itNr;
+    popEdge();
   }
   
   std::cerr << "Finished MinHeap clustering" << std::endl;
   
-  if (writeMissingEdges_) {
-    loadNextEdges(mergeRoots);
-    std::sort(missingEdges_.begin(), missingEdges_.end(), lowerPval);
-    std::string clusterPairMissingFN = clusterPairFN_ + ".missing_edges.tsv";
-    std::ofstream resultMissingFNStream(clusterPairMissingFN.c_str());
-    if (resultMissingFNStream.is_open()) {
-      BOOST_FOREACH (SparseMissingEdge& sme, missingEdges_) {
-        if (sme.value < cutoff - 5.0) {
-          if (sme.row.fileIdx >= mergeOffset_) {
-            sme.row = mergeRoots[sme.row];
-          }
-          if (sme.col.fileIdx >= mergeOffset_) {
-            sme.col = mergeRoots[sme.col];
-          }   
-          resultMissingFNStream << sme.row << "\t" << sme.col << "\t" << sme.value << "\t" << sme.numEdges << "\n";
-        } else {
-          break;
-        }
-      }
-    }
-  }
+  if (writeMissingEdges_) writeMissingEdges(cutoff);
   
   time(&elapsedTime);
   double diff = difftime(elapsedTime, startTime);
@@ -369,22 +313,20 @@ void SparseClustering::doClustering(double cutoff) {
                " sec wall time." << std::endl;
 }
 
-void SparseClustering::readMatrix(std::string & matrixInFN) {  
-  std::ifstream inputStream(matrixInFN.c_str());
-  std::string line, colValString;
-  while (std::getline(inputStream, line)) {
-    double logPval;
-    bool first = true;
-    std::istringstream ss(line);
-    unsigned int row;
-    ss >> row;
-    while (ss >> colValString) { // every value after a colon is a p-value followed by a space
-      std::size_t found = colValString.find_first_of(":");
-      unsigned int col = boost::lexical_cast<unsigned int>(colValString.substr(0, found));
-      double logPval = boost::lexical_cast<double>(colValString.substr(found+1));
-      if (row != col) {
-        // TODO: Fix this!
-        minInsert(ScanId(0,row), ScanId(0, col), logPval);
+void SparseClustering::writeMissingEdges(double cutoff) {
+  std::cerr << "Writing missing edges." << std::endl;
+  loadNextEdges();
+  std::sort(missingEdges_.begin(), missingEdges_.end(), lowerPval);
+  std::string clusterPairMissingFN = clusterPairFN_ + ".missing_edges.tsv";
+  std::ofstream resultMissingFNStream(clusterPairMissingFN.c_str());
+  if (resultMissingFNStream.is_open()) {
+    BOOST_FOREACH (SparseMissingEdge& sme, missingEdges_) {
+      if (sme.value < cutoff - 5.0) {
+        sme.row = getRoot(sme.row);
+        sme.col = getRoot(sme.col);
+        resultMissingFNStream << sme.row << "\t" << sme.col << "\t" << sme.value << "\t" << sme.numEdges << "\n";
+      } else {
+        break;
       }
     }
   }
@@ -412,13 +354,20 @@ bool SparseClustering::clusteringUnitTest() {
   
   SparseClustering matrix;
   
-  matrix.minInsert(ScanId(0,1),ScanId(0,1),-20.0);
-  matrix.minInsert(ScanId(0,1),ScanId(0,2),-2.0);
-  matrix.minInsert(ScanId(0,1),ScanId(0,3),-6.0);
-  matrix.minInsert(ScanId(0,1),ScanId(0,4),-6.0);
-  matrix.minInsert(ScanId(0,2),ScanId(0,3),-1.0);
-  matrix.minInsert(ScanId(0,2),ScanId(0,4),-10.0);
-  matrix.minInsert(ScanId(0,3),ScanId(0,4),-4.0);
+  ScanId s1(0,1), s2(0,2), s3(0,3), s4(0,4);
+  matrix.clusterInit(s1);
+  matrix.clusterInit(s2);
+  matrix.clusterInit(s3);
+  matrix.clusterInit(s4);
+  
+  size_t idx = 0u;
+  matrix.addNewEdge(SparseMissingEdge(-20.0, s1, s1, 1), idx);
+  matrix.addNewEdge(SparseMissingEdge(-2.0, s1, s2, 1), idx);
+  matrix.addNewEdge(SparseMissingEdge(-6.0, s1, s3, 1), idx);
+  matrix.addNewEdge(SparseMissingEdge(-6.0, s1, s4, 1), idx);
+  matrix.addNewEdge(SparseMissingEdge(-1.0, s2, s3, 1), idx);
+  matrix.addNewEdge(SparseMissingEdge(-10.0, s2, s4, 1), idx);
+  matrix.addNewEdge(SparseMissingEdge(-4.0, s3, s4, 1), idx);
   
   matrix.doClustering(-0.9);
   
@@ -443,10 +392,8 @@ bool SparseClustering::clusteringUnitTest() {
   */
   
   std::vector<ScanId> clusterRow = clusters_.begin()->second;
-  if (clusterRow[0] == ScanId(0,1) 
-      && clusterRow[1] == ScanId(0,3) 
-      && clusterRow[2] == ScanId(0,2) 
-      && clusterRow[3] == ScanId(0,4)) {
+  if (clusterRow[0] == s1 && clusterRow[1] == s3 
+      && clusterRow[2] == s2 && clusterRow[3] == s4) {
     return true;
   } else {
     std::cerr << "Nr elements = " << clusterRow.size() << ": ";

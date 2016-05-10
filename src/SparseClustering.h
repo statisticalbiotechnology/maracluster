@@ -27,10 +27,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <stdexcept>
 
-#include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -80,18 +77,8 @@ class SparseClustering {
     return clusters_; 
   }
   void initMatrix(const std::string& matrixFN);
-  void readMatrix(std::string& matrixFN);
   
-  void halfInsert(const ScanId row, const ScanId col, 
-                  const double value);
-  void minInsert(const ScanId row, const ScanId col, 
-                 const double value);
-  void updateEntry(const ScanId row, const ScanId col, 
-                   const double value);
   void doClustering(double cutoff);
-  
-  void clusterInit(const ScanId row, const ScanId col);
-  void clusterInit(const ScanId row);
   
   void printClusters(std::string& resultFN);
   
@@ -99,40 +86,45 @@ class SparseClustering {
   
   static bool clusteringUnitTest();
  protected:
+  long long numTotalEdges_;
+  std::string clusterPairFN_;
   unsigned int edgeLoadingBatchSize_;
   unsigned int mergeOffset_;
-  
-  std::string clusterPairFN_;
-  boost::unordered_map<ScanId, std::map<ScanId, double> > matrix_;
-  std::vector<SparseMissingEdge> missingEdges_;
-  std::map<ScanId, std::vector<ScanId> > clusters_;
-  
-  std::priority_queue<SparseEdge> edgeList_;
-  boost::unordered_map<ScanId, bool> isAlive_;
-  
-  long long numTotalEdges_;
+  bool writeMissingEdges_;
   
   MatrixLoader matrixLoader_;
   
-  bool writeMissingEdges_;
+  std::priority_queue<SparseEdge> edgeList_;
+  boost::unordered_map<ScanId, std::map<ScanId, double> > matrix_;
+  std::map<ScanId, std::vector<ScanId> > clusters_;
   
-  void makeSymmetric();
-  void addNewEdge(const SparseMissingEdge& edge, size_t& idx);
+  boost::unordered_map<ScanId, ScanId> mergeRoots_;
+  boost::unordered_map<ScanId, bool> isAlive_;
+  std::vector<SparseMissingEdge> missingEdges_;
   
-  void loadNextEdges(
-    boost::unordered_map<ScanId, ScanId>& mergeRoots);
+  void loadNextEdges();
   
   void getClusterMemberships(
     boost::unordered_map<ScanId, ScanId>& clusterMemberships);
-    
   void updateMissingEdges(
-    boost::unordered_map<ScanId, ScanId>& clusterMemberships, 
-    boost::unordered_map<ScanId, ScanId>& mergeRoots);
-  
+    boost::unordered_map<ScanId, ScanId>& clusterMemberships);
   void addNewEdges(
     boost::unordered_map<ScanId, ScanId>& clusterMemberships);
-  
   void pruneEdges();
+  
+  void addNewEdge(const SparseMissingEdge& edge, size_t& idx);
+  void insertEdge(const ScanId row, const ScanId col, const double value);
+  void popEdge();
+  
+  void clusterInit(const ScanId row);
+  ScanId getRoot(const ScanId& si);
+  
+  void joinClusters(const ScanId& minRow, const ScanId& minCol,
+    const ScanId& mergeScanId);
+  void updateMatrix(const ScanId& minRow, const ScanId& minCol,
+    const ScanId& mergeScanId);
+  
+  void writeMissingEdges(double cutoff);
   
   inline static bool lowerEdge(const SparseMissingEdge& a, 
                                const SparseMissingEdge& b) { 
@@ -144,10 +136,6 @@ class SparseClustering {
   inline static bool lowerPval(const SparseMissingEdge& a, 
                                const SparseMissingEdge& b) { 
     return (a.value < b.value); 
-  }
-  
-  inline static bool intraCluster(SparseMissingEdge s) { 
-    return s.row == s.col; 
   }
 };
 

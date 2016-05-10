@@ -21,6 +21,7 @@ void BatchPvalueVectors::initPvecRow(const MassChargeCandidate& mcc,
                                     const BatchSpectrum& spec,
                                     PvalueVectorsDbRow& pvecRow) {
   pvecRow.precMass = mcc.mass;
+  pvecRow.precMz = mcc.precMz;
   pvecRow.charge = mcc.charge;
   pvecRow.scannr = spec.scannr;
   pvecRow.retentionTime = spec.retentionTime;
@@ -98,8 +99,7 @@ void BatchPvalueVectors::initPvalCalc(PvalueCalculator& pvalCalc,
   pvalCalc.init(pvecRow.peakBins, std::vector<double>() );
 #else
   PeakDistribution distribution;
-  double precMz = SpectrumHandler::calcPrecMz(pvecRow.precMass, pvecRow.queryCharge);
-  peakCounts.generatePeakDistribution(precMz, pvecRow.queryCharge, 
+  peakCounts.generatePeakDistribution(pvecRow.precMz, pvecRow.queryCharge, 
                                       distribution, numQueryPeaks);
   
   pvalCalc.initFromPeakBins(pvecRow.peakBins, distribution.getDistribution());
@@ -153,8 +153,8 @@ void BatchPvalueVectors::writePvalueVectors(
   }
 
   std::vector<BatchPvalueVector> headList, tailList, allList;
-  double headOverlapLimit = getLowerBound(pvalVecCollection_.front().precMass);
-  double tailOverlapLimit = getUpperBound(pvalVecCollection_.back().precMass);
+  double headOverlapLimit = getLowerBound(pvalVecCollection_.front().precMz);
+  double tailOverlapLimit = getUpperBound(pvalVecCollection_.back().precMz);
   size_t n = pvalVecCollection_.size();
   for (size_t i = 0; i < n; ++i) {
     if (i % 100000 == 0 && BatchGlobals::VERB > 2) {
@@ -162,10 +162,10 @@ void BatchPvalueVectors::writePvalueVectors(
     }
 
     insert(pvalVecCollection_[i], allList);
-    if (pvalVecCollection_[i].precMass < headOverlapLimit) {
+    if (pvalVecCollection_[i].precMz < headOverlapLimit) {
       insert(pvalVecCollection_[i], headList);
     }
-    if (pvalVecCollection_[i].precMass > tailOverlapLimit) {
+    if (pvalVecCollection_[i].precMz > tailOverlapLimit) {
       insert(pvalVecCollection_[i], tailList);
     }
   }
@@ -188,6 +188,7 @@ void BatchPvalueVectors::insert(PvalueVectorsDbRow& pvecRow, std::vector<BatchPv
   BatchPvalueVector pvec;
   
   pvec.precMass = pvecRow.precMass;
+  pvec.precMz = pvecRow.precMz;
   pvec.charge = pvecRow.charge;
   pvec.scannr = pvecRow.scannr;
   
@@ -228,6 +229,7 @@ void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsF
     PvalueVectorsDbRow pvecRow;
     
     pvecRow.precMass = tmp.precMass;
+    pvecRow.precMz = tmp.precMz;
     pvecRow.charge = tmp.charge;
     pvecRow.scannr = tmp.scannr;
     
@@ -324,10 +326,10 @@ void BatchPvalueVectors::batchCalculatePvalues() {
                    i*100/n << "%)." << std::endl;
       BatchGlobals::reportProgress(startTime, startClock, i, n);
     }
-    double precLimit = getUpperBound(pvalVecCollection_[i].precMass);
+    double precLimit = getUpperBound(pvalVecCollection_[i].precMz);
     std::vector<PvalueTriplet> pvalBuffer;                       
     for (size_t j = i+1; j < n; ++j) {
-      if (pvalVecCollection_[j].precMass < precLimit) { 
+      if (pvalVecCollection_[j].precMz < precLimit) { 
         calculatePvalues(pvalVecCollection_[i], pvalVecCollection_[j], pvalBuffer);
         //#pragma omp atomic
         //++numPvalsNoThresh;
@@ -371,13 +373,13 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
       BatchGlobals::reportProgress(startTime, startClock, i, n);
     }
     std::vector<PvalueTriplet> pvalBuffer;
-    double precLimitLower = getLowerBound(pvalVecCollection_[i].precMass);
-    double precLimitUpper = getUpperBound(pvalVecCollection_[i].precMass);
+    double precLimitLower = getLowerBound(pvalVecCollection_[i].precMz);
+    double precLimitUpper = getUpperBound(pvalVecCollection_[i].precMz);
     for (size_t j = 0; j < querySpectra.size(); ++j) {
-      if (querySpectra[j].precMass < precLimitLower) {
+      if (querySpectra[j].precMz < precLimitLower) {
         continue;
       }
-      if (querySpectra[j].precMass < precLimitUpper) {
+      if (querySpectra[j].precMz < precLimitUpper) {
         calculatePvalue(pvalVecCollection_[i], querySpectra[j], pvalBuffer);
       } else {
         break;
@@ -476,9 +478,9 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
     if (tmpPvalBuffer.size() > 0) {
       //std::cerr << i << " cand " << tmpPvalBuffer.size() << std::endl;
       
-      double lowerBound = getLowerBound(pvalVecCollection_[t.scannr2.scannr].precMass);
+      double lowerBound = getLowerBound(pvalVecCollection_[t.scannr2.scannr].precMz);
       BOOST_FOREACH(const PvalueTriplet& t, tmpPvalBuffer) {
-        if (pvalVecCollection_[t.scannr1.scannr].precMass > lowerBound) {
+        if (pvalVecCollection_[t.scannr1.scannr].precMz > lowerBound) {
           calculatePvalues(pvalVecCollection_[t.scannr1.scannr], 
                            pvalVecCollection_[t.scannr2.scannr], pvalBuffer);
           ++fingerPrintPairCandidatesLocal;
@@ -530,11 +532,11 @@ void BatchPvalueVectors::batchCalculatePvaluesOverlap(
     if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n1 << std::endl;
     }
-    double precLimit = getUpperBound(pvalVecCollectionTail[i].precMass);
+    double precLimit = getUpperBound(pvalVecCollectionTail[i].precMz);
     std::vector<PvalueTriplet> pvalBuffer;
     for (size_t j = 0; j < n2; ++j) {
       //std::cerr << pvalVecCollectionHead[j].precMass << " " << precLimit << std::endl;
-      if (pvalVecCollectionHead[j].precMass < precLimit) { 
+      if (pvalVecCollectionHead[j].precMz < precLimit) { 
         //std::cerr << pvalVecCollectionHead[j].precMass << " " << precLimit << std::endl;
         calculatePvalues(pvalVecCollectionTail[i], pvalVecCollectionHead[j], pvalBuffer);
       } else {

@@ -33,6 +33,10 @@ struct ScanId {
     return (fileIdx == si.fileIdx && scannr == si.scannr);
   }
   
+  bool operator!=(const ScanId& si) const {
+    return (fileIdx != si.fileIdx || scannr != si.scannr);
+  }
+  
   void readFromString(const char* str, char** endptr);
 };
 

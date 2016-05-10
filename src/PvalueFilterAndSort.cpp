@@ -18,6 +18,15 @@
 
 int PvalueFilterAndSort::maxPvalsPerFile_ = 50000000; // 20 bytes per p-value
 
+void PvalueFilterAndSort::filterAndSort(std::vector<PvalueTriplet>& buffer) {
+  std::vector<PvalueTriplet> filteredBuffer;
+  
+  removeDirectedDuplicates(buffer, filteredBuffer);
+  buffer.swap(filteredBuffer);
+  
+  std::sort(buffer.begin(), buffer.end(), lowerPval);
+}
+
 void PvalueFilterAndSort::filterAndSort(const std::string& pvalFN) {
   bool tsvInput = false;
   bool removeUnidirected = false;
@@ -124,25 +133,8 @@ void PvalueFilterAndSort::filterAndSortSingleFile(const std::string& partFileFN,
   
   readPvals(partFileFN, buffer);
   
-  size_t numPvals = buffer.size();
+  filterAndSort(buffer);
   
-  //std::cerr << "Read " << numPvals << " p-values" << std::endl;
-  
-  removeDirectedDuplicates(buffer, filteredBuffer);
-  /*
-  if (removeUnidirected) {
-    removeUndirectedDuplicates(filteredBuffer, buffer);
-  } else {
-    buffer.swap(filteredBuffer);
-  }
-  */
-  buffer.swap(filteredBuffer);
-  
-  //std::cerr << "Removed " << numPvals - buffer.size() << " duplicate entries" << std::endl;
-  
-  std::sort(buffer.begin(), buffer.end(), lowerPval);
-  
-  //std::string sortedPvalFN = partFileFN + ".sorted";
   std::string sortedPvalFN = partFileFN;
   
   bool append = false;

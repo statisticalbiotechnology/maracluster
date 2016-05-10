@@ -311,7 +311,7 @@ int createIndex(const std::string& outputFolder, const std::string& fnPrefix,
   
   if (!BatchGlobals::fileExists(datFNFile)) {    
     BatchSpectrumFiles spectrumFiles(outputFolder, chargeUncertainty);
-    spectrumFiles.splitByPrecursorMass(fileList, datFNFile, peakCountFN, 
+    spectrumFiles.splitByPrecursorMz(fileList, datFNFile, peakCountFN, 
         scanNrsFN, precursorTolerance, precursorToleranceDa);
   } else {
     std::cerr << "Read dat-files from " << datFNFile << 
