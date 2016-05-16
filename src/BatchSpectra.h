@@ -50,10 +50,12 @@ class BatchSpectra {
   void calculatePvalueVectors(SpectrumFileList& fileList, 
     PeakCounts& peakCounts);
   void calculatePvalueVectors(PeakCounts& peakCounts);
-  void writePvalueVectors(const std::string& pvalueVectorsBaseFN);
+  void writePvalueVectors(const std::string& pvalueVectorsBaseFN, bool writeAll);
   
   // method to calculate p-values
   void calculatePvalues();
+  void calculateAndClusterPvalues(const std::string& pvalueTreeFN,
+                                  const std::string& scanInfoFN);
   void librarySearch(BatchSpectra& querySpectra);
   
   // Reading a batchspectrum inputfile for fingerprint similarities

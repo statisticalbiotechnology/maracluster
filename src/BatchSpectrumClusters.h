@@ -31,6 +31,7 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include "BatchGlobals.h"
+#include "BatchSpectrumFiles.h"
 #include "SpectrumFileList.h"
 #include "PvalueTriplet.h"
 #include "ScanMergeInfo.h"
@@ -38,9 +39,9 @@
 
 class BatchSpectrumClusters {
  public:
-  void printClusters(const std::string& pvalTreeFN,
+  void printClusters(const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
-    const std::string& scanNrsFN, const std::string& scanDescFN,
+    const std::string& scanInfoFN, const std::string& scanDescFN,
     const std::string& resultBaseFN);
   static bool scanDescReadUnitTest();
  private:
@@ -49,9 +50,9 @@ class BatchSpectrumClusters {
   void readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals);
   void createScanDescriptionMap(
-    const std::string& scanNrsFN, const std::string& scanDescFN,
+    const std::string& scanInfoFN, const std::string& scanDescFN,
     SpectrumFileList& fileList);
-  void readScanNrs(const std::string& scanNrsFN);
+  void readScanNrs(const std::string& scanInfoFN);
   void readScanDescs(const std::string& scanDescFN, SpectrumFileList& fileList);
   
   void createClusterings(std::vector<PvalueTriplet>& pvals, 

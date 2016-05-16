@@ -56,7 +56,7 @@ std::string fnPrefix_ = "MaRaCluster";
 std::string scanDescFN_ = "";
 std::string peakCountFN_ = "";
 std::string datFNFile_ = "";
-std::string scanNrsFN_ = "";
+std::string scanInfoFN_ = "";
 std::string pvaluesFN_ = "";
 std::string clusterFileFN_ = "";
 std::string pvalVecInFileFN_ = "";
@@ -72,6 +72,7 @@ std::string spectrumLibraryFN_ = "";
 std::string matrixFN_ = "";
 std::string resultTreeFN_ = "";
 bool skipFilterAndSort_ = false;
+bool writeAll_ = false;
 std::vector<double> clusterThresholds_;
 double precursorTolerance_ = 20.0;
 bool precursorToleranceDa_ = false;
@@ -107,7 +108,7 @@ bool parseOptions(int argc, char **argv) {
       "path");
   cmd.defineOption("a",
       "prefix",
-      "Output files will be prefixed as e.g. <prefix>.pvalue_tree.tsv (default: 'MaRaCluster')",
+      "Output files will be prefixed as e.g. <prefix>.clusters_p10.tsv (default: 'MaRaCluster')",
       "name");
   cmd.defineOption("i",
       "specIn",
@@ -139,7 +140,7 @@ bool parseOptions(int argc, char **argv) {
       "File to write/read peak counts binary file",
       "filename");
   cmd.defineOption("s",
-      "scanNrsFN",
+      "scanInfoFN",
       "File to write/read scan number list binary file",
       "filename");
   cmd.defineOption("j",
@@ -227,7 +228,7 @@ bool parseOptions(int argc, char **argv) {
   // file output for maracluster batch and index (also for some other methods)
   if (cmd.optionSet("j")) datFNFile_ = cmd.options["j"];
   if (cmd.optionSet("g")) peakCountFN_ = cmd.options["g"];
-  if (cmd.optionSet("s")) scanNrsFN_ = cmd.options["s"];
+  if (cmd.optionSet("s")) scanInfoFN_ = cmd.options["s"];
   
   // file input options for maracluster pvalue
   if (cmd.optionSet("i")) spectrumInFN_ = cmd.options["i"];
@@ -292,7 +293,7 @@ bool parseOptions(int argc, char **argv) {
 
 int createIndex(const std::string& outputFolder, const std::string& fnPrefix, 
     const std::string& spectrumBatchFileFN, std::string& peakCountFN,
-    std::string& scanNrsFN, std::string& datFNFile, int chargeUncertainty,
+    std::string& scanInfoFN, std::string& datFNFile, int chargeUncertainty,
     double precursorTolerance, bool precursorToleranceDa) {
   if (spectrumBatchFileFN.size() == 0) {
     std::cerr << "Error: no batch file specified with -b flag" << std::endl;
@@ -301,41 +302,35 @@ int createIndex(const std::string& outputFolder, const std::string& fnPrefix,
   
   if (peakCountFN.size() == 0)
     peakCountFN = outputFolder + "/" + fnPrefix + ".peak_counts.dat";
-  if (scanNrsFN.size() == 0)
-    scanNrsFN = outputFolder + "/" + fnPrefix + ".scannrs.dat";
+  if (scanInfoFN.size() == 0)
+    scanInfoFN = outputFolder + "/" + fnPrefix + ".scan_info.dat";
   if (datFNFile.size() == 0)
     datFNFile = outputFolder + "/" + fnPrefix + ".dat_file_list.txt";
   
   SpectrumFileList fileList;
   fileList.initFromFile(spectrumBatchFileFN);
   
-  if (!BatchGlobals::fileExists(datFNFile)) {    
+  if (!BatchGlobals::fileExists(datFNFile) || !BatchGlobals::fileExists(scanInfoFN)) {    
     BatchSpectrumFiles spectrumFiles(outputFolder, chargeUncertainty);
     spectrumFiles.splitByPrecursorMz(fileList, datFNFile, peakCountFN, 
-        scanNrsFN, precursorTolerance, precursorToleranceDa);
+        scanInfoFN, precursorTolerance, precursorToleranceDa);
   } else {
     std::cerr << "Read dat-files from " << datFNFile << 
-        ". Remove this file to generate new dat-files." << std::endl;
-  }
-  
-  if (!BatchGlobals::fileExists(scanNrsFN)) {    
-    BatchSpectrumFiles spectrumFiles(outputFolder, chargeUncertainty);
-    spectrumFiles.writeScannrs(fileList, scanNrsFN);
-  } else {
-    std::cerr << "Read scan numbers from " << scanNrsFN << 
-        ". Remove this file to generate a new scannr list." << std::endl;
+        " and scan numbers from " << scanInfoFN <<
+        ". Remove these files to generate new dat-files." << std::endl;
   }
   
   return EXIT_SUCCESS;
 }
 
 int doClustering(const std::string& outputFolder, const std::string& fnPrefix, 
-    const std::vector<std::string> pvalFNs, const std::string& scanNrsFN, 
+    const std::vector<std::string> pvalFNs, 
+    std::vector<std::string> pvalTreeFNs, const std::string& scanInfoFN, 
     const std::string& scanDescFN, const std::vector<double>& clusterThresholds, 
     SpectrumFileList& fileList, bool skipFilterAndSort, 
     std::string& matrixFN, std::string& resultTreeFN) {
   // input checks
-  if (scanNrsFN.size() == 0) {
+  if (scanInfoFN.size() == 0) {
     std::cerr << "Error: no scannrs file specified with -s flag" << std::endl;
     return EXIT_FAILURE;
   }
@@ -346,17 +341,13 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
 
   // create output file paths
   if (resultTreeFN.size() == 0) {
-    resultTreeFN = outputFolder + "/" + fnPrefix + ".pvalue_tree.tsv";
+    resultTreeFN = outputFolder + "/overlap.pvalue_tree.tsv";
   }
   std::string clusterBaseFN = outputFolder + "/" + fnPrefix + ".clusters_";
   
   // start clustering
   if (!BatchGlobals::fileExists(resultTreeFN)) {
     std::cerr << "Starting p-value clustering." << std::endl;
-    
-    if (!skipFilterAndSort) {
-      matrixFN = outputFolder + "/" + fnPrefix + ".pvalue_triplets.dat";
-    }
     
     if (!BatchGlobals::fileExists(matrixFN)) {
       bool removeUnidirection = true;
@@ -376,10 +367,11 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
     std::cerr << "Previous clustering results are available in " << 
         resultTreeFN << ". Remove this file to redo the clustering." << std::endl;
   }
+  pvalTreeFNs.push_back(resultTreeFN);
   
   // write clusters
   BatchSpectrumClusters clustering;
-  clustering.printClusters(resultTreeFN, clusterThresholds, fileList, scanNrsFN, scanDescFN, clusterBaseFN);
+  clustering.printClusters(pvalTreeFNs, clusterThresholds, fileList, scanInfoFN, scanDescFN, clusterBaseFN);
   
   return EXIT_SUCCESS;
 }
@@ -419,7 +411,7 @@ int main(int argc, char* argv[]) {
           
           int error = createIndex(outputFolder_, fnPrefix_, 
                                   spectrumBatchFileFN_, peakCountFN_, 
-                                  scanNrsFN_, datFNFile_, chargeUncertainty_,
+                                  scanInfoFN_, datFNFile_, chargeUncertainty_,
                                   precursorTolerance_, precursorToleranceDa_);
           if (error != EXIT_SUCCESS) return EXIT_FAILURE;
           
@@ -430,6 +422,7 @@ int main(int argc, char* argv[]) {
           }
           
           std::vector<std::string> pvalFNs;
+          std::vector<std::string> pvalTreeFNs;
           std::vector< std::pair<std::string, std::string> > overlapFNs(datFNs.size() - 1);
           
           {
@@ -452,22 +445,26 @@ int main(int argc, char* argv[]) {
                 overlapFNs[i-1].second = pvalueVectorsBaseFN + ".head.dat";
               }
               std::string pvaluesFN = datFN + ".pvalues.dat";
+              std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
               
-              if (!BatchGlobals::fileExists(pvaluesFN)) {
+              if (!BatchGlobals::fileExists(pvalueTreeFN)) {
                 BatchSpectra spectra(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
                 spectra.readBatchSpectra(datFN);
                 spectra.calculatePvalueVectors(peakCounts);
-                spectra.writePvalueVectors(pvalueVectorsBaseFN);
-                spectra.calculatePvalues();
+                spectra.writePvalueVectors(pvalueVectorsBaseFN, writeAll_);
+                spectra.calculateAndClusterPvalues(pvalueTreeFN, scanInfoFN_);
               } else {
-                std::cerr << "Using p-values from " << pvaluesFN << 
-                    ". Remove this file to generate new p-values." << std::endl;
+                std::cerr << "Using p-value tree from " << pvalueTreeFN <<
+                    ". Remove this file to generate a new p-value tree." << std::endl;
               }
-              pvalFNs.push_back(pvaluesFN);
+              if (BatchGlobals::fileExists(pvaluesFN)) {
+                pvalFNs.push_back(pvaluesFN);
+              }
+              pvalTreeFNs.push_back(pvalueTreeFN);
             }
           }
           
-          std::string pvaluesFN = outputFolder_ + "/overlaps.pvalues.dat";
+          std::string pvaluesFN = outputFolder_ + "/overlap.pvalues.dat";
           if (overlapFNs.size() > 0) {
             if (!BatchGlobals::fileExists(pvaluesFN)) {
               BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
@@ -483,12 +480,13 @@ int main(int argc, char* argv[]) {
           }
           
           if (matrixFN_.size() == 0) {
-            matrixFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalue_triplets.dat";
+            matrixFN_ = outputFolder_ + "/poisoned.pvalues.dat";
           }
           
           SpectrumFileList fileList;
           fileList.initFromFile(spectrumBatchFileFN_);
-          error = doClustering(outputFolder_, fnPrefix_, pvalFNs, scanNrsFN_, scanDescFN_,
+          error = doClustering(outputFolder_, fnPrefix_, pvalFNs, pvalTreeFNs, 
+                              scanInfoFN_, scanDescFN_,
                               clusterThresholds_, fileList, skipFilterAndSort_, 
                               matrixFN_, resultTreeFN_); 
           
@@ -507,7 +505,7 @@ int main(int argc, char* argv[]) {
         {
           // maracluster index -b /media/storage/mergespec/data/batchcluster/Linfeng/all.txt
           return createIndex(outputFolder_, fnPrefix_, spectrumBatchFileFN_, 
-                             peakCountFN_, scanNrsFN_, datFNFile_, chargeUncertainty_,
+                             peakCountFN_, scanInfoFN_, datFNFile_, chargeUncertainty_,
                              precursorTolerance_, precursorToleranceDa_);
         }
         case PVALUE:
@@ -521,7 +519,12 @@ int main(int argc, char* argv[]) {
             
             BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             pvecs.parsePvalueVectorFile(pvalVecInFileFN_);
-            pvecs.batchCalculatePvalues();
+            if (resultTreeFN_.size() > 0) {
+              pvecs.batchCalculateAndClusterPvalues(resultTreeFN_, scanInfoFN_);
+            } else {
+              pvecs.batchCalculatePvalues();
+            }
+            PvalueFilterAndSort::convertBinaryPvalToTsv(pvaluesFN_, pvaluesFN_);
           } else if (overlapBatchFileFN_.size() > 0) { 
             // calculate p-values in overlap between two windows
             // maracluster pvalue -w data/batchcluster/overlap_files.txt
@@ -591,7 +594,7 @@ int main(int argc, char* argv[]) {
         }
         case CLUSTER:
         {
-          std::vector<std::string> pvalFNs;
+          std::vector<std::string> pvalFNs, pvalTreeFNs;
           pvalFNs.push_back(matrixFN_);
           
           if (spectrumBatchFileFN_.size() == 0) {
@@ -601,7 +604,7 @@ int main(int argc, char* argv[]) {
           SpectrumFileList fileList;
           fileList.initFromFile(spectrumBatchFileFN_);
           
-          return doClustering(outputFolder_, fnPrefix_, pvalFNs, scanNrsFN_, 
+          return doClustering(outputFolder_, fnPrefix_, pvalFNs, pvalTreeFNs, scanInfoFN_, 
               scanDescFN_, clusterThresholds_, fileList, skipFilterAndSort_, 
               matrixFN_, resultTreeFN_);
         }

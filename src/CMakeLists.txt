@@ -53,7 +53,7 @@ else(FINGERPRINT_FILTER)
   set(BFM_SRC "")
 endif(FINGERPRINT_FILTER)
 
-add_library(maraclusterlibrary STATIC SparseClustering.cpp MatrixLoader.cpp PvalueCalculator.cpp PvalueFilterAndSort.cpp PeakDistribution.cpp PercolatorInterface.cpp BinSpectra.cpp BinAndRank.cpp InterpolationMerge.cpp RankMerge.cpp ClusterMerge.cpp PeakCounts.cpp ScanMergeInfo.cpp SpectrumFileList.cpp SpectrumHandler.cpp MSFileHandler.cpp MSFileExtractor.cpp MSFileMerger.cpp MZIntensityPair.cpp MSClusterMerge.cpp Option.cpp MyException.cpp  ScanId.cpp PvalueTriplet.cpp ${BFM_SRC})
+add_library(maraclusterlibrary STATIC SparseClustering.cpp SparsePoisonedClustering.cpp MatrixLoader.cpp PvalueCalculator.cpp PvalueFilterAndSort.cpp PeakDistribution.cpp PercolatorInterface.cpp BinSpectra.cpp BinAndRank.cpp InterpolationMerge.cpp RankMerge.cpp ClusterMerge.cpp PeakCounts.cpp ScanMergeInfo.cpp SpectrumFileList.cpp SpectrumHandler.cpp MSFileHandler.cpp MSFileExtractor.cpp MSFileMerger.cpp MZIntensityPair.cpp MSClusterMerge.cpp Option.cpp MyException.cpp  ScanId.cpp PvalueTriplet.cpp ${BFM_SRC})
 
 add_library(batchlibrary STATIC BatchGlobals.cpp BatchPvalues.cpp BatchPvalueVectors.cpp BatchSpectra.cpp BatchSpectrumClusters.cpp BatchSpectrumFiles.cpp)
 

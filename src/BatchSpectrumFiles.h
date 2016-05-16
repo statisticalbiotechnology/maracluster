@@ -41,6 +41,15 @@
 #include "BinSpectra.h"
 #include "BinaryInterface.h"
 
+struct ScanInfo {
+  ScanInfo() : scanId(), minPrecMz(0.0), maxPrecMz(0.0) {}
+  ScanInfo(const ScanId& si, const float precMz) :
+    scanId(si), minPrecMz(precMz), maxPrecMz(precMz) {}
+  
+  ScanId scanId;
+  float minPrecMz, maxPrecMz;
+};
+
 class BatchSpectrumFiles {
  public:
   BatchSpectrumFiles() : precMzFileFolder_(""), chargeUncertainty_(0) {}
@@ -53,11 +62,11 @@ class BatchSpectrumFiles {
   
   void splitByPrecursorMz(SpectrumFileList& fileList,
       std::vector<std::string>& datFNs, const std::string& peakCountFN,
-      const std::string& scanNrsFN, double precursorTolerance, 
+      const std::string& scanInfoFN, double precursorTolerance, 
       bool precursorToleranceDa);
   void splitByPrecursorMz(SpectrumFileList& fileList,
       const std::string& datFNFile, const std::string& peakCountFN,
-      const std::string& scanNrsFN, double precursorTolerance, 
+      const std::string& scanInfoFN, double precursorTolerance, 
       bool precursorToleranceDa);
   
   void writeDatFNsToFile(std::vector<std::string>& datFNs,
@@ -65,11 +74,11 @@ class BatchSpectrumFiles {
   void getDatFNs(std::vector<double>& limits, std::vector<std::string>& datFNs);
   void readDatFNsFromFile(const std::string& datFNFile,
     std::vector<std::string>& datFNs);
+  void readPrecMzLimits(const std::string& scanInfoFN,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
   void getBatchSpectra(const std::string& spectrumFN, 
     SpectrumFileList& fileList, std::vector<BatchSpectrum>& localSpectra);
-  void writeScannrs(SpectrumFileList& fileList, 
-                    const std::string& scanNrsFN);
   
   static bool limitsUnitTest();
   
@@ -90,7 +99,7 @@ class BatchSpectrumFiles {
     std::vector<double>& precMzsAccumulated, const std::string& peakCountFN);
   void writeSplittedPrecursorMzFiles(SpectrumFileList& fileList, 
     std::vector<double>& limits, std::vector<std::string>& datFNs,
-    const std::string& scanNrsFN);
+    const std::string& scanInfoFN);
   
   void appendBatchSpectra(
     std::vector< std::vector<BatchSpectrum> >& batchSpectra,

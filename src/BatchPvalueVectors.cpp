@@ -143,7 +143,7 @@ void BatchPvalueVectors::sortPvalueVectors() {
 }
 
 void BatchPvalueVectors::writePvalueVectors(
-    const std::string& pvalueVectorsBaseFN) {
+    const std::string& pvalueVectorsBaseFN, bool writeAll) {
   std::string pvalueVectorsFN = pvalueVectorsBaseFN + ".dat";
   std::string pvalueVectorsHeadFN = pvalueVectorsBaseFN + ".head.dat";
   std::string pvalueVectorsTailFN = pvalueVectorsBaseFN + ".tail.dat";
@@ -153,15 +153,16 @@ void BatchPvalueVectors::writePvalueVectors(
   }
 
   std::vector<BatchPvalueVector> headList, tailList, allList;
-  double headOverlapLimit = getLowerBound(pvalVecCollection_.front().precMz);
-  double tailOverlapLimit = getUpperBound(pvalVecCollection_.back().precMz);
+  double headOverlapLimit = getUpperBound(pvalVecCollection_.front().precMz);
+  double tailOverlapLimit = getLowerBound(pvalVecCollection_.back().precMz);
   size_t n = pvalVecCollection_.size();
   for (size_t i = 0; i < n; ++i) {
     if (i % 100000 == 0 && BatchGlobals::VERB > 2) {
       std::cerr << "Writing pvalue vector " << i << "/" << n << std::endl;
     }
 
-    insert(pvalVecCollection_[i], allList);
+    if (writeAll) insert(pvalVecCollection_[i], allList);
+    
     if (pvalVecCollection_[i].precMz < headOverlapLimit) {
       insert(pvalVecCollection_[i], headList);
     }
@@ -348,6 +349,133 @@ void BatchPvalueVectors::batchCalculatePvalues() {
   
   //PvalueFilterAndSort::filterAndSort(pvalues_.getPvaluesFN());
 }
+
+/* This function presumes that the pvalue vectors are sorted by precursor
+   mass by writePvalueVectors() */
+void BatchPvalueVectors::batchCalculateAndClusterPvalues(
+    const std::string& resultTreeFN,
+    const std::string& scanInfoFN) {    
+  if (BatchGlobals::VERB > 1) {
+    std::cerr << "Calculating pvalues" << std::endl;
+  }
+  
+  size_t n = pvalVecCollection_.size();
+  
+  time_t startTime;
+  time(&startTime);
+  clock_t startClock = clock();
+  
+  std::map<ScanId, std::pair<float, float> > precMzLimits;
+  if (scanInfoFN.size() > 0) {
+    BatchSpectrumFiles reader;
+    reader.readPrecMzLimits(scanInfoFN, precMzLimits);
+  } else {
+    for (int i = 0; i < n; ++i) {
+      ScanId si = pvalVecCollection_[i].scannr;
+      if (precMzLimits[si].first == 0.0) {
+        precMzLimits[si] = std::make_pair(pvalVecCollection_[i].precMz, pvalVecCollection_[i].precMz);
+      } else if (pvalVecCollection_[i].precMz < precMzLimits[si].first) {
+        precMzLimits[si].first = pvalVecCollection_[i].precMz;
+      } else if (pvalVecCollection_[i].precMz > precMzLimits[si].second) {
+        precMzLimits[si].second = pvalVecCollection_[i].precMz;
+      }
+    }
+  }
+  
+  //long long numPvalsNoThresh = 0;
+  size_t batchSize = 10000;
+  size_t lowerBoundIdx = 0;
+  
+  std::vector<PvalueTriplet> pvalBuffer;
+#pragma omp parallel for schedule(dynamic, 1) ordered
+  for (int b = 0; b < n; b += batchSize) {
+    if (BatchGlobals::VERB > 2) {
+      std::cerr << "Processing pvalue vector " << b+1 << "/" << n << " (" <<
+                   b*100/n << "%)." << std::endl;
+    }
+    int upperBoundIdx = (std::min)(b + batchSize, n);
+    
+    std::vector<PvalueTriplet> localPvalBuffer;
+    for (int i = b; i < upperBoundIdx; ++i) {
+      double precLimit = getUpperBound(pvalVecCollection_[i].precMz);
+      for (size_t j = i+1; j < n; ++j) {
+        if (pvalVecCollection_[j].precMz < precLimit) { 
+          calculatePvalues(pvalVecCollection_[i], pvalVecCollection_[j], localPvalBuffer);
+          //#pragma omp atomic
+          //++numPvalsNoThresh;
+        } else {
+          break;
+        }
+      }
+    }
+    
+    double lowestPrecMz = pvalVecCollection_[0].precMz;
+    size_t minPvalsForClustering = 5000000; /* = 10M */
+  #pragma omp ordered
+    {
+      double lowerPrecMz = pvalVecCollection_[lowerBoundIdx].precMz;
+      double upperPrecMz = pvalVecCollection_[upperBoundIdx-1].precMz;
+      pvalBuffer.insert(pvalBuffer.end(), localPvalBuffer.begin(), localPvalBuffer.end());
+      if (upperBoundIdx == n || 
+            (pvalBuffer.size() > minPvalsForClustering && 
+             getUpperBound(getUpperBound(lowerPrecMz)) < upperPrecMz)) {  
+        if (BatchGlobals::VERB > 2) {
+          std::cerr << "Clustering " << pvalBuffer.size() << " pvalues" << std::endl;
+        }
+        
+        /*if (pvalBuffer.size() > 60000000) {
+          PvalueFilterAndSort::filterAndSort(pvalBuffer);
+          pvalues_.batchWrite(pvalBuffer);
+        }*/
+        
+        PvalueFilterAndSort::filter(pvalBuffer);
+        
+        SparsePoisonedClustering matrix;
+        markPoisoned(matrix, pvalBuffer, precMzLimits, lowestPrecMz, upperPrecMz);
+        
+        matrix.initPvals(pvalBuffer);
+        matrix.setClusterPairFN(resultTreeFN);
+        matrix.doClustering(dbPvalThreshold_);
+        
+        matrix.getPoisonedEdges(pvalBuffer);
+        if (BatchGlobals::VERB > 2) {
+          std::cerr << "Retained " << pvalBuffer.size() << " pvalues" << std::endl;
+          BatchGlobals::reportProgress(startTime, startClock, b, n);
+        }
+      }
+    }
+  }
+  pvalues_.batchWrite(pvalBuffer);
+  clearPvalueVectors();
+  
+  if (BatchGlobals::VERB > 1) {
+    //std::cerr << "Finished calculating pvalues (" << numPvalsNoThresh << " total)." << std::endl;
+    std::cerr << "Finished calculating pvalues." << std::endl;
+  }
+}
+
+void BatchPvalueVectors::markPoisoned(SparsePoisonedClustering& matrix, 
+    std::vector<PvalueTriplet>& pvalBuffer, 
+    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+    float lowestPrecMz, float upperPrecMz) {
+  std::set<ScanId> scanIds;
+  BOOST_FOREACH (const PvalueTriplet& pt, pvalBuffer) {
+    scanIds.insert(pt.scannr1);
+    scanIds.insert(pt.scannr2);
+  }
+  
+  BOOST_FOREACH (const ScanId& si, scanIds) {
+    float minPrecMz = precMzLimits[si].first;
+    float maxPrecMz = precMzLimits[si].second;
+    //double precMz = pvalVecCollection_[i].precMz;
+    
+    if (minPrecMz < getUpperBound(lowestPrecMz)
+        || upperPrecMz < getUpperBound(maxPrecMz)) {
+      matrix.markPoisoned(si);
+    }
+  }
+}
+
 
 /* This function presumes that the pvalue vectors are sorted by precursor
    mass by writePvalueVectors() */

@@ -27,6 +27,11 @@ struct PvalueTriplet {
   PvalueTriplet(ScanId _scannr1, ScanId _scannr2, float _pval) :
     scannr1(_scannr1), scannr2(_scannr2), pval(_pval) {}
   
+  bool operator<(const PvalueTriplet& pt) const {
+    return (pval < pt.pval) || (pval == pt.pval && scannr1 < pt.scannr1)
+       || (pval == pt.pval && scannr1 == pt.scannr1 && scannr2 < pt.scannr2);
+  }
+  
   void readFromString(const char* f, char** next);
 };
 

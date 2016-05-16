@@ -42,6 +42,7 @@ class PvalueFilterAndSort {
  public:
   static int maxPvalsPerFile_;
   
+  static void filter(std::vector<PvalueTriplet>& buffer);
   static void filterAndSort(std::vector<PvalueTriplet>& buffer);
   static void filterAndSort(const std::string& pvalFN);
   static void filterAndSort(const std::vector<std::string>& pvalFNs, 
@@ -77,10 +78,6 @@ class PvalueFilterAndSort {
   inline static bool scannr(const PvalueTriplet& a, const PvalueTriplet& b) { 
     return (a.scannr1 < b.scannr1) || 
         (a.scannr1 == b.scannr1 && a.scannr2 < b.scannr2); 
-  }
-  
-  inline static bool lowerPval(const PvalueTriplet& a, const PvalueTriplet& b) { 
-    return (a.pval < b.pval); 
   }
                          
  private:

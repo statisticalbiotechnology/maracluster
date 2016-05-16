@@ -16,14 +16,18 @@
  
 #include "BatchSpectrumClusters.h"
 
-void BatchSpectrumClusters::printClusters(const std::string& pvalTreeFN,
+void BatchSpectrumClusters::printClusters(
+    const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
-    const std::string& scanNrsFN, const std::string& scanDescFN,
+    const std::string& scanInfoFN, const std::string& scanDescFN,
     const std::string& resultBaseFN) {
   std::vector<PvalueTriplet> pvals;
-  readPvalTree(pvalTreeFN, pvals);
+  BOOST_FOREACH (const std::string& pvalTreeFN, pvalTreeFNs) {
+    readPvalTree(pvalTreeFN, pvals);
+  }
+  std::sort(pvals.begin(), pvals.end());
   
-  createScanDescriptionMap(scanNrsFN, scanDescFN, fileList);
+  createScanDescriptionMap(scanInfoFN, scanDescFN, fileList);
   
   createClusterings(pvals, clusterThresholds, fileList, resultBaseFN);
 }
@@ -55,9 +59,9 @@ void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
 }
 
 void BatchSpectrumClusters::createScanDescriptionMap(
-    const std::string& scanNrsFN, const std::string& scanDescFN,
+    const std::string& scanInfoFN, const std::string& scanDescFN,
     SpectrumFileList& fileList) {
-  readScanNrs(scanNrsFN);
+  readScanNrs(scanInfoFN);
   readScanDescs(scanDescFN, fileList);
 }
 
@@ -106,16 +110,16 @@ void BatchSpectrumClusters::readScanDescs(const std::string& scanDescFN,
   }
 }
 
-void BatchSpectrumClusters::readScanNrs(const std::string& scanNrsFN) {
-  if (BatchGlobals::fileExists(scanNrsFN)) {
-    std::vector<ScanId> scanIds;
-    BinaryInterface::read<ScanId>(scanNrsFN, scanIds);
+void BatchSpectrumClusters::readScanNrs(const std::string& scanInfoFN) {
+  if (BatchGlobals::fileExists(scanInfoFN)) {
+    std::vector<ScanInfo> scanInfos;
+    BinaryInterface::read<ScanInfo>(scanInfoFN, scanInfos);
     
-    BOOST_FOREACH (const ScanId& si, scanIds) {
-      scanPeptideMap_[si] = ScanMergeInfo(si);
+    BOOST_FOREACH (const ScanInfo& si, scanInfos) {
+      scanPeptideMap_[si.scanId] = ScanMergeInfo(si.scanId);
     }
   } else {
-    std::cerr << "WARNING: Could not find scannr list file." << std::endl;
+    std::cerr << "WARNING: Could not find scanInfo file." << std::endl;
   }
 }
 
@@ -163,7 +167,7 @@ void BatchSpectrumClusters::createClusterings(
     
     if (clusters[pvalTriplet.scannr1].size() == 0) {
       std::cerr << "ERROR: Empty clusters: " << pvalTriplet.scannr1 
-          << " " << pvalTriplet.scannr2 << " " << pvalTriplet.pval << std::endl;   
+          << " " << clusters[pvalTriplet.scannr2].size() << " " << pvalTriplet.scannr2 << " " << pvalTriplet.pval << std::endl;   
     }
     
     clusters[pvalTriplet.scannr1].insert(
@@ -239,12 +243,12 @@ void BatchSpectrumClusters::writeSingletonClusters(
 }
 
 bool BatchSpectrumClusters::scanDescReadUnitTest() {
-  std::string scanNrsFN = "";
+  std::string scanInfoFN = "";
   std::string scanDescFN = "/home/matthew/mergespec/data/percolator_no_tdc/scandesc/103111-Yeast-2hr.scannr_list.tsv";
   
   BatchSpectrumClusters clustering;
   SpectrumFileList fileList;
-  clustering.createScanDescriptionMap(scanNrsFN, scanDescFN, fileList);
+  clustering.createScanDescriptionMap(scanInfoFN, scanDescFN, fileList);
   if (clustering.scanPeptideMap_[ScanId(0,11)].peptide != "R.SIVPSGASTGVHEALEMR.D") {
     std::cerr << clustering.scanPeptideMap_[ScanId(0,11)].peptide << " != " 
               << "R.SIVPSGASTGVHEALEMR.D" << std::endl;

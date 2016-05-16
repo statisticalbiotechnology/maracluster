@@ -30,8 +30,10 @@
 #include "BatchStatement.h"
 #include "BatchPvalues.h"
 #include "BatchSpectrum.h"
+#include "BatchSpectrumFiles.h"
 #include "SpectrumHandler.h"
 #include "SparseClustering.h"
+#include "SparsePoisonedClustering.h"
 #include "SpectrumFileList.h"
 #include "PvalueCalculator.h"
 #include "PvalueTriplet.h"
@@ -71,7 +73,8 @@ class BatchPvalueVectors {
                    bool forceInsert);
   
   void sortPvalueVectors();
-  void writePvalueVectors(const std::string& pvalueVectorsBaseFN);
+  void writePvalueVectors(const std::string& pvalueVectorsBaseFN, 
+                          bool writeAll);
   
   inline void clearPvalueVectors() { pvalVecBatch_.clear(); }
   void parsePvalueVectorFile(const std::string& pvalVecInFileFN);
@@ -81,6 +84,8 @@ class BatchPvalueVectors {
   void processOverlapFiles(std::vector< std::pair<std::string, std::string> >& overlapFNs);
   
   void batchCalculatePvalues();
+  void batchCalculateAndClusterPvalues(const std::string& resultTreeFN, 
+                                       const std::string& scanInfoFN);
   void readFingerprints(
     std::vector<std::vector<unsigned short> >& mol_features, 
     std::vector<ScanId>& mol_identifiers, 
@@ -139,6 +144,11 @@ class BatchPvalueVectors {
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
+  void markPoisoned(SparsePoisonedClustering& matrix, 
+    std::vector<PvalueTriplet>& pvalBuffer, 
+    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+    float lowestPrecMz, float upperPrecMz);
+    
   inline double getLowerBound(double mass) { 
     return getLowerBound(mass, precursorTolerance_, precursorToleranceDa_);
   }

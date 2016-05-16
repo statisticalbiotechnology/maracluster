@@ -20,7 +20,7 @@ void SparseClustering::initMatrix(const std::string& matrixFN) {
   matrixLoader_.initStream(matrixFN);
 }
 
-void SparseClustering::clusterInit(const ScanId row) {
+void SparseClustering::clusterInit(const ScanId& row) {
 #pragma omp critical (new_cluster)
   {
     isAlive_[row] = true;
@@ -43,6 +43,8 @@ void SparseClustering::loadNextEdges() {
 #ifndef SINGLE_LINKAGE
   pruneEdges();
 #endif
+  
+  matrix_.sortRows();
   
   std::cerr << "  Loaded new edges: new: " << edgeList_.size() - beforeSize << 
       ", total: " << numTotalEdges_ << "/" << matrixLoader_.numPvals_ << 
@@ -89,13 +91,17 @@ void SparseClustering::updateMissingEdges(
   }
 }
 
+void SparseClustering::loadEdges(std::vector<PvalueTriplet>& pvec) {
+  pvec.reserve(edgeLoadingBatchSize_);
+  matrixLoader_.nextNEdges(edgeLoadingBatchSize_, pvec);
+}
+
 void SparseClustering::addNewEdges(
     boost::unordered_map<ScanId, ScanId>& clusterMemberships) {
   std::cerr << "  Loading new edges." << std::endl;
   
   std::vector<PvalueTriplet> pvec;
-  pvec.reserve(edgeLoadingBatchSize_);
-  matrixLoader_.nextNEdges(edgeLoadingBatchSize_, pvec);
+  loadEdges(pvec);
   
   size_t numNewEdges = pvec.size();
   size_t insertOffset = missingEdges_.size();
@@ -186,19 +192,22 @@ void SparseClustering::addNewEdge(const SparseMissingEdge& edge, size_t& idx) {
   }
 }
 
-void SparseClustering::insertEdge(const ScanId row, const ScanId col, 
-                                   const double value) {
+void SparseClustering::insertEdge(const ScanId& row, const ScanId& col, 
+                                  const double value) {
 #pragma omp critical (pq_edges_insert)
   {
     edgeList_.push(SparseEdge(value, row, col));
-    matrix_[row][col] = value;
-    matrix_[col][row] = value;
+    matrix_.insert(row, col, value);
   }
+}
+
+bool SparseClustering::edgesLeft() {
+  return matrixLoader_.hasEdgesAvailable();
 }
 
 void SparseClustering::popEdge() {
   edgeList_.pop();
-  if (edgeList_.size() == 0 && matrixLoader_.hasEdgesAvailable()) {
+  if (edgeList_.size() == 0 && edgesLeft()) {
     loadNextEdges();
   }
 }
@@ -215,8 +224,10 @@ void SparseClustering::joinClusters(const ScanId& minRow, const ScanId& minCol,
 
 void SparseClustering::updateMatrix(const ScanId& minRow, const ScanId& minCol,
     const ScanId& mergeScanId) {
+  matrix_.merge(minRow, minCol, mergeScanId, edgeList_);
+  /*
   typedef std::pair<ScanId, double> ColValPair;
-  BOOST_FOREACH (const ColValPair& colValPair, matrix_[minRow]) {
+  BOOST_FOREACH (const ColValPair& colValPair, matrix_.getRow(minRow)) {
     ScanId col = colValPair.first;
     if (col == minCol || col == minRow || !isAlive_[col]) continue;
     if (matrix_[minCol].find(col) != matrix_[minCol].end()) {
@@ -232,6 +243,7 @@ void SparseClustering::updateMatrix(const ScanId& minRow, const ScanId& minCol,
   
   matrix_.erase(minRow);
   matrix_.erase(minCol);
+  */
 }
 
 ScanId SparseClustering::getRoot(const ScanId& si) {
@@ -258,7 +270,7 @@ void SparseClustering::doClustering(double cutoff) {
   time(&startTime);
   clock_t startClock = clock(), elapsedClock;
   
-  if (matrixLoader_.hasEdgesAvailable()) {
+  if (edgesLeft()) {
     loadNextEdges();
   } else {
     std::cerr << "Could not read edges from input file." << std::endl;

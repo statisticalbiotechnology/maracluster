@@ -29,7 +29,7 @@ using pwiz::msdata::SelectedIon;
 
 void BatchSpectrumFiles::splitByPrecursorMz(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
-    const std::string& peakCountFN, const std::string& scanNrsFN,
+    const std::string& peakCountFN, const std::string& scanInfoFN,
     double precursorTolerance, bool precursorToleranceDa) {
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Splitting spectra by precursor Mz" << std::endl;
@@ -45,15 +45,15 @@ void BatchSpectrumFiles::splitByPrecursorMz(
   getPrecMzLimits(precMzsAccumulated, limits, precursorTolerance, 
                     precursorToleranceDa);
   getDatFNs(limits, datFNs);
-  writeSplittedPrecursorMzFiles(fileList, limits, datFNs, scanNrsFN);
+  writeSplittedPrecursorMzFiles(fileList, limits, datFNs, scanInfoFN);
 }
 
 void BatchSpectrumFiles::splitByPrecursorMz(SpectrumFileList& fileList,
     const std::string& datFNFile, const std::string& peakCountFN,
-    const std::string& scanNrsFN, double precursorTolerance, 
+    const std::string& scanInfoFN, double precursorTolerance, 
     bool precursorToleranceDa) {  
   std::vector<std::string> datFNs;
-  splitByPrecursorMz(fileList, datFNs, peakCountFN, scanNrsFN, 
+  splitByPrecursorMz(fileList, datFNs, peakCountFN, scanInfoFN, 
                        precursorTolerance, precursorToleranceDa);
   
   writeDatFNsToFile(datFNs, datFNFile);
@@ -122,40 +122,11 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
   std::sort(precMzsAccumulated.begin(), precMzsAccumulated.end());
 }
 
-void BatchSpectrumFiles::writeScannrs(SpectrumFileList& fileList,
-                                      const std::string& scanNrsFN) {
-  std::vector<std::string> spectrumFNs = fileList.getFilePaths();
-#pragma omp parallel for schedule(dynamic, 1)                
-  for (int fileIdx = 0; fileIdx < spectrumFNs.size(); ++fileIdx) {
-    std::string spectrumFN = spectrumFNs[fileIdx];
-    
-    SpectrumListPtr specList;    
-  #pragma omp critical (create_msdata)
-    {  
-      MSDataFile msd(spectrumFN);
-      specList = msd.run.spectrumListPtr;
-    }
-    size_t numSpectra = specList->size();
-    //size_t numSpectra = 2;
-    std::vector<ScanId> globalScanNrs(numSpectra);
-    
-    for(size_t i = 0; i < numSpectra; ++i) {
-      SpectrumPtr s = specList->spectrum(i, false);
-      
-      unsigned int scannr = SpectrumHandler::getScannr(s);
-      ScanId globalIdx = fileList.getScanId(spectrumFN, scannr);
-      globalScanNrs[i] = globalIdx;
-    }
-    bool append = true;
-    BinaryInterface::write<ScanId>(globalScanNrs, scanNrsFN, append);
-  }
-}
-
 void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
     SpectrumFileList& fileList, 
     std::vector<double>& limits,
     std::vector<std::string>& datFNs,
-    const std::string& scanNrsFN) {
+    const std::string& scanInfoFN) {
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Dividing spectra in " << limits.size() << 
                  " bins of ~2 CPU hours each." << std::endl;
@@ -173,13 +144,17 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
     std::vector<BatchSpectrum> localSpectra;
     getBatchSpectra(spectrumFN, fileList, localSpectra);
     
-    std::vector<ScanId> scanIds;
+    std::vector<ScanInfo> scanInfos;
     std::vector< std::vector<BatchSpectrum> > batchSpectra(limits.size());
     BOOST_FOREACH (BatchSpectrum& bs, localSpectra) {
       int precBin = getPrecMzBin(bs.precMz, limits);
       batchSpectra[precBin].push_back(bs);
-      if (scanIds.empty() || !(bs.scannr == scanIds.back())) 
-        scanIds.push_back(bs.scannr); // assumes sorted by scannr
+      if (scanInfos.empty() || bs.scannr != scanInfos.back().scanId) 
+        scanInfos.push_back(ScanInfo(bs.scannr, bs.precMz)); // assumes sorted by scannr
+      else {
+        scanInfos.back().minPrecMz = std::min(scanInfos.back().minPrecMz, bs.precMz);
+        scanInfos.back().maxPrecMz = std::max(scanInfos.back().maxPrecMz, bs.precMz);
+      }
     }
     
   #pragma omp critical (add_to_datfiles)
@@ -189,7 +164,7 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
   #pragma omp critical (write_scannrs)
     {
       bool append = true;
-      BinaryInterface::write<ScanId>(scanIds, scanNrsFN, append);
+      BinaryInterface::write<ScanInfo>(scanInfos, scanInfoFN, append);
     }
   }
 }
@@ -319,6 +294,19 @@ void BatchSpectrumFiles::readPrecMzs(const std::string& precMzFN,
     while (getline(precMzStream, line)) {
       precMzs.push_back(boost::lexical_cast<double>(line));
     }
+  }
+}
+
+void BatchSpectrumFiles::readPrecMzLimits(const std::string& scanInfoFN,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits) {
+  if (BatchGlobals::VERB > 2) {
+    std::cerr << "Reading precursor m/z limits." << std::endl;
+  }
+  std::vector<ScanInfo> scanInfos;
+  BinaryInterface::read<ScanInfo>(scanInfoFN, scanInfos);
+  
+  BOOST_FOREACH (const ScanInfo& si, scanInfos) {
+    precMzLimits[si.scanId] = std::make_pair(si.minPrecMz, si.maxPrecMz);
   }
 }
 

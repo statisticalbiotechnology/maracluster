@@ -18,13 +18,16 @@
 
 int PvalueFilterAndSort::maxPvalsPerFile_ = 50000000; // 20 bytes per p-value
 
-void PvalueFilterAndSort::filterAndSort(std::vector<PvalueTriplet>& buffer) {
+void PvalueFilterAndSort::filter(std::vector<PvalueTriplet>& buffer) {
   std::vector<PvalueTriplet> filteredBuffer;
   
   removeDirectedDuplicates(buffer, filteredBuffer);
   buffer.swap(filteredBuffer);
-  
-  std::sort(buffer.begin(), buffer.end(), lowerPval);
+}
+
+void PvalueFilterAndSort::filterAndSort(std::vector<PvalueTriplet>& buffer) {
+  filter(buffer);
+  std::sort(buffer.begin(), buffer.end());
 }
 
 void PvalueFilterAndSort::filterAndSort(const std::string& pvalFN) {
@@ -185,7 +188,7 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
       if (!(f && f <= (l-sizeof(PvalueTriplet)))) closedFiles.insert(bin);
     }
     
-    std::sort(pvecBuffer.begin(), pvecBuffer.end(), lowerPval);
+    std::sort(pvecBuffer.begin(), pvecBuffer.end());
     
     std::vector<PvalueTriplet> pvec;
     int numPvalsToErase = 0;

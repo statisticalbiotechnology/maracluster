@@ -98,6 +98,7 @@ void BatchSpectra::calculatePvalueVectors(SpectrumFileList& fileList,
       BatchGlobals::reportProgress(startTime, startClock, i, numSpectra);
     }
   }
+  spectra_.clear();
   
   bool forceInsert = true;
   pvecs_.batchInsert(peakCounts, forceInsert);  
@@ -113,8 +114,9 @@ void BatchSpectra::calculatePvalueVectors(PeakCounts& peakCounts) {
   calculatePvalueVectors(fileList, peakCounts);
 }
 
-void BatchSpectra::writePvalueVectors(const std::string& pvalueVectorsBaseFN) {  
-  pvecs_.writePvalueVectors(pvalueVectorsBaseFN);
+void BatchSpectra::writePvalueVectors(const std::string& pvalueVectorsBaseFN,
+                                      bool writeAll) {  
+  pvecs_.writePvalueVectors(pvalueVectorsBaseFN, writeAll);
 }
 
 void BatchSpectra::calculatePvalues() {
@@ -123,6 +125,11 @@ void BatchSpectra::calculatePvalues() {
 #else
   pvecs_.batchCalculatePvalues();
 #endif
+}
+
+void BatchSpectra::calculateAndClusterPvalues(const std::string& pvalueTreeFN,
+    const std::string& scanInfoFN) {
+  pvecs_.batchCalculateAndClusterPvalues(pvalueTreeFN, scanInfoFN);
 }
 
 void BatchSpectra::librarySearch(BatchSpectra& querySpectra) {

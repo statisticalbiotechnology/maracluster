@@ -110,6 +110,7 @@ void PvalueCalculator::computePvalVector() {
     x.push_back( log( (1.0 - pi)/pi ) );
     sumLogP += log(pi);
   }
+  peakProbs_.clear();
   
   // discretize each xi to get li and compute the sum of all li 
   peakScores_.clear();

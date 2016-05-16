@@ -33,34 +33,8 @@
 
 #include "MatrixLoader.h"
 #include "PvalueTriplet.h"
-
-struct SparseEdge {
-  SparseEdge(double _value, ScanId _row, ScanId _col) : 
-      value(_value), row(_row), col(_col) {}
-  SparseEdge() : value(0.0), row(), col() {}
-  
-  double value;
-  ScanId row, col;
-  
-  inline bool operator<(const SparseEdge& r2) const {
-    return value > r2.value
-      || (value == r2.value && row < r2.row)
-      || (value == r2.value && row == r2.row && col < r2.col);
-  }
-  
-  bool sameEdge(const SparseEdge& r2) {
-    return (row == r2.row && col == r2.col);
-  }
-};
-
-struct SparseMissingEdge : public SparseEdge {
-  SparseMissingEdge(double _value, ScanId _row, ScanId _col, 
-             unsigned int _numEdges) : SparseEdge(_value, _row, _col), 
-                                       numEdges(_numEdges) {}
-  SparseMissingEdge() : SparseEdge(), numEdges(1) {}
-  
-  unsigned int numEdges;
-};
+#include "SparseEdge.h"
+#include "SparseMatrix.h"
 
 class SparseClustering {
  public:
@@ -78,7 +52,7 @@ class SparseClustering {
   }
   void initMatrix(const std::string& matrixFN);
   
-  void doClustering(double cutoff);
+  virtual void doClustering(double cutoff);
   
   void printClusters(std::string& resultFN);
   
@@ -95,14 +69,16 @@ class SparseClustering {
   MatrixLoader matrixLoader_;
   
   std::priority_queue<SparseEdge> edgeList_;
-  boost::unordered_map<ScanId, std::map<ScanId, double> > matrix_;
+  SparseMatrix matrix_;
   std::map<ScanId, std::vector<ScanId> > clusters_;
   
   boost::unordered_map<ScanId, ScanId> mergeRoots_;
   boost::unordered_map<ScanId, bool> isAlive_;
   std::vector<SparseMissingEdge> missingEdges_;
   
-  void loadNextEdges();
+  virtual void loadNextEdges();
+  void loadEdges(std::vector<PvalueTriplet>& pvec);
+  virtual bool edgesLeft();
   
   void getClusterMemberships(
     boost::unordered_map<ScanId, ScanId>& clusterMemberships);
@@ -113,10 +89,10 @@ class SparseClustering {
   void pruneEdges();
   
   void addNewEdge(const SparseMissingEdge& edge, size_t& idx);
-  void insertEdge(const ScanId row, const ScanId col, const double value);
+  void insertEdge(const ScanId& row, const ScanId& col, const double value);
   void popEdge();
   
-  void clusterInit(const ScanId row);
+  void clusterInit(const ScanId& row);
   ScanId getRoot(const ScanId& si);
   
   void joinClusters(const ScanId& minRow, const ScanId& minCol,
