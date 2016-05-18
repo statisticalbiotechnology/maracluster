@@ -58,6 +58,10 @@ class SparseClustering {
   
   void setMergeOffset(unsigned int mergeOffset) { mergeOffset_ = mergeOffset; }
   
+  void reserve(const size_t numScans) {
+    matrix_.reserve(numScans + 1);
+  }
+  
   static bool clusteringUnitTest();
  protected:
   long long numTotalEdges_;
@@ -93,7 +97,15 @@ class SparseClustering {
   void popEdge();
   
   void clusterInit(const ScanId& row);
-  ScanId getRoot(const ScanId& si);
+  
+  ScanId getRoot(const ScanId& si) {
+    if (si.fileIdx >= mergeOffset_) {
+      return mergeRoots_[si];
+    } else {
+      return si;
+    } 
+  }
+  void setRoot(const ScanId& si, const ScanId& root) { mergeRoots_[si] = root; }
   
   void joinClusters(const ScanId& minRow, const ScanId& minCol,
     const ScanId& mergeScanId);

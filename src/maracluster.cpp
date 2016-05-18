@@ -27,8 +27,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include "pwiz/data/msdata/MSDataFile.hpp"
-
 #include "Option.h"
 #include "PvalueCalculator.h"
 #include "SpectrumFileList.h"
@@ -41,9 +39,11 @@
 #include "BatchSpectra.h"
 #include "BatchPvalueVectors.h"
 #include "BatchPvalues.h"
+
 #include "MSFileExtractor.h"
 #include "MSFileMerger.h"
 #include "MSClusterMerge.h"
+
 #include "PvalueFilterAndSort.h"
 #include "SparseClustering.h"
 
@@ -404,9 +404,6 @@ int main(int argc, char* argv[]) {
           if (spectrumBatchFileFN_.size() == 0) {
             std::cerr << "Error: no batch file specified with -b flag" << std::endl;
             return EXIT_FAILURE;
-          } else {
-            SpectrumFileList fileList;
-            fileList.initFromFile(spectrumBatchFileFN_);
           }
           
           int error = createIndex(outputFolder_, fnPrefix_, 
@@ -426,9 +423,6 @@ int main(int argc, char* argv[]) {
           std::vector< std::pair<std::string, std::string> > overlapFNs(datFNs.size() - 1);
           
           {
-            PeakCounts peakCounts;
-            peakCounts.readFromFile(peakCountFN_);
-            
             for (size_t i = 0; i < datFNs.size(); ++i) {
               // make sure the file exists
               if (!BatchGlobals::fileExists(datFNs[i])) {
@@ -448,11 +442,18 @@ int main(int argc, char* argv[]) {
               std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
               
               if (!BatchGlobals::fileExists(pvalueTreeFN)) {
-                BatchSpectra spectra(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
-                spectra.readBatchSpectra(datFN);
-                spectra.calculatePvalueVectors(peakCounts);
-                spectra.writePvalueVectors(pvalueVectorsBaseFN, writeAll_);
-                spectra.calculateAndClusterPvalues(pvalueTreeFN, scanInfoFN_);
+                BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+                {
+                  BatchSpectra spectra;
+                  spectra.readBatchSpectra(datFN);
+                  spectra.sortSpectraByPrecMz();
+                  
+                  PeakCounts peakCounts;
+                  peakCounts.readFromFile(peakCountFN_);
+                  pvecs.calculatePvalueVectors(spectra.getSpectra(), peakCounts);
+                }
+                pvecs.writePvalueVectors(pvalueVectorsBaseFN, writeAll_);
+                pvecs.batchCalculateAndClusterPvalues(pvalueTreeFN, scanInfoFN_);
               } else {
                 std::cerr << "Using p-value tree from " << pvalueTreeFN <<
                     ". Remove this file to generate a new p-value tree." << std::endl;
@@ -551,10 +552,13 @@ int main(int argc, char* argv[]) {
             
             std::cerr << "Read " << batchSpectra.size() << " spectra." << std::endl;
             
-            BatchSpectra spectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            BatchSpectra spectra;
             spectra.setBatchSpectra(batchSpectra);
-            spectra.calculatePvalueVectors(peakCounts);
-            spectra.calculatePvalues();
+            spectra.sortSpectraByPrecMz();
+            
+            BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            pvecs.calculatePvalueVectors(spectra.getSpectra(), peakCounts);
+            pvecs.batchCalculatePvalues();
             PvalueFilterAndSort::convertBinaryPvalToTsv(pvaluesFN_, pvaluesFN_);
           } else {
             // calculate p-values
@@ -569,26 +573,38 @@ int main(int argc, char* argv[]) {
               std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
               return EXIT_FAILURE;
             }
-            if (spectrumBatchFileFN_.size() == 0) {
-              std::cerr << "Error: no batch file specified with -b flag" << std::endl;
+            if (spectrumBatchFileFN_.size() == 0 && spectrumInFN_.size() == 0) {
+              std::cerr << "Error: no input file specified with -i or -b flag" << std::endl;
               return EXIT_FAILURE;
             }
+            std::string pvalueVectorsBaseFN = outputFolder_ + "/" + fnPrefix_ + ".pvalue_vectors";
             
-            PeakCounts peakCounts;
-            peakCounts.readFromFile(peakCountFN_);
-            
-            SpectrumFileList fileList;
-            fileList.initFromFile(spectrumBatchFileFN_);
-            
-            BatchSpectra spectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
-            if (spectrumInFN_.substr(spectrumInFN_.size() - 3) == "dat") {
-              spectra.readBatchSpectra(spectrumInFN_);
-            } else {
-              spectra.convertToBatchSpectra(spectrumInFN_, fileList);
+            BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            {
+              BatchSpectra spectra;
+              if (spectrumInFN_.substr(spectrumInFN_.size() - 3) == "dat") {
+                spectra.readBatchSpectra(spectrumInFN_);
+              } else {
+                SpectrumFileList fileList;
+                fileList.initFromFile(spectrumBatchFileFN_);
+                spectra.convertToBatchSpectra(spectrumInFN_, fileList);
+              }
+              spectra.sortSpectraByPrecMz();
+              
+              PeakCounts peakCounts;
+              peakCounts.readFromFile(peakCountFN_);
+              pvecs.calculatePvalueVectors(spectra.getSpectra(), peakCounts);
+              if (pvalueVectorsBaseFN.size() > 0) {
+                pvecs.writePvalueVectors(pvalueVectorsBaseFN, writeAll_);
+              }
             }
             
-            spectra.calculatePvalueVectors(peakCounts);
-            spectra.calculatePvalues();
+            //pvecs.parsePvalueVectorFile(pvalueVectorsBaseFN + ".dat");
+            if (resultTreeFN_.size() > 0) {
+              pvecs.batchCalculateAndClusterPvalues(resultTreeFN_, scanInfoFN_);
+            } else {
+              pvecs.batchCalculatePvalues();
+            }
           }
           return EXIT_SUCCESS;
         }
@@ -651,7 +667,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Finished reading peak counts" << std::endl;
             
             // read in the query spectra
-            BatchSpectra querySpectra("", precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            BatchSpectra querySpectra;
             SpectrumFileList fileList;
             if (spectrumInFN_.size() > 0) {
               querySpectra.convertToBatchSpectra(spectrumInFN_, fileList);
@@ -659,14 +675,17 @@ int main(int argc, char* argv[]) {
               fileList.initFromFile(spectrumBatchFileFN_);
               querySpectra.convertToBatchSpectra(fileList);
             }
+            querySpectra.sortSpectraByPrecMz();
             
             // read in the library spectra
             PvalueCalculator::kMinScoringPeaks = 5u;
-            BatchSpectra librarySpectra(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            BatchSpectra librarySpectra;
             librarySpectra.convertToBatchSpectra(spectrumLibraryFN_, fileList);
-            librarySpectra.calculatePvalueVectors(peakCounts);
+            librarySpectra.sortSpectraByPrecMz();
             
-            librarySpectra.librarySearch(querySpectra);
+            BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            pvecs.calculatePvalueVectors(librarySpectra.getSpectra(), peakCounts);
+            pvecs.batchCalculatePvaluesLibrarySearch(querySpectra.getSpectra());
           } else {
             std::cerr << "Using p-values from " << pvaluesFN_ << 
                 ". Remove this file to generate new p-values." << std::endl;

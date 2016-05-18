@@ -142,19 +142,13 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
     }
     
     std::vector<BatchSpectrum> localSpectra;
-    getBatchSpectra(spectrumFN, fileList, localSpectra);
-    
     std::vector<ScanInfo> scanInfos;
+    getBatchSpectra(spectrumFN, fileList, localSpectra, scanInfos);
+    
     std::vector< std::vector<BatchSpectrum> > batchSpectra(limits.size());
     BOOST_FOREACH (BatchSpectrum& bs, localSpectra) {
       int precBin = getPrecMzBin(bs.precMz, limits);
       batchSpectra[precBin].push_back(bs);
-      if (scanInfos.empty() || bs.scannr != scanInfos.back().scanId) 
-        scanInfos.push_back(ScanInfo(bs.scannr, bs.precMz)); // assumes sorted by scannr
-      else {
-        scanInfos.back().minPrecMz = std::min(scanInfos.back().minPrecMz, bs.precMz);
-        scanInfos.back().maxPrecMz = std::max(scanInfos.back().maxPrecMz, bs.precMz);
-      }
     }
     
   #pragma omp critical (add_to_datfiles)
@@ -172,7 +166,8 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
 
 void BatchSpectrumFiles::getBatchSpectra(
     const std::string& spectrumFN, SpectrumFileList& fileList,
-    std::vector<BatchSpectrum>& localSpectra) {
+    std::vector<BatchSpectrum>& localSpectra, 
+    std::vector<ScanInfo>& scanInfos) {
   if ( !boost::filesystem::exists( spectrumFN ) ) {
     std::cerr << "Ignoring missing file " << spectrumFN << std::endl;
     return;
@@ -194,7 +189,8 @@ void BatchSpectrumFiles::getBatchSpectra(
     
     double retentionTime = SpectrumHandler::getRetentionTime(s);
     unsigned int scannr = SpectrumHandler::getScannr(s);
-    ScanId globalIdx = fileList.getScanId(spectrumFN, scannr);
+    ScanInfo scanInfo;
+    scanInfo.scanId = fileList.getScanId(spectrumFN, scannr);
     
     std::vector<MassChargeCandidate> mccs;
     SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_);
@@ -215,12 +211,18 @@ void BatchSpectrumFiles::getBatchSpectra(
           bs.precMz = SpectrumHandler::calcPrecMz(mass, mcc.charge);
           bs.retentionTime = retentionTime;
           bs.charge = mcc.charge;
-          bs.scannr = globalIdx;
+          bs.scannr = scanInfo.scanId;
+          
+          if (scanInfo.minPrecMz == 0.0 || bs.precMz < scanInfo.minPrecMz)
+            scanInfo.minPrecMz = bs.precMz;
+          if (scanInfo.maxPrecMz == 0.0 || bs.precMz > scanInfo.maxPrecMz)
+            scanInfo.maxPrecMz = bs.precMz;
           
           localSpectra.push_back(bs);
         }
       }
     }
+    scanInfos.push_back(scanInfo);
   }
 }
 

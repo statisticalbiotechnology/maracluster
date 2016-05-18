@@ -78,7 +78,8 @@ class BatchSpectrumFiles {
     std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
   void getBatchSpectra(const std::string& spectrumFN, 
-    SpectrumFileList& fileList, std::vector<BatchSpectrum>& localSpectra);
+    SpectrumFileList& fileList, std::vector<BatchSpectrum>& localSpectra,
+    std::vector<ScanInfo>& localScanInfos);
   
   static bool limitsUnitTest();
   

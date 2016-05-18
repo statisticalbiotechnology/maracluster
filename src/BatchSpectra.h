@@ -24,7 +24,6 @@
 #include "BatchGlobals.h"
 #include "BatchSpectrumFiles.h"
 #include "BatchSpectrum.h"
-#include "BatchPvalueVectors.h"
 
 #include "SpectrumHandler.h"
 #include "SpectrumFileList.h"
@@ -33,9 +32,7 @@
 
 class BatchSpectra {
  public:
-  BatchSpectra(const std::string& pvaluesFN, double precursorTolerance, 
-    bool precursorToleranceDa, double dbPvalThreshold) : 
-    pvecs_(pvaluesFN, precursorTolerance, precursorToleranceDa, dbPvalThreshold) {}
+  BatchSpectra() {}
   
   // methods to import spectra
   void setBatchSpectra(std::vector<BatchSpectrum>& spectra) {
@@ -46,17 +43,10 @@ class BatchSpectra {
   void convertToBatchSpectra(SpectrumFileList& fileList);
   void readBatchSpectra(std::string& batchSpectraFN);
   
-  // methods for p-value vectors
-  void calculatePvalueVectors(SpectrumFileList& fileList, 
-    PeakCounts& peakCounts);
-  void calculatePvalueVectors(PeakCounts& peakCounts);
-  void writePvalueVectors(const std::string& pvalueVectorsBaseFN, bool writeAll);
+  void sortSpectraByPrecMass();
+  void sortSpectraByPrecMz();
   
-  // method to calculate p-values
-  void calculatePvalues();
-  void calculateAndClusterPvalues(const std::string& pvalueTreeFN,
-                                  const std::string& scanInfoFN);
-  void librarySearch(BatchSpectra& querySpectra);
+  inline std::vector<BatchSpectrum>& getSpectra() { return spectra_; }
   
   // Reading a batchspectrum inputfile for fingerprint similarities
   bool readFingerprints(std::string& input_file, 
@@ -74,11 +64,7 @@ class BatchSpectra {
   inline static bool lessPrecMz(const BatchSpectrum& a, 
     const BatchSpectrum& b) { return (a.precMz < b.precMz) || (a.precMz == b.precMz && a.scannr < b.scannr); }
  protected:
-  BatchPvalueVectors pvecs_;
   std::vector<BatchSpectrum> spectra_;
-  
-  void sortSpectraByPrecMass();
-  void sortSpectraByPrecMz();
 };
 
 #endif // BATCH_SPECTRA_H

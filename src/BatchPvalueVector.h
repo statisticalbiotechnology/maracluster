@@ -18,6 +18,7 @@
 #define BATCH_PVALUE_VECTOR_H
 
 #include "PvalueCalculator.h"
+#include "ScanId.h"
 
 struct BatchPvalueVector {
   double precMass, precMz, retentionTime;

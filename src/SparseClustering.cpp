@@ -246,14 +246,6 @@ void SparseClustering::updateMatrix(const ScanId& minRow, const ScanId& minCol,
   */
 }
 
-ScanId SparseClustering::getRoot(const ScanId& si) {
-  if (si.fileIdx >= mergeOffset_) {
-    return mergeRoots_[si];
-  } else {
-    return si;
-  } 
-}
-
 // Based on http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2718652/
 void SparseClustering::doClustering(double cutoff) {  
   std::cerr << "Starting MinHeap clustering" << std::endl;
@@ -292,7 +284,7 @@ void SparseClustering::doClustering(double cutoff) {
       
       ScanId minRowRoot = getRoot(minEdge.row);
       ScanId mergeScanId(mergeOffset_, mergeCnt++);
-      mergeRoots_[mergeScanId] = minRowRoot;
+      setRoot(mergeScanId, minRowRoot);
       isAlive_[mergeScanId] = true;
       
       if (writeTree) {

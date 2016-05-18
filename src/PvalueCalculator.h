@@ -82,6 +82,10 @@ class PvalueCalculator {
   void serialize(std::string& polyfitString, std::string& peakScorePairsString);
   void deserialize(std::string& polyfitString, std::string& peakScorePairsString);
   
+  inline std::vector<unsigned int> getPeakBins() const { return peakBins_; }
+  inline std::vector<unsigned int> getPeakScores() const { return peakScores_; }
+  inline std::vector<double> getPolyfit() const { return polyfit_; }
+  
   static bool pvalUnitTest();
   static bool pvalPolyfitUnitTest();
   static bool pvalUniformUnitTest();
@@ -93,15 +97,13 @@ class PvalueCalculator {
   static double lcg_rand_unif();
   
  private:
-  
-  std::vector<double> polyfit_;
-  std::vector<double> sumProb_;
-  std::vector<double> peakProbs_;
-  
+  unsigned int maxScore_;
   std::vector<unsigned int> peakBins_;
   std::vector<unsigned int> peakScores_;
+  std::vector<double> polyfit_;
   
-  unsigned int maxScore_;
+  std::vector<double> sumProb_;
+  std::vector<double> peakProbs_;
   
   void binaryMatchPeakBins(const std::vector<unsigned int>& queryPeakBins, std::vector<bool>& d);
   double polyval(double x);

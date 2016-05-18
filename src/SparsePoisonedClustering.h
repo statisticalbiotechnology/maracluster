@@ -37,8 +37,12 @@ class SparsePoisonedClustering : public SparseClustering {
  public:
   SparsePoisonedClustering() : SparseClustering(), edgesLeft_(false) { }
   
-  void markPoisoned(const ScanId& scanId) {
+  inline void markPoisoned(const ScanId& scanId) {
     isPoisoned_[scanId] = true;
+  }
+  
+  inline bool isPoisoned(const ScanId& scanId) {
+    return isPoisoned_[scanId];
   }
   
   void initPvals(std::vector<PvalueTriplet>& pvec) {

@@ -21,24 +21,22 @@ void SparsePoisonedClustering::loadNextEdges() {
   std::cerr << "  Loading new edges." << std::endl;
   
   size_t numNewEdges = pvals_.size();
-  numTotalEdges_ += numNewEdges;
   for (int i = 0; i < numNewEdges; ++i) {
-    ScanId row = pvals_[i].scannr1;
-    ScanId col = pvals_[i].scannr2;
+    ScanId s1 = (std::min)(pvals_[i].scannr1, pvals_[i].scannr2);
+    ScanId s2 = (std::max)(pvals_[i].scannr1, pvals_[i].scannr2);
     
-    isAlive_[row] = true;
-    isAlive_[col] = true;
-    
-    ScanId s1 = (std::min)(row, col);
-    ScanId s2 = (std::max)(row, col);
+    if (isPoisoned_[s1] && isPoisoned_[s2]) {
+      poisonedEdges_.push_back(pvals_[i]);
+    } else {
 #ifdef SINGLE_LINKAGE
-    if (row != col) {
-      size_t idx = 0;
-      addNewEdge(SparseMissingEdge(pvec[i].pval, s1, s2, clusters_[s1].size()*clusters_[s2].size()), idx);
-    }
+      if (row != col) {
+        size_t idx = 0;
+        addNewEdge(SparseMissingEdge(pvec[i].pval, s1, s2, clusters_[s1].size()*clusters_[s2].size()), idx);
+      }
 #else
-    insertEdge(s1, s2, pvals_[i].pval);
+      insertEdge(s1, s2, pvals_[i].pval);
 #endif
+    }
   }
   matrix_.sortRows();
   pvals_.clear();
@@ -69,7 +67,7 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
   unsigned int mergeCnt = 0u;
   while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
-    if (isAlive_[minEdge.row] && isAlive_[minEdge.col]) {
+    if (matrix_.isAlive(minEdge.row) && matrix_.isAlive(minEdge.col)) {
       if (isPoisoned_[minEdge.row] || isPoisoned_[minEdge.col]) {
         isPoisoned_[minEdge.row] = true;
         isPoisoned_[minEdge.col] = true;
@@ -80,19 +78,16 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
                                                std::max(minRowRoot, minColRoot), 
                                                minEdge.value));
       } else {
-        isAlive_[minEdge.row] = false;
-        isAlive_[minEdge.col] = false;
-        
         if (mergeCnt % 10000 == 0) {
           std::cerr << "It. " << mergeCnt << ": minRow = " << minEdge.row 
                     << ", minCol = " << minEdge.col 
-                    << ", minEl = " << minEdge.value << std::endl;
+                    << ", minEl = " << minEdge.value 
+                    << ", edgesLeft = " << edgeList_.size() << std::endl;
         }
         
         ScanId minRowRoot = getRoot(minEdge.row);
         ScanId mergeScanId(mergeOffset_, mergeCnt++);
-        mergeRoots_[mergeScanId] = minRowRoot;
-        isAlive_[mergeScanId] = true;
+        setRoot(mergeScanId, minRowRoot);
         
         if (writeTree) {
           ScanId minColRoot = getRoot(minEdge.col);
@@ -109,7 +104,6 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
   std::cerr << "Finished MinHeap clustering" << std::endl;
   
   if (writeMissingEdges_) writeMissingEdges(cutoff);
-  
   
   time(&elapsedTime);
   double diff = difftime(elapsedTime, startTime);

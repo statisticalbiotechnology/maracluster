@@ -34,6 +34,15 @@ class SparseMatrix {
     sparseMatrix_.push_back(SparseRow());
   }
   
+  inline bool isAlive(const ScanId& si) {
+    return sparseMatrix_[scanIdToIdx_[si]].size() > 0;
+  }
+  
+  void reserve(const size_t numScans) {
+    idxToScanId_.reserve(numScans + 1);
+    sparseMatrix_.reserve(numScans + 1);
+  }
+  
   void insert(const ScanId& s1, const ScanId& s2, const double value) {
     //std::cerr << "Inserting " << s1 << " " << s2 << " " << value << std::endl;
     size_t i1 = getScanIdx(s1);

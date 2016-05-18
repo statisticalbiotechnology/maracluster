@@ -27,25 +27,41 @@
 #include <boost/foreach.hpp>
 
 #include "BatchGlobals.h"
-#include "BatchStatement.h"
+#include "BatchPvalueVector.h"
 #include "BatchPvalues.h"
 #include "BatchSpectrum.h"
 #include "BatchSpectrumFiles.h"
+
 #include "SpectrumHandler.h"
-#include "SparseClustering.h"
-#include "SparsePoisonedClustering.h"
 #include "SpectrumFileList.h"
+
 #include "PvalueCalculator.h"
 #include "PvalueTriplet.h"
 #include "PvalueFilterAndSort.h"
+
 #include "PeakCounts.h"
-#include "BatchPvalueVector.h"
+
+#include "SparsePoisonedClustering.h"
 
 #ifdef FINGERPRINT_FILTER
   #include "BinaryFingerprintMethods.h"
 #endif
 
 struct PvalueVectorsDbRow {
+  void deepCopy(const PvalueVectorsDbRow& tmp) {
+    precMass = tmp.precMass;
+    precMz = tmp.precMz;
+    charge = tmp.charge;
+    scannr = tmp.scannr;
+    
+    retentionTime = tmp.retentionTime;
+    queryCharge = tmp.queryCharge;
+    peakBins = tmp.pvalCalc.getPeakBins();
+    
+    std::vector<unsigned int> peakScores = tmp.pvalCalc.getPeakScores();
+    std::vector<double> polyfit = tmp.pvalCalc.getPolyfit();
+    pvalCalc.initPolyfit(peakBins, peakScores, polyfit);
+  }
   double precMass, precMz;
   int charge;
   ScanId scannr;
@@ -66,6 +82,9 @@ class BatchPvalueVectors {
       pvalues_(pvaluesFN), precursorTolerance_(precursorTolerance), 
       precursorToleranceDa_(precursorToleranceDa), dbPvalThreshold_(dbPvalThreshold) {}
   
+  void calculatePvalueVectors(std::vector<BatchSpectrum>& spectra, 
+      PeakCounts& peakCounts);
+  
   void insertMassChargeCandidate(
       MassChargeCandidate& mcc, BatchSpectrum& spec);
       
@@ -75,6 +94,8 @@ class BatchPvalueVectors {
   void sortPvalueVectors();
   void writePvalueVectors(const std::string& pvalueVectorsBaseFN, 
                           bool writeAll);
+  void reloadPvalueVectors();
+  inline std::vector<PvalueVectorsDbRow>& getPvalueVectors() { return pvalVecCollection_; }
   
   inline void clearPvalueVectors() { pvalVecBatch_.clear(); }
   void parsePvalueVectorFile(const std::string& pvalVecInFileFN);
@@ -97,6 +118,8 @@ class BatchPvalueVectors {
   void batchCalculatePvaluesOverlap(
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionHead);
+  
+  void transferPvalueVectors(BatchPvalueVectors& pvecs);
   
   static inline double getLowerBound(double precMass, double precursorTolerance, 
       bool precursorToleranceDa) {
@@ -144,10 +167,13 @@ class BatchPvalueVectors {
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
+  void getPrecMzLimits(
+    std::map<ScanId, std::pair<float, float> >& precMzLimits);
+    
   void markPoisoned(SparsePoisonedClustering& matrix, 
     std::vector<PvalueTriplet>& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
-    float lowestPrecMz, float upperPrecMz);
+    float lowerPrecMz, float upperPrecMz);
     
   inline double getLowerBound(double mass) { 
     return getLowerBound(mass, precursorTolerance_, precursorToleranceDa_);

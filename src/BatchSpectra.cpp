@@ -33,7 +33,8 @@ void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN,
   
   BatchSpectrumFiles specFiles;
   std::vector<BatchSpectrum> localSpectra;
-  specFiles.getBatchSpectra(spectrumFN, fileList, localSpectra);
+  std::vector<ScanInfo> localScanInfos;
+  specFiles.getBatchSpectra(spectrumFN, fileList, localSpectra, localScanInfos);
   
 #pragma omp critical(append_spectra)
   {
@@ -64,77 +65,6 @@ void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
 
 void BatchSpectra::sortSpectraByPrecMz() {
   std::sort(spectra_.begin(), spectra_.end(), lessPrecMz);
-}
-
-void BatchSpectra::calculatePvalueVectors(SpectrumFileList& fileList, 
-    PeakCounts& peakCounts) {
-  if (BatchGlobals::VERB > 2) {
-    std::cerr << "Inserting spectra into database" << std::endl;
-  }
-  
-  sortSpectraByPrecMz();
-  
-  size_t numSpectra = spectra_.size();
-  //size_t numSpectra = 20000;
-  
-  time_t startTime;
-  time(&startTime);
-  clock_t startClock = clock();
-
-  for (size_t i = 0; i < numSpectra; ++i) {    
-    if (BatchGlobals::VERB > 4) {
-      std::cerr << "Global scannr " << spectra_[i].scannr << std::endl;
-    }
-    
-    MassChargeCandidate mcc(spectra_[i].charge, spectra_[i].precMz, spectra_[i].precMass);
-    pvecs_.insertMassChargeCandidate(mcc, spectra_[i]);
-    
-    bool forceInsert = false;
-    pvecs_.batchInsert(peakCounts, forceInsert);
-    
-    if ((i % 50000 == 0 && BatchGlobals::VERB > 2) || BatchGlobals::VERB > 3) {
-      std::cerr << "Successfully inserted spectrum " << i + 1 << "/" << 
-          numSpectra << " (" << (i+1)*100/numSpectra << "%)" << std::endl;
-      BatchGlobals::reportProgress(startTime, startClock, i, numSpectra);
-    }
-  }
-  spectra_.clear();
-  
-  bool forceInsert = true;
-  pvecs_.batchInsert(peakCounts, forceInsert);  
-  pvecs_.sortPvalueVectors();
-  
-  if (BatchGlobals::VERB > 2) {
-    std::cerr << "Successfully inserted spectra into database" << std::endl;
-  }
-}
-
-void BatchSpectra::calculatePvalueVectors(PeakCounts& peakCounts) {
-  SpectrumFileList fileList;
-  calculatePvalueVectors(fileList, peakCounts);
-}
-
-void BatchSpectra::writePvalueVectors(const std::string& pvalueVectorsBaseFN,
-                                      bool writeAll) {  
-  pvecs_.writePvalueVectors(pvalueVectorsBaseFN, writeAll);
-}
-
-void BatchSpectra::calculatePvalues() {
-#ifdef FINGERPRINT_FILTER
-  pvecs_.batchCalculatePvaluesJaccardFilter();
-#else
-  pvecs_.batchCalculatePvalues();
-#endif
-}
-
-void BatchSpectra::calculateAndClusterPvalues(const std::string& pvalueTreeFN,
-    const std::string& scanInfoFN) {
-  pvecs_.batchCalculateAndClusterPvalues(pvalueTreeFN, scanInfoFN);
-}
-
-void BatchSpectra::librarySearch(BatchSpectra& querySpectra) {
-  querySpectra.sortSpectraByPrecMz();
-  pvecs_.batchCalculatePvaluesLibrarySearch(querySpectra.spectra_);
 }
 
 #ifdef FINGERPRINT_FILTER
