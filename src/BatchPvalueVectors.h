@@ -167,9 +167,14 @@ class BatchPvalueVectors {
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
+  void clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
+    std::vector<PvalueTriplet>& pvalPoisonedBuffer,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+    float lowerPrecMz, float upperPrecMz, const std::string& resultTreeFN);
+    
   void getPrecMzLimits(
     std::map<ScanId, std::pair<float, float> >& precMzLimits);
-    
+  
   void markPoisoned(SparsePoisonedClustering& matrix, 
     std::vector<PvalueTriplet>& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 

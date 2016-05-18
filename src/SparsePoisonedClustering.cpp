@@ -59,12 +59,8 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
   
   if (edgesLeft()) {
     loadNextEdges();
-  } else {
-    std::cerr << "Could not read edges from input file." << std::endl;
-    return;
   }
   
-  unsigned int mergeCnt = 0u;
   while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
     if (matrix_.isAlive(minEdge.row) && matrix_.isAlive(minEdge.col)) {
@@ -78,15 +74,15 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
                                                std::max(minRowRoot, minColRoot), 
                                                minEdge.value));
       } else {
-        if (mergeCnt % 10000 == 0) {
-          std::cerr << "It. " << mergeCnt << ": minRow = " << minEdge.row 
+        if (mergeCnt_ % 10000 == 0) {
+          std::cerr << "It. " << mergeCnt_ << ": minRow = " << minEdge.row 
                     << ", minCol = " << minEdge.col 
                     << ", minEl = " << minEdge.value 
                     << ", edgesLeft = " << edgeList_.size() << std::endl;
         }
         
         ScanId minRowRoot = getRoot(minEdge.row);
-        ScanId mergeScanId(mergeOffset_, mergeCnt++);
+        ScanId mergeScanId(mergeOffset_, mergeCnt_++);
         setRoot(mergeScanId, minRowRoot);
         
         if (writeTree) {

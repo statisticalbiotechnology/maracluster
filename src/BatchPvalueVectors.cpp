@@ -445,73 +445,159 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
   
   size_t pvecBatchSize = 10000;
   size_t minPvalsForClustering = 20000000; /* = 20M */
-  size_t lowerBoundIdx = 0;
+  size_t newStartBatch = 0;
+  size_t numPvecBatches = (n - 1) / pvecBatchSize + 1;
   
-  std::vector<PvalueTriplet> pvalBuffer;
-#pragma omp parallel for schedule(dynamic, 1) ordered
+  std::vector< std::vector<PvalueTriplet> > pvalBuffers(numPvecBatches), pvalPoisonedBuffers;
+  std::vector<bool> finishedPvalCalc(numPvecBatches), finishedClustering;
+  size_t clusterJobCnt = 0u;
+#pragma omp parallel for schedule(dynamic)
   for (int b = 0; b < n; b += pvecBatchSize) {
     if (BatchGlobals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << b+1 << "/" << n << " (" 
                 << b*100/n << "%)." << std::endl;
     }
     int upperBoundIdx = (std::min)(b + pvecBatchSize, n);
+    bool lastBatch = (upperBoundIdx == n);
     
-    std::vector<PvalueTriplet> localPvalBuffer;
     for (int i = b; i < upperBoundIdx; ++i) {
       double precLimit = getUpperBound(pvalVecCollection_[i].precMz);
       for (size_t j = i+1; j < n; ++j) {
         if (pvalVecCollection_[j].precMz < precLimit) { 
-          calculatePvalues(pvalVecCollection_[i], pvalVecCollection_[j], localPvalBuffer);
+          calculatePvalues(pvalVecCollection_[i], pvalVecCollection_[j], pvalBuffers[b / pvecBatchSize]);
+        } else {
+          break;
+        }
+      }
+    }
+    finishedPvalCalc[b / pvecBatchSize] = true;
+    
+    double lowerPrecMz = 0.0, upperPrecMz = 0.0;
+    bool doClustering = false;
+    size_t clusterJobIdx = 0u;
+    size_t endIdx = 0u;
+    
+    size_t startBatch = 0u, endBatch = 0u;
+    #pragma omp critical
+    {
+      size_t numPvals = 0u;
+      startBatch = newStartBatch;
+      for (size_t i = newStartBatch; i < numPvecBatches; ++i) {
+        if (finishedPvalCalc[i]) {
+          numPvals += pvalBuffers[i].size();
+          endBatch = i;
+          
+          size_t startIdx = startBatch*pvecBatchSize;
+          endIdx = (std::min)((endBatch+1)*pvecBatchSize, n) - 1;
+          lowerPrecMz = pvalVecCollection_[startIdx].precMz;
+          upperPrecMz = pvalVecCollection_[endIdx].precMz;
+          
+          if ((getUpperBound(getUpperBound(lowerPrecMz)) < upperPrecMz && numPvals > minPvalsForClustering) 
+                || lastBatch) {
+            doClustering = true;
+            finishedClustering.push_back(false);
+            pvalPoisonedBuffers.push_back(std::vector<PvalueTriplet>());
+            clusterJobIdx = clusterJobCnt++;
+            newStartBatch = endBatch+1;
+            break;
+          }
         } else {
           break;
         }
       }
     }
     
-    double lowestPrecMz = pvalVecCollection_[0].precMz;
-    
-  #pragma omp ordered
-    {
-      double lowerPrecMz = pvalVecCollection_[lowerBoundIdx].precMz;
-      double upperPrecMz = pvalVecCollection_[upperBoundIdx-1].precMz;
-      pvalBuffer.insert(pvalBuffer.end(), localPvalBuffer.begin(), localPvalBuffer.end());
-      if (upperBoundIdx == n || 
-            (pvalBuffer.size() > minPvalsForClustering && 
-             getUpperBound(getUpperBound(lowerPrecMz)) < upperPrecMz)) {  
-        if (BatchGlobals::VERB > 2) {
-          std::cerr << "Clustering " << pvalBuffer.size() << " pvalues" << std::endl;
-        }
-        
+    if (doClustering) {
+      std::vector<PvalueTriplet> pvalBuffer, pvalPoisonedBuffer;
+      for (size_t i = startBatch; i <= endBatch; ++i) {
+        pvalBuffer.insert(pvalBuffer.end(), pvalBuffers[i].begin(), pvalBuffers[i].end());
+        pvalBuffers[i].clear();
         /*if (pvalBuffer.size() > 60000000) {
           PvalueFilterAndSort::filterAndSort(pvalBuffer);
           pvalues_.batchWrite(pvalBuffer);
         }*/
-        
-        lowerBoundIdx = upperBoundIdx;
-        PvalueFilterAndSort::filter(pvalBuffer);
-        
-        SparsePoisonedClustering matrix;
-        markPoisoned(matrix, pvalBuffer, precMzLimits, lowestPrecMz, upperPrecMz);
-        
-        matrix.initPvals(pvalBuffer);
-        matrix.setClusterPairFN(resultTreeFN);
-        matrix.doClustering(dbPvalThreshold_);
-        
-        matrix.getPoisonedEdges(pvalBuffer);
-        if (BatchGlobals::VERB > 2) {
-          std::cerr << "Retained " << pvalBuffer.size() << " pvalues" << std::endl;
-          BatchGlobals::reportProgress(startTime, startClock, upperBoundIdx, n);
+      }
+      
+      std::cerr << "Starting clustering job " << clusterJobIdx + 1 << std::endl;
+      
+      clusterPvals(pvalBuffer, pvalPoisonedBuffer, precMzLimits, 
+          lowerPrecMz, upperPrecMz, resultTreeFN);
+      
+      if (BatchGlobals::VERB > 2) {
+        std::cerr << "Retained " << pvalPoisonedBuffer.size() << " pvalues" << std::endl;
+        BatchGlobals::reportProgress(startTime, startClock, endIdx, n);
+      }
+      pvalPoisonedBuffers[clusterJobIdx] = pvalPoisonedBuffer;
+      finishedClustering[clusterJobIdx] = true;
+    }
+    
+    bool doPoisonedClustering = false;
+    double lowestPrecMz = pvalVecCollection_[0].precMz;
+    size_t endPoisonedBatch = 0u;
+    #pragma omp critical
+    {
+      size_t numPvals = 0u;
+      for (size_t i = 0; i < pvalPoisonedBuffers.size(); ++i) {
+        if (finishedClustering[i]) {
+          numPvals += pvalPoisonedBuffers[i].size();
+          endPoisonedBatch = i;
+          if (numPvals > minPvalsForClustering || lastBatch) {
+            doPoisonedClustering = true;
+            break;
+          }
+        } else {
+          break;
         }
+      }
+    
+      if (doPoisonedClustering) {
+        std::vector<PvalueTriplet> pvalBuffer, pvalPoisonedBuffer;
+        for (size_t i = 0; i <= endPoisonedBatch; ++i) {
+          pvalBuffer.insert(pvalBuffer.end(), pvalPoisonedBuffers[i].begin(), pvalPoisonedBuffers[i].end());
+          pvalPoisonedBuffers[i].clear();
+        }
+        
+        std::cerr << "Starting poisoned clustering job " << endPoisonedBatch << std::endl;
+        
+        clusterPvals(pvalBuffer, pvalPoisonedBuffer, precMzLimits, 
+            lowestPrecMz, upperPrecMz, resultTreeFN);
+        
+        if (BatchGlobals::VERB > 2) {
+          std::cerr << "Retained " << pvalPoisonedBuffer.size() << " pvalues" << std::endl;
+        }
+        pvalPoisonedBuffers[0] = pvalPoisonedBuffer;
       }
     }
   }
-  pvalues_.batchWrite(pvalBuffer);
+  if (pvalPoisonedBuffers.size() > 0) {
+    pvalues_.batchWrite(pvalPoisonedBuffers[0]);
+  }
   clearPvalueVectors();
   
   if (BatchGlobals::VERB > 1) {
     //std::cerr << "Finished calculating pvalues (" << numPvalsNoThresh << " total)." << std::endl;
     std::cerr << "Finished calculating pvalues." << std::endl;
   }
+}
+
+void BatchPvalueVectors::clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
+    std::vector<PvalueTriplet>& pvalPoisonedBuffer,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+    float lowerPrecMz, float upperPrecMz, const std::string& resultTreeFN) {
+  PvalueFilterAndSort::filter(pvalBuffer);
+      
+  if (BatchGlobals::VERB > 2) {
+    std::cerr << "Clustering " << pvalBuffer.size() << " pvalues" << std::endl;
+  }
+  
+  SparsePoisonedClustering matrix;
+  markPoisoned(matrix, pvalBuffer, precMzLimits, lowerPrecMz, upperPrecMz);
+  
+  matrix.initPvals(pvalBuffer);
+  matrix.setClusterPairFN(resultTreeFN);
+  matrix.doClustering(dbPvalThreshold_);
+  
+  matrix.getPoisonedEdges(pvalPoisonedBuffer);
 }
 
 void BatchPvalueVectors::markPoisoned(SparsePoisonedClustering& matrix, 

@@ -35,7 +35,7 @@
 
 class SparsePoisonedClustering : public SparseClustering {
  public:
-  SparsePoisonedClustering() : SparseClustering(), edgesLeft_(false) { }
+  SparsePoisonedClustering() : SparseClustering(), edgesLeft_(false), mergeCnt_(0u) { }
   
   inline void markPoisoned(const ScanId& scanId) {
     isPoisoned_[scanId] = true;
@@ -52,6 +52,8 @@ class SparsePoisonedClustering : public SparseClustering {
   
   void getPoisonedEdges(std::vector<PvalueTriplet>& pvec) {
     pvec.swap(poisonedEdges_);
+    /*insert(pvec.end(), poisonedEdges_.begin(), poisonedEdges_.end());
+    poisonedEdges_.clear();*/
   }
   
   void doClustering(double cutoff);
@@ -60,6 +62,7 @@ class SparsePoisonedClustering : public SparseClustering {
   boost::unordered_map<ScanId, bool> isPoisoned_;
   std::vector<PvalueTriplet> pvals_, poisonedEdges_;
   bool edgesLeft_;
+  unsigned int mergeCnt_;
   
   void loadNextEdges();
   bool edgesLeft() { return edgesLeft_; }
