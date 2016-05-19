@@ -51,6 +51,7 @@ class PvalueCalculator {
   static unsigned int kMinScoringPeaks;
   static const bool kVariableScoringPeaks;
   
+  PvalueCalculator() : maxScore_(0u) {}
   inline unsigned int getNumScoringPeaks() const { return peakBins_.size(); }
   static unsigned int getMaxScoringPeaks(double mass) { 
     if (kVariableScoringPeaks) {
@@ -68,14 +69,18 @@ class PvalueCalculator {
     }
   }
   
-  void init(const std::vector<unsigned int>& _peakBins, const std::vector<double>& _peakProbs);
-  void initFromPeakBins(const std::vector<unsigned int>& originalPeakBins, const std::vector<double>& peakDist);
-  void initPolyfit(const std::vector<unsigned int>& peakBins, const std::vector<unsigned int>& peakScores, const std::vector<double>& polyfit);
+  void initPolyfit(const std::vector<unsigned int>& peakBins, 
+                   const std::vector<unsigned int>& peakScores, 
+                   const std::vector<double>& polyfit);
   
-  void computePvalVector();
-  double computePval(const std::vector<unsigned int>& queryPeakBins, bool smoothing = false);
+  void computePvalVector(const std::vector<unsigned int>& originalPeakBins, 
+      const std::vector<double>& peakDist, std::vector<double>& sumProb);
+  double computePval(const std::vector<unsigned int>& queryPeakBins, 
+      bool smoothing, std::vector<double>& sumProb);
   
-  void computePvalVectorPolyfit();
+  void computePvalVectorPolyfit(
+      const std::vector<unsigned int>& originalPeakBins, 
+      const std::vector<double>& peakDist);
   double computePvalPolyfit(const std::vector<unsigned int>& queryPeakBins);
   
   void copyPolyfit(short* peakBins, short* peakScores, double* polyfit);
@@ -102,9 +107,9 @@ class PvalueCalculator {
   std::vector<unsigned int> peakScores_;
   std::vector<double> polyfit_;
   
-  std::vector<double> sumProb_;
-  std::vector<double> peakProbs_;
-  
+  void initFromPeakBins(const std::vector<unsigned int>& originalPeakBins, 
+                        const std::vector<double>& peakDist,
+                        std::vector<double>& peakProbs);
   void binaryMatchPeakBins(const std::vector<unsigned int>& queryPeakBins, std::vector<bool>& d);
   double polyval(double x);
   

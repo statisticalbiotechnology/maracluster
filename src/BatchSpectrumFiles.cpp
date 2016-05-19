@@ -207,7 +207,6 @@ void BatchSpectrumFiles::getBatchSpectra(
           BatchSpectrum bs;
           peakBins.resize(BATCH_SPECTRUM_NUM_STORED_PEAKS, 0u);
           std::copy(peakBins.begin(), peakBins.end(), bs.fragBins);
-          bs.precMass = mass;
           bs.precMz = SpectrumHandler::calcPrecMz(mass, mcc.charge);
           bs.retentionTime = retentionTime;
           bs.charge = mcc.charge;

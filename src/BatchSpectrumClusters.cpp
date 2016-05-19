@@ -244,10 +244,12 @@ void BatchSpectrumClusters::writeSingletonClusters(
 
 bool BatchSpectrumClusters::scanDescReadUnitTest() {
   std::string scanInfoFN = "";
-  std::string scanDescFN = "/home/matthew/mergespec/data/percolator_no_tdc/scandesc/103111-Yeast-2hr.scannr_list.tsv";
+  std::string scanDescFN = "/media/storage/mergespec/data/103111-Yeast-2hr/percolator_no_tdc/scandesc/103111-Yeast-2hr.scannr_list.tsv";
   
   BatchSpectrumClusters clustering;
   SpectrumFileList fileList;
+  clustering.scanPeptideMap_[ScanId(0,11)] = ScanMergeInfo(ScanId(0,11));
+  clustering.scanPeptideMap_[ScanId(2,39214)] = ScanMergeInfo(ScanId(2,39214));
   clustering.createScanDescriptionMap(scanInfoFN, scanDescFN, fileList);
   if (clustering.scanPeptideMap_[ScanId(0,11)].peptide != "R.SIVPSGASTGVHEALEMR.D") {
     std::cerr << clustering.scanPeptideMap_[ScanId(0,11)].peptide << " != " 

@@ -144,15 +144,16 @@ void MSFileExtractor::extractToBatchSpectrumList(
         float precMz = SpectrumHandler::calcPrecMz(mcc.mass, mcc.charge);
         for (int charge = minCharge; charge <= maxCharge; ++charge) {
           BatchSpectrum bs;
-          bs.precMass = SpectrumHandler::calcMass(precMz, charge);
+          bs.precMz = precMz;
           bs.retentionTime = retentionTime;
           bs.charge = charge;
           bs.scannr = scanId;
           
-          unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(bs.precMass);
+          float precMass = SpectrumHandler::calcMass(precMz, charge);
+          unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(precMass);
           std::vector<unsigned int> peakBins;
-          BinSpectra::binBinaryTruncated(mziPairs, peakBins, numScoringPeaks, bs.precMass);
-          if (peakBins.size() >= PvalueCalculator::getMinScoringPeaks(bs.precMass)) {
+          BinSpectra::binBinaryTruncated(mziPairs, peakBins, numScoringPeaks, precMass);
+          if (peakBins.size() >= PvalueCalculator::getMinScoringPeaks(precMass)) {
             std::copy(peakBins.begin(), peakBins.end(), bs.fragBins);
             batchSpectra.push_back(bs);
           }

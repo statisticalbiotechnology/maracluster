@@ -21,6 +21,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <queue>
 #include <string>
 
 #include <boost/lexical_cast.hpp>
@@ -49,30 +50,34 @@
 
 struct PvalueVectorsDbRow {
   void deepCopy(const PvalueVectorsDbRow& tmp) {
-    precMass = tmp.precMass;
     precMz = tmp.precMz;
-    charge = tmp.charge;
-    scannr = tmp.scannr;
-    
     retentionTime = tmp.retentionTime;
+    charge = tmp.charge;
     queryCharge = tmp.queryCharge;
+    scannr = tmp.scannr;
     peakBins = tmp.pvalCalc.getPeakBins();
     
     std::vector<unsigned int> peakScores = tmp.pvalCalc.getPeakScores();
     std::vector<double> polyfit = tmp.pvalCalc.getPolyfit();
     pvalCalc.initPolyfit(peakBins, peakScores, polyfit);
   }
-  double precMass, precMz;
-  int charge;
+  float precMz, retentionTime;
+  int charge, queryCharge;
   ScanId scannr;
   std::vector<unsigned int> peakBins;
-  double retentionTime;
-  int queryCharge;
   PvalueCalculator pvalCalc;
   
   inline bool operator<(const PvalueVectorsDbRow& other) const {
     return precMz < other.precMz || (precMz == other.precMz && scannr < other.scannr);
   }
+};
+
+struct ClusterJob {
+  size_t startBatch, endBatch;
+  size_t endIdx;
+  double lowerPrecMz, upperPrecMz;
+  bool finished;
+  std::vector<PvalueTriplet> poisonedPvals;
 };
 
 class BatchPvalueVectors {
@@ -119,8 +124,6 @@ class BatchPvalueVectors {
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionHead);
   
-  void transferPvalueVectors(BatchPvalueVectors& pvecs);
-  
   static inline double getLowerBound(double precMass, double precursorTolerance, 
       bool precursorToleranceDa) {
     if (precursorToleranceDa) {
@@ -149,7 +152,7 @@ class BatchPvalueVectors {
   void initPvalCalc(PvalueCalculator& pvalCalc, 
                            PvalueVectorsDbRow& pvecRow, 
                            PeakCounts& peakCounts, 
-                           const int numQueryPeaks, const bool polyfit);                
+                           const int numQueryPeaks);                
   
   void initPvecRow(const MassChargeCandidate& mcc, 
                           const BatchSpectrum& spec,
@@ -167,6 +170,15 @@ class BatchPvalueVectors {
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
+  void runClusterJob(ClusterJob& clusterJob,
+    std::vector< std::vector<PvalueTriplet> >& pvalBuffers,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits,
+    const std::string& resultTreeFN);
+  void runPoisonedClusterJob(ClusterJob& clusterJob,
+    std::deque<ClusterJob>& clusterJobs,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits,
+    const std::string& resultTreeFN);
+    
   void clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
     std::vector<PvalueTriplet>& pvalPoisonedBuffer,
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
@@ -179,7 +191,13 @@ class BatchPvalueVectors {
     std::vector<PvalueTriplet>& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float lowerPrecMz, float upperPrecMz);
-    
+  bool isPoisoned(const ScanId& si,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+    float lowerPrecMz, float upperPrecMz);
+  bool isSafeToWrite(const ScanId& si,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+    float upperPrecMz);
+        
   inline double getLowerBound(double mass) { 
     return getLowerBound(mass, precursorTolerance_, precursorToleranceDa_);
   }

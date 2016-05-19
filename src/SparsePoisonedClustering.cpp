@@ -45,14 +45,6 @@ void SparsePoisonedClustering::loadNextEdges() {
 void SparsePoisonedClustering::doClustering(double cutoff) {  
   std::cerr << "Starting MinHeap clustering" << std::endl;
   
-  // decide if we write the results to a file or stdout
-  std::ofstream resultFNStream;
-  bool writeTree = false;
-  if (clusterPairFN_.size() > 0) {
-    resultFNStream.open(clusterPairFN_.c_str(), std::ios_base::app);
-    writeTree = true;
-  }
-  
   time_t startTime, elapsedTime;
   time(&startTime);
   clock_t startClock = clock(), elapsedClock;
@@ -61,6 +53,7 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
     loadNextEdges();
   }
   
+  std::vector<PvalueTriplet> tree;
   while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
     if (matrix_.isAlive(minEdge.row) && matrix_.isAlive(minEdge.col)) {
@@ -85,16 +78,21 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
         ScanId mergeScanId(mergeOffset_, mergeCnt_++);
         setRoot(mergeScanId, minRowRoot);
         
-        if (writeTree) {
-          ScanId minColRoot = getRoot(minEdge.col);
-          PvalueTriplet tmp(minRowRoot, minColRoot, minEdge.value);
-          resultFNStream << tmp << "\n";
-        }
+        ScanId minColRoot = getRoot(minEdge.col);
+        tree.push_back(PvalueTriplet(minRowRoot, minColRoot, minEdge.value));
         
         updateMatrix(minEdge.row, minEdge.col, mergeScanId);
       }
     }
     popEdge();
+  }
+  
+#pragma omp critical (write_tree)
+  if (clusterPairFN_.size() > 0) {
+    std::ofstream resultFNStream(clusterPairFN_.c_str(), std::ios_base::app);
+    BOOST_FOREACH (PvalueTriplet& pval, tree) {
+      resultFNStream << pval << std::endl;
+    }
   }
   
   std::cerr << "Finished MinHeap clustering" << std::endl;

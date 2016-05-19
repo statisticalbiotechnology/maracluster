@@ -58,9 +58,6 @@ class BatchSpectra {
       std::vector<ScanId>& mol_identifiers, 
       std::vector<float>& prec_masses);
   
-  inline static bool lessPrecMass(const BatchSpectrum& a, 
-    const BatchSpectrum& b) { return (a.precMass < b.precMass) || (a.precMass == b.precMass && a.scannr < b.scannr); }
-  
   inline static bool lessPrecMz(const BatchSpectrum& a, 
     const BatchSpectrum& b) { return (a.precMz < b.precMz) || (a.precMz == b.precMz && a.scannr < b.scannr); }
  protected:

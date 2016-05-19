@@ -90,7 +90,8 @@ bool BatchSpectra::readFingerprints(
   for (size_t i = 0; i < numSpectra; ++i) {
     BatchSpectrum s = spectra_[i];
     
-    unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(s.precMass);
+    float precMass = SpectrumHandler::calcMass(s.precMz, s.charge);
+    unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(precMass);
     
     std::vector<unsigned short> features;
     for (unsigned int j = 0; j < numScoringPeaks; ++j) {
@@ -104,7 +105,7 @@ bool BatchSpectra::readFingerprints(
       reverse(features.begin(), features.end());
       mol_identifiers.push_back(s.scannr);
       mol_features.push_back(features);
-      prec_masses.push_back(s.precMass);
+      prec_masses.push_back(precMass);
       ++mol_count;
     }
   }

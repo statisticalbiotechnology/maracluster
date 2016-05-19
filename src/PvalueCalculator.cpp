@@ -33,11 +33,6 @@ const bool PvalueCalculator::kVariableScoringPeaks = false;
 
 unsigned long PvalueCalculator::seed_ = 1;
 
-void PvalueCalculator::init(const std::vector<unsigned int>& peakBins, const std::vector<double>& peakProbs) {
-  peakBins_ = peakBins;
-  peakProbs_ = peakProbs;
-}
-
 void PvalueCalculator::initPolyfit(const std::vector<unsigned int>& peakBins, const std::vector<unsigned int>& peakScores, const std::vector<double>& polyfit) {
   peakBins_ = peakBins;
   peakScores_ = peakScores;
@@ -47,21 +42,17 @@ void PvalueCalculator::initPolyfit(const std::vector<unsigned int>& peakBins, co
 
 void PvalueCalculator::initFromPeakBins(
     const std::vector<unsigned int>& originalPeakBins, 
-    const std::vector<double>& peakDist) {
-  peakProbs_.clear();
+    const std::vector<double>& peakDist,
+    std::vector<double>& peakProbs) {
+  peakProbs.clear();
   peakBins_.clear();
   
   BOOST_FOREACH (const unsigned int mzBin, originalPeakBins) {
     if (mzBin >= peakDist.size()) break;
     double peakProb = peakDist.at(mzBin);
     if (peakProb > kMinProb && peakProb < kMaxProb) {
-      peakProbs_.push_back(peakProb);
+      peakProbs.push_back(peakProb);
       peakBins_.push_back(mzBin);
-      //std::cerr << mzBin << " " << peakProb << std::endl;
-    } else if (peakProb <= kMinProb) {
-      //std::cerr << "Warning: peak probability below minimum" << std::endl;
-    } else if (peakProb >= kMaxProb) {
-      //std::cerr << "Warning: peak probability above maximum" << std::endl;
     }
   }
   
@@ -97,20 +88,24 @@ steps_per_position - discretization step
 
 Output: estimated p value
 */
-void PvalueCalculator::computePvalVector() {
+void PvalueCalculator::computePvalVector(
+    const std::vector<unsigned int>& originalPeakBins, 
+    const std::vector<double>& peakDist,
+    std::vector<double>& sumProb) {
+  std::vector<double> peakProbs;
+  initFromPeakBins(originalPeakBins, peakDist, peakProbs);
   
 	//std::cerr << "Computing pvalue vector" << std::endl;
   // calculate the vector x and the sum of log(pi)
   std::vector<double> x;
   double sumLogP = 0.0;
-  BOOST_FOREACH(double pi, peakProbs_) {
+  BOOST_FOREACH(double pi, peakProbs) {
     if (pi >= 0.5) {
       throw std::runtime_error("Found a probability >= 0.5, this will result in an error in pvalue calculation.");
     }
     x.push_back( log( (1.0 - pi)/pi ) );
     sumLogP += log(pi);
   }
-  peakProbs_.clear();
   
   // discretize each xi to get li and compute the sum of all li 
   peakScores_.clear();
@@ -155,13 +150,13 @@ void PvalueCalculator::computePvalVector() {
   }
   
   // calculate the final p-value vector
-  sumProb_.resize(sumL + 1);
-  sumProb_[0] = exp(log(f[0]) + sumLogP + c);
+  sumProb.resize(sumL + 1);
+  sumProb[0] = exp(log(f[0]) + sumLogP + c);
   for (unsigned int i = 1; i < sumL + 1; ++i) {
     if (f[i] == 0) {
-      sumProb_[i] = sumProb_[i-1];
+      sumProb[i] = sumProb[i-1];
     } else {
-      sumProb_[i] = sumProb_[i-1] + exp (i * k + log(f[i]) + sumLogP + c);
+      sumProb[i] = sumProb[i-1] + exp (i * k + log(f[i]) + sumLogP + c);
     }
   }
   //std::cerr << "Computed pvalue vector" << std::endl;
@@ -176,7 +171,9 @@ smooth_pvalue - True if the pvalues should be smoothed
 
 Output: estimated p value
 */
-double PvalueCalculator::computePval(const std::vector<unsigned int>& queryPeakBins, bool smoothing) {
+double PvalueCalculator::computePval(
+    const std::vector<unsigned int>& queryPeakBins, 
+    bool smoothing, std::vector<double>& sumProb) {
   std::vector<bool> d(peakBins_.size());
   binaryMatchPeakBins(queryPeakBins, d);
   
@@ -201,32 +198,33 @@ double PvalueCalculator::computePval(const std::vector<unsigned int>& queryPeakB
   if (smoothing) {
     double lastScoreContrib;
     if (sumThresh > 0) {
-      lastScoreContrib = sumProb_[sumThresh] - sumProb_[sumThresh-1];
+      lastScoreContrib = sumProb[sumThresh] - sumProb[sumThresh-1];
     } else {
-      lastScoreContrib = sumProb_[sumThresh];
+      lastScoreContrib = sumProb[sumThresh];
     }
-    return (std::min)(1.0,sumProb_[sumThresh] - lcg_rand_unif()*lastScoreContrib);
+    return (std::min)(1.0,sumProb[sumThresh] - lcg_rand_unif()*lastScoreContrib);
   } else {
-    return (std::min)(1.0,sumProb_[sumThresh]);
+    return (std::min)(1.0,sumProb[sumThresh]);
   }
 }
 
 // Based on: http://vilipetek.com/2013/10/07/polynomial-fitting-in-c-using-boost/ (25-07-2014)
-void PvalueCalculator::computePvalVectorPolyfit() {
+void PvalueCalculator::computePvalVectorPolyfit(
+    const std::vector<unsigned int>& originalPeakBins, 
+    const std::vector<double>& peakDist) {
   using namespace boost::numeric::ublas;
   
-  computePvalVector();
+  std::vector<double> sumProb;
+  computePvalVector(originalPeakBins, peakDist, sumProb);
   
-	unsigned int maxScore = sumProb_.size();
+	unsigned int maxScore = sumProb.size();
 	matrix<double> oXMatrix( maxScore, kPolyfitDegree + 1 );
 	matrix<double> oYMatrix( maxScore, 1 );
 	
 	// copy score vector
 	for ( size_t i = 0; i < maxScore; i++) {
-		oYMatrix(i, 0) = log10(sumProb_[i]);
-		//std::cerr << sumProb_[i] << " " << log10(sumProb_[i]) << std::endl;
+		oYMatrix(i, 0) = log10(sumProb[i]);
 	}
-	sumProb_.clear();
 
 	// create the X (Vandermonde) matrix
 	for ( size_t score = 0; score < maxScore; ++score) {
@@ -279,15 +277,9 @@ double PvalueCalculator::computePvalPolyfit(const std::vector<unsigned int>& que
   for (unsigned int i = 0; i < d.size(); ++i) {
     if (!d[i]) {
       score += peakScores_[i];
-    }/* else {
-      std::cerr << "[" << peakBins_[i] << " " << peakScores_[i] << "], ";
-    }*/
+    }
   }
-  
   double relScore = static_cast<double>(score)/maxScore_;
-  
-  //std::cerr << score << "/" << maxScore_ << " " << polyval(relScore) << std::endl;
-  
   return polyval(relScore);
 }
 
@@ -376,36 +368,33 @@ double PvalueCalculator::lcg_rand_unif() {
 bool PvalueCalculator::pvalUnitTest() {
   PvalueCalculator pvalCalc;
   
-  std::vector<double> p;
+  std::vector<double> p(8);
   std::vector<unsigned int> d1, d2;
-  
-  p.push_back(0.2);
-  p.push_back(0.3);
-  p.push_back(0.4);
-  p.push_back(0.2);
   
   d1.push_back(1);
   d1.push_back(3);
   d1.push_back(5);
   d1.push_back(7);
   
+  p.at(1) = 0.2;
+  p.at(3) = 0.3;
+  p.at(5) = 0.4;
+  p.at(7) = 0.2;
+  
   d2.push_back(1);
   d2.push_back(3);
   d2.push_back(8);
   d2.push_back(9);
   
-  pvalCalc.peakProbs_ = p;
-  pvalCalc.peakBins_ = d1;
+  std::vector<double> sumProb;
+  pvalCalc.computePvalVector(d1, p, sumProb);
   
-  pvalCalc.computePvalVector();
+  double pval = pvalCalc.computePval(d2, false, sumProb);
   
-  double pval = pvalCalc.computePval(d2);
-  
-  if (isEqual(pval, 0.135674)) {
+  if (isEqual(pval, 0.135954)) {
     return true;
   } else {
-    std::cerr << pval << std::endl;
-    std::cerr << 0.135674 << std::endl;
+    std::cerr << "Computed: " << pval << ", ref: " << 0.135954 << std::endl;
     return false;
   }
 }
@@ -417,7 +406,7 @@ bool PvalueCalculator::pvalUniformUnitTest() {
   unsigned int numSpectra = 200000u, numBins = 1000u, numPeaks = 100u;
   double prob = 1-pow(1-1.0/numBins,numPeaks);
 
-  std::vector<double> p(numPeaks, prob);
+  std::vector<double> p(numBins, prob);
 
   std::vector<unsigned int> d1, d2;
   
@@ -435,10 +424,8 @@ bool PvalueCalculator::pvalUniformUnitTest() {
   }
   std::sort(d1.begin(), d1.end());
   
-  pvalCalc.peakProbs_ = p;
-  pvalCalc.peakBins_ = d1;
-  
-  pvalCalc.computePvalVector();
+  std::vector<double> sumProb;
+  pvalCalc.computePvalVector(d1, p, sumProb);
   
   for (unsigned int j = 0; j < numSpectra; ++j) {
     d2.clear();
@@ -457,7 +444,7 @@ bool PvalueCalculator::pvalUniformUnitTest() {
     }
     std::cout << hits << '\t';
     std::sort(d2.begin(), d2.end());
-    std::cout << pvalCalc.computePval(d2, true) << std::endl;
+    std::cout << pvalCalc.computePval(d2, true, sumProb) << std::endl;
   }
   
   return true;
@@ -470,7 +457,7 @@ bool PvalueCalculator::binaryPeakMatchUnitTest() {
   unsigned int numBins = 1000u, numPeaks = 100u;
   double prob = 1-pow(1-1.0/numBins,numPeaks);
 
-  std::vector<double> p(numPeaks, prob);
+  std::vector<double> p(numBins, prob);
 
   std::vector<unsigned int> d1, d2;
   
@@ -501,7 +488,6 @@ bool PvalueCalculator::binaryPeakMatchUnitTest() {
   }
   std::sort(d2.begin(), d2.end());
   
-  pvalCalc.peakProbs_ = p;
   pvalCalc.peakBins_ = d1;
   
   /*
@@ -535,8 +521,6 @@ bool PvalueCalculator::pvalPolyfitUnitTest() {
   unsigned int numBins = 1000u, numPeaks = 100u;
   double prob = 1-pow(1-1.0/numBins,numPeaks);
 
-  std::vector<double> p(numPeaks, prob);
-
   std::vector<unsigned int> d1, d2;
   
   std::map<unsigned int, bool> hasPeak;
@@ -568,7 +552,6 @@ bool PvalueCalculator::pvalPolyfitUnitTest() {
   }
   std::sort(d2.begin(), d2.end());
   
-  pvalCalc.peakProbs_ = p;
   pvalCalc.peakBins_ = d1;
   pvalCalc.polyfit_.push_back(-40.236851088905013);
   pvalCalc.polyfit_.push_back(90.270774017803348);
@@ -579,10 +562,10 @@ bool PvalueCalculator::pvalPolyfitUnitTest() {
   
   double logPval = pvalCalc.computePvalPolyfit(d2);
   
-  if (isEqual(logPval, -0.817751)) {
+  if (isEqual(logPval, -0.789775)) {
     return true;
   } else {
-    std::cout << "log(pval) was " << logPval << ", should be -0.817751." << std::endl;
+    std::cout << "log(pval) was " << logPval << ", should be -0.789775." << std::endl;
     return false;
   }
 }

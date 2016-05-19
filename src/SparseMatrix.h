@@ -73,8 +73,9 @@ class SparseMatrix {
         ++idx2;
       }
     }
-    sparseMatrix_[i1].clear();
-    sparseMatrix_[i2].clear();
+    SparseRow empty1, empty2;
+    sparseMatrix_[i1].swap(empty1);
+    sparseMatrix_[i2].swap(empty2);
   }
   
  protected:

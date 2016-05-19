@@ -723,14 +723,13 @@ int main(int argc, char* argv[]) {
             std::cerr << "PvalueCalculator peak matching unit tests failed" << std::endl;
             ++failures;
           }
-          /*
+          
           if (PvalueCalculator::pvalUnitTest()) {
             std::cerr << "PvalueCalculator unit tests succeeded" << std::endl;
           } else {
             std::cerr << "PvalueCalculator unit tests failed" << std::endl;
             ++failures;
           }
-          */
           
           if (PvalueCalculator::pvalPolyfitUnitTest()) {
             std::cerr << "PvalueCalculator polyfit unit tests succeeded" << std::endl;
