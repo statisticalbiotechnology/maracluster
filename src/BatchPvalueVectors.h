@@ -55,8 +55,8 @@ struct PvalueVectorsDbRow {
     charge = tmp.charge;
     queryCharge = tmp.queryCharge;
     scannr = tmp.scannr;
-    peakBins = tmp.pvalCalc.getPeakBins();
     
+    std::vector<unsigned int> peakBins = tmp.pvalCalc.getPeakBins();
     std::vector<unsigned int> peakScores = tmp.pvalCalc.getPeakScores();
     std::vector<double> polyfit = tmp.pvalCalc.getPolyfit();
     pvalCalc.initPolyfit(peakBins, peakScores, polyfit);
@@ -64,7 +64,6 @@ struct PvalueVectorsDbRow {
   float precMz, retentionTime;
   int charge, queryCharge;
   ScanId scannr;
-  std::vector<unsigned int> peakBins;
   PvalueCalculator pvalCalc;
   
   inline bool operator<(const PvalueVectorsDbRow& other) const {

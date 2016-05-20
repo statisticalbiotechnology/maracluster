@@ -35,7 +35,7 @@ class SparseMatrix {
   }
   
   inline bool isAlive(const ScanId& si) {
-    return sparseMatrix_[scanIdToIdx_[si]].size() > 0;
+    return isAlive(scanIdToIdx_[si]);
   }
   
   void reserve(const size_t numScans) {
@@ -56,15 +56,17 @@ class SparseMatrix {
     }
   }
   
-  void merge(const ScanId& s1, const ScanId& s2, const ScanId& m, std::priority_queue<SparseEdge>& edgeList) {
+  void merge(const ScanId& s1, const ScanId& s2, const ScanId& m, 
+             std::priority_queue<SparseEdge>& edgeList) {
     size_t i1 = getScanIdx(s1);
     size_t i2 = getScanIdx(s2);
     size_t row = getScanIdx(m);
     size_t idx2 = 0u;
     for (size_t idx1 = 0u; idx1 < sparseMatrix_[i1].size(); ++idx1) {
       size_t col = sparseMatrix_[i1][idx1].first;
-      while (idx2 < sparseMatrix_[i2].size() && sparseMatrix_[i2][idx2].first <= col) {
-        if (sparseMatrix_[i2][idx2].first == col && sparseMatrix_[col].size() > 0) {
+      while (idx2 < sparseMatrix_[i2].size() 
+              && sparseMatrix_[i2][idx2].first <= col) {
+        if (sparseMatrix_[i2][idx2].first == col && isAlive(col)) {
           double val = std::max(sparseMatrix_[i1][idx1].second, 
                                 sparseMatrix_[i2][idx2].second);
           insert(row, col, val);
@@ -88,6 +90,10 @@ class SparseMatrix {
   void insert(size_t i1, size_t i2, const double value) {
     sparseMatrix_[i1].push_back(std::make_pair(i2, value));
     sparseMatrix_[i2].push_back(std::make_pair(i1, value));
+  }
+  
+  inline bool isAlive(const size_t idx) {
+    return sparseMatrix_[idx].size() > 0;
   }
   
   size_t getScanIdx(const ScanId& s1) {

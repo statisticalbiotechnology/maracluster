@@ -33,20 +33,21 @@ const bool PvalueCalculator::kVariableScoringPeaks = false;
 
 unsigned long PvalueCalculator::seed_ = 1;
 
-void PvalueCalculator::initPolyfit(const std::vector<unsigned int>& peakBins, const std::vector<unsigned int>& peakScores, const std::vector<double>& polyfit) {
-  peakBins_ = peakBins;
-  peakScores_ = peakScores;
+void PvalueCalculator::initPolyfit(std::vector<unsigned int>& peakBins, 
+    std::vector<unsigned int>& peakScores, std::vector<double>& polyfit) {
+  peakBins_.swap(peakBins);
+  peakScores_.swap(peakScores);
   maxScore_ = std::accumulate(peakScores_.begin(), peakScores_.end(), 0u);
-  polyfit_ = polyfit;
+  polyfit_.swap(polyfit);
 }
 
 void PvalueCalculator::initFromPeakBins(
-    const std::vector<unsigned int>& originalPeakBins, 
     const std::vector<double>& peakDist,
     std::vector<double>& peakProbs) {
   peakProbs.clear();
-  peakBins_.clear();
   
+  std::vector<unsigned int> originalPeakBins;
+  originalPeakBins.swap(peakBins_);
   BOOST_FOREACH (const unsigned int mzBin, originalPeakBins) {
     if (mzBin >= peakDist.size()) break;
     double peakProb = peakDist.at(mzBin);
@@ -89,11 +90,10 @@ steps_per_position - discretization step
 Output: estimated p value
 */
 void PvalueCalculator::computePvalVector(
-    const std::vector<unsigned int>& originalPeakBins, 
     const std::vector<double>& peakDist,
     std::vector<double>& sumProb) {
   std::vector<double> peakProbs;
-  initFromPeakBins(originalPeakBins, peakDist, peakProbs);
+  initFromPeakBins(peakDist, peakProbs);
   
 	//std::cerr << "Computing pvalue vector" << std::endl;
   // calculate the vector x and the sum of log(pi)
@@ -210,12 +210,11 @@ double PvalueCalculator::computePval(
 
 // Based on: http://vilipetek.com/2013/10/07/polynomial-fitting-in-c-using-boost/ (25-07-2014)
 void PvalueCalculator::computePvalVectorPolyfit(
-    const std::vector<unsigned int>& originalPeakBins, 
     const std::vector<double>& peakDist) {
   using namespace boost::numeric::ublas;
   
   std::vector<double> sumProb;
-  computePvalVector(originalPeakBins, peakDist, sumProb);
+  computePvalVector(peakDist, sumProb);
   
 	unsigned int maxScore = sumProb.size();
 	matrix<double> oXMatrix( maxScore, kPolyfitDegree + 1 );
@@ -387,7 +386,8 @@ bool PvalueCalculator::pvalUnitTest() {
   d2.push_back(9);
   
   std::vector<double> sumProb;
-  pvalCalc.computePvalVector(d1, p, sumProb);
+  pvalCalc.setPeakBins(d1);
+  pvalCalc.computePvalVector(p, sumProb);
   
   double pval = pvalCalc.computePval(d2, false, sumProb);
   
@@ -425,7 +425,8 @@ bool PvalueCalculator::pvalUniformUnitTest() {
   std::sort(d1.begin(), d1.end());
   
   std::vector<double> sumProb;
-  pvalCalc.computePvalVector(d1, p, sumProb);
+  pvalCalc.setPeakBins(d1);
+  pvalCalc.computePvalVector(p, sumProb);
   
   for (unsigned int j = 0; j < numSpectra; ++j) {
     d2.clear();

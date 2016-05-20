@@ -70,26 +70,28 @@ void BatchPvalueVectors::initPvecRow(const MassChargeCandidate& mcc,
   
   float precMass = SpectrumHandler::calcMass(spec.precMz, spec.charge);
   unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(precMass);
+  std::vector<unsigned int> peakBins;
 #ifdef DOT_PRODUCT
   numScoringPeaks *= 2;
-  pvecRow.peakBins.reserve(numScoringPeaks);
+  peakBins.reserve(numScoringPeaks);
   for (unsigned int j = 0; j < numScoringPeaks; ++j) {
-    if (spec.fragBins[j] != 0) {
-      pvecRow.peakBins.push_back(spec.fragBins[j]);
+    if (spec.fragBins[j] != 0 || j % 2 == 1) {
+      peakBins.push_back(spec.fragBins[j]);
     } else if (j % 2 == 0) {
       break;
     }
   }
 #else
-  pvecRow.peakBins.reserve(numScoringPeaks);
+  peakBins.reserve(numScoringPeaks);
   for (unsigned int j = 0; j < numScoringPeaks; ++j) {
     if (spec.fragBins[j] != 0) {
-      pvecRow.peakBins.push_back(spec.fragBins[j]);
+      peakBins.push_back(spec.fragBins[j]);
     } else {
       break;
     }
   }
 #endif
+  pvecRow.pvalCalc.setPeakBins(peakBins);
 }
 
 void BatchPvalueVectors::insertMassChargeCandidate(
@@ -139,14 +141,14 @@ void BatchPvalueVectors::initPvalCalc(PvalueCalculator& pvalCalc,
     PvalueVectorsDbRow& pvecRow, PeakCounts& peakCounts, 
     const int numQueryPeaks) {
 #ifdef DOT_PRODUCT
-  pvalCalc.initPolyfit(pvecRow.peakBins, std::vector<unsigned int>(),
+  pvalCalc.initPolyfit(std::vector<unsigned int>(),
                        std::vector<double>());
 #else
   PeakDistribution distribution;
   peakCounts.generatePeakDistribution(pvecRow.precMz, pvecRow.queryCharge, 
                                       distribution, numQueryPeaks);
   
-  pvalCalc.computePvalVectorPolyfit(pvecRow.peakBins, distribution.getDistribution());
+  pvalCalc.computePvalVectorPolyfit(distribution.getDistribution());
 #endif
 }
 
@@ -294,10 +296,10 @@ void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsF
     pvecRow.retentionTime = tmp.retentionTime;
     pvecRow.queryCharge = tmp.queryCharge;
     
-    std::vector<unsigned int> peakScores;
+    std::vector<unsigned int> peakBins, peakScores;
     for (unsigned int j = 0; j < PvalueCalculator::kMaxScoringPeaks; ++j) {
       if (tmp.peakBins[j] != 0) {
-        pvecRow.peakBins.push_back(tmp.peakBins[j]);
+        peakBins.push_back(tmp.peakBins[j]);
         peakScores.push_back(tmp.peakScores[j]);
       } else {
         break;
@@ -309,7 +311,7 @@ void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsF
       polyfit.push_back(tmp.polyfit[j]);
     }
     
-    pvecRow.pvalCalc.initPolyfit(pvecRow.peakBins, peakScores, polyfit);
+    pvecRow.pvalCalc.initPolyfit(peakBins, peakScores, polyfit);
     
     pvalVecCollection.push_back(pvecRow);
   }
@@ -475,24 +477,29 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
   #pragma omp critical (dist_cluster)
     {
       size_t numPvals = 0u;
-      ClusterJob clusterJob;
-      clusterJob.startBatch = newStartBatch;
       size_t startIdx = newStartBatch * pvecBatchSize;
-      clusterJob.lowerPrecMz = pvalVecCollection_[startIdx].precMz;
+      double lowerPrecMz = pvalVecCollection_[startIdx].precMz;
       for (size_t i = newStartBatch; i < numPvecBatches; ++i) {
         if (finishedPvalCalc[i]) {
           numPvals += pvalBuffers[i].size();
           
-          clusterJob.endBatch = i;
-          clusterJob.endIdx = (std::min)((i+1) * pvecBatchSize, n) - 1;
-          clusterJob.upperPrecMz = pvalVecCollection_[clusterJob.endIdx].precMz;
+          size_t endIdx = (std::min)((i+1) * pvecBatchSize, n) - 1;
+          double upperPrecMz = pvalVecCollection_[endIdx].precMz;
           
-          double threeWindows = getUpperBound(getUpperBound(getUpperBound(clusterJob.lowerPrecMz)));
-          if (threeWindows < clusterJob.upperPrecMz && numPvals > minPvalsForClustering) {
+          double threeWindows = getUpperBound(getUpperBound(getUpperBound(lowerPrecMz)));
+          if (threeWindows < upperPrecMz && numPvals > minPvalsForClustering) {
             doClustering = true;
             clusterJobIdx = clusterJobs.size();
-            newStartBatch = clusterJob.endBatch+1;
+            
+            ClusterJob clusterJob;
+            clusterJob.startBatch = newStartBatch;
+            clusterJob.endBatch = i;
+            clusterJob.endIdx = endIdx;
+            clusterJob.lowerPrecMz = lowerPrecMz;
+            clusterJob.upperPrecMz = upperPrecMz;
             clusterJob.finished = false;
+            
+            newStartBatch = clusterJob.endBatch + 1;
             clusterJobs.push_back(clusterJob);
             break;
           }
@@ -570,6 +577,7 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
   
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Finished calculating pvalues." << std::endl;
+    BatchGlobals::reportProgress(startTime, startClock, n - 1, n);
   }
 }
 
@@ -612,7 +620,6 @@ void BatchPvalueVectors::runPoisonedClusterJob(ClusterJob& clusterJob,
   
   clusterPvals(pvalBuffer, clusterJobs[clusterJob.endBatch].poisonedPvals, precMzLimits, 
       clusterJob.lowerPrecMz, clusterJob.upperPrecMz, resultTreeFN);
-  clusterJob.finished = true;
   
   if (clusterJob.startBatch == 0) {
     std::vector<PvalueTriplet> pvalBufferWrite, pvalBufferKeep;
@@ -627,6 +634,7 @@ void BatchPvalueVectors::runPoisonedClusterJob(ClusterJob& clusterJob,
     clusterJobs[clusterJob.endBatch].poisonedPvals.swap(pvalBufferKeep);
     pvalues_.batchWrite(pvalBufferWrite);
   }
+  clusterJob.finished = true;
   
   if (BatchGlobals::VERB > 2) {
     std::cerr << "Retained " << clusterJobs[clusterJob.endBatch].poisonedPvals.size() << " pvalues" << std::endl;
@@ -750,10 +758,11 @@ void BatchPvalueVectors::readFingerprints(
     float precMass = SpectrumHandler::calcMass(s.precMz, s.charge);
     unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(precMass);
     
+    std::vector<unsigned int> peakBins = s.pvalCalc.getPeakBins();
     std::vector<unsigned short> features;
-    for (unsigned int j = 0; j < (std::min)(numScoringPeaks, static_cast<unsigned int>(s.peakBins.size())); ++j) {
-      if (s.peakBins[j] != 0) {
-        features.push_back(s.peakBins[j]);
+    for (unsigned int j = 0; j < (std::min)(numScoringPeaks, static_cast<unsigned int>(peakBins.size())); ++j) {
+      if (peakBins[j] != 0) {
+        features.push_back(peakBins[j]);
       } else {
         break;
       }
@@ -902,18 +911,20 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
 #ifdef DOT_PRODUCT
   double numerator = 0.0, numerator2 = 0.0;
   std::vector<std::pair<unsigned int, double> > mziPairs, queryMziPairs;
-  double div = pvecRow.peakBins[1];
-  for (size_t i = 0; i < pvecRow.peakBins.size(); i += 2) {
-    double normalizedIntensity = static_cast<double>(pvecRow.peakBins[i+1])/div;
-    mziPairs.push_back(std::make_pair(pvecRow.peakBins[i], normalizedIntensity));
+  std::vector<unsigned int> peakBins = pvecRow.pvalCalc.getPeakBins();
+  double div = peakBins[1];
+  for (size_t i = 0; i < peakBins.size(); i += 2) {
+    double normalizedIntensity = static_cast<double>(peakBins[i+1])/div;
+    mziPairs.push_back(std::make_pair(peakBins[i], normalizedIntensity));
     numerator += normalizedIntensity*normalizedIntensity;
   }
   std::sort(mziPairs.begin(), mziPairs.end());
   
-  div = queryPvecRow.peakBins[1];
-  for (size_t i = 0; i < queryPvecRow.peakBins.size(); i += 2) {
-    double normalizedIntensity = static_cast<double>(queryPvecRow.peakBins[i+1])/div;
-    queryMziPairs.push_back(std::make_pair(queryPvecRow.peakBins[i], normalizedIntensity));
+  std::vector<unsigned int> queryPeakBins = pvecRow.pvalCalc.getPeakBins();
+  div = queryPeakBins[1];
+  for (size_t i = 0; i < queryPeakBins.size(); i += 2) {
+    double normalizedIntensity = static_cast<double>(queryPeakBins[i+1])/div;
+    queryMziPairs.push_back(std::make_pair(queryPeakBins[i], normalizedIntensity));
     numerator2 += normalizedIntensity*normalizedIntensity;
   }
   std::sort(queryMziPairs.begin(), queryMziPairs.end());
@@ -937,17 +948,15 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
     pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
                                        std::max(pvecRow.scannr, queryPvecRow.scannr),
                                        cosDist));
-    //pvalBuffer.push_back(PvalueTriplet(queryPvecRow.scannr, pvecRow.scannr, cosDist));
   }
 #else  
-  double queryPval = queryPvecRow.pvalCalc.computePvalPolyfit(pvecRow.peakBins);
+  double queryPval = queryPvecRow.pvalCalc.computePvalPolyfit(pvecRow.pvalCalc.getPeakBinsRef());
   if (queryPval <= dbPvalThreshold_) {
-    double targetPval = pvecRow.pvalCalc.computePvalPolyfit(queryPvecRow.peakBins);
+    double targetPval = pvecRow.pvalCalc.computePvalPolyfit(queryPvecRow.pvalCalc.getPeakBinsRef());
     if (targetPval <= dbPvalThreshold_) {
       pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
                                          std::max(pvecRow.scannr, queryPvecRow.scannr),
                                          std::max(targetPval, queryPval)));
-      //pvalBuffer.push_back(PvalueTriplet(queryPvecRow.scannr, pvecRow.scannr, queryPval));
     }
   }
 #endif
