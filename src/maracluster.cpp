@@ -362,7 +362,8 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
     matrix.setMergeOffset(fileList.getMergeOffset());
     matrix.initMatrix(matrixFN);
     matrix.setClusterPairFN(resultTreeFN);
-    matrix.doClustering(std::min(dbPvalThreshold_, clusterThresholds.back())); 
+    matrix.doClustering(std::min(dbPvalThreshold_, clusterThresholds.back()));
+    remove(matrixFN.c_str());
   } else {
     std::cerr << "Previous clustering results are available in " << 
         resultTreeFN << ". Remove this file to redo the clustering." << std::endl;
@@ -465,18 +466,24 @@ int main(int argc, char* argv[]) {
             }
           }
           
-          std::string pvaluesFN = outputFolder_ + "/overlap.pvalues.dat";
-          if (overlapFNs.size() > 0) {
-            if (!BatchGlobals::fileExists(pvaluesFN)) {
-              BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
-              pvecs.processOverlapFiles(overlapFNs);
-            } else {
-              std::cerr << "Using p-values from " << pvaluesFN << 
-                  ". Remove this file to generate new p-values." << std::endl;
-            }
-            
-            if (BatchGlobals::fileExists(pvaluesFN)) {
-              pvalFNs.push_back(pvaluesFN);
+          if (resultTreeFN_.size() == 0) {
+            resultTreeFN_ = outputFolder_ + "/overlap.pvalue_tree.tsv";
+          }
+          
+          if (!BatchGlobals::fileExists(resultTreeFN_)) {
+            std::string pvaluesFN = outputFolder_ + "/overlap.pvalues.dat";
+            if (overlapFNs.size() > 0) {
+              if (!BatchGlobals::fileExists(pvaluesFN)) {
+                BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+                pvecs.processOverlapFiles(overlapFNs);
+              } else {
+                std::cerr << "Using p-values from " << pvaluesFN << 
+                    ". Remove this file to generate new p-values." << std::endl;
+              }
+              
+              if (BatchGlobals::fileExists(pvaluesFN)) {
+                pvalFNs.push_back(pvaluesFN);
+              }
             }
           }
           

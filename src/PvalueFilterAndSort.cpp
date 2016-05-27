@@ -62,6 +62,10 @@ void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs,
   
   externalMergeSort(resultFN, numFiles); 
   
+  BOOST_FOREACH (const std::string& pvalFN, pvalFNs) {
+    remove(pvalFN.c_str());
+  }
+  
   reportProgress(startTime, startClock);
 }
 

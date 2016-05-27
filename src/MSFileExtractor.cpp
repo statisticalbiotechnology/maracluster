@@ -87,6 +87,7 @@ void MSFileExtractor::extractSpectra() {
   std::vector< std::vector<ScanId> > scanIdsByFile;
   getScanIdsByFile(scanIdsByFile);
   
+  size_t idx = 0;
   for (size_t fileIdx = 0; fileIdx < scanIdsByFile.size(); ++fileIdx) {
     std::string filepath = fileList_.getFilePath(fileIdx);
     if ((fileIdx+1) % 20 == 0) {
@@ -101,6 +102,7 @@ void MSFileExtractor::extractSpectra() {
       SpectrumPtr s = sl->spectrum(result, true);
       
       s->id = "scan=" + boost::lexical_cast<std::string>(hash_value(scanId));
+      s->index = idx++;
       extractedSpectra->spectra.push_back(s);
     }
   }

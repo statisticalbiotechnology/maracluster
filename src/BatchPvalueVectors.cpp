@@ -349,6 +349,9 @@ void BatchPvalueVectors::processOverlapFiles(
     readPvalueVectorsFile(p.second, pvalVecCollectionHead);
     
     batchCalculatePvaluesOverlap(pvalVecCollectionTail, pvalVecCollectionHead);
+    
+    remove(p.first.c_str());
+    remove(p.second.c_str());
   }
   clearPvalueVectors();
 }
