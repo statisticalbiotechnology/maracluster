@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "pwiz/data/msdata/MSData.hpp"
-#include "pwiz/data/vendor_readers/Thermo/Reader_Thermo.hpp"
+#include "pwiz/data/vendor_readers/ExtendedReaderList.hpp"
 #include "Option.h"
 #include "MSFileHandler.h"
 #include "MSFileExtractor.h"
@@ -103,20 +103,23 @@ bool parseOptions(int argc, char **argv) {
 int main(int argc, char* argv[]) {
   try {
     if (parseOptions(argc, argv)) {
-      pwiz::msdata::Reader_Thermo reader;
-      pwiz::msdata::MSData msd;
-      reader.read(spectrumOutFN_, "head", msd);
-      
-      pwiz::msdata::SpectrumListPtr sl = msd.run.spectrumListPtr;
-      
-      for (unsigned int j = 0; j < sl->size(); ++j) {
-        pwiz::msdata::SpectrumPtr s = sl->spectrum(j, true);
-        std::vector<MassChargeCandidate> mccs;
-        SpectrumHandler::getMassChargeCandidates(s, mccs);
-        unsigned int scannr = SpectrumHandler::getScannr(s);
-        std::cerr << "scannr " << scannr << std::endl;
+      ReaderList::Config readerConfig();
+
+      vector<MSDataPtr> msdList;
+      readers.read(filename, msdList, readerConfig);
+
+      for (size_t i=0; i < msdList.size(); ++i) {
+        MSData& msd = *msdList[i];
+        pwiz::msdata::SpectrumListPtr sl = msd.run.spectrumListPtr;
+
+        for (unsigned int j = 0; j < sl->size(); ++j) {
+          pwiz::msdata::SpectrumPtr s = sl->spectrum(j, true);
+          std::vector<MassChargeCandidate> mccs;
+          SpectrumHandler::getMassChargeCandidates(s, mccs);
+          unsigned int scannr = SpectrumHandler::getScannr(s);
+          std::cerr << "scannr " << scannr << std::endl;
+        }
       }
-            
       return EXIT_SUCCESS;
     }
   } catch (std::exception& e) {
