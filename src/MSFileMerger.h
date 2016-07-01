@@ -51,7 +51,8 @@ class MSFileMerger : public MSFileHandler {
     numClusterBins_(0), numBatches_(0), 
     numMSFilePtrsPerBatch_(0), MSFileHandler(spectrumOutFN) {}
   
-  void parseClusterFileForMerge(const std::string& clusterFile);
+  void parseClusterFileForMerge(const std::string& clusterFile,
+      const size_t minClusterSize);
   
   void parseClusterFileForSingleFileMerge(
       const std::string& clusterFN, const std::string& spectrumInFN,
@@ -63,6 +64,10 @@ class MSFileMerger : public MSFileHandler {
   
   void mergeSpectraSmall();
   void mergeSpectraScalable();
+  
+  inline size_t getClusterBin(const ScanId& si) {
+    return si.scannr % numClusterBins_;
+  }
   
   inline static bool lessIndex(const MergeScanIndex& a, 
     const MergeScanIndex& b) { return (a.spectrumIndex < b.spectrumIndex); }

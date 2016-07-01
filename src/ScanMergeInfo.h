@@ -73,6 +73,7 @@ class ScanMergeInfoSet {
 	public:
 	  ScanMergeInfoSet() : isDecoy(false), minScannr_(UINT_MAX, UINT_MAX) {}
 	  
+	  inline size_t size() { return scans.size(); }
 		void push_back(ScanMergeInfo smi) { 
 		  scans.push_back(smi);
 		  if (smi.scannr < minScannr_) minScannr_ = smi.scannr;

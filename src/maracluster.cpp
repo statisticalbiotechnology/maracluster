@@ -78,6 +78,7 @@ double precursorTolerance_ = 20.0;
 bool precursorToleranceDa_ = false;
 double dbPvalThreshold_ = -5.0; // logPval
 int chargeUncertainty_;
+size_t minConsensusClusterSize_ = 1u;
 
 bool parseOptions(int argc, char **argv) {
   std::ostringstream callStream;
@@ -189,6 +190,10 @@ bool parseOptions(int argc, char **argv) {
       "specOut",
       "File where you want the merged spectra to be written",
       "filename");
+  cmd.defineOption("M",
+      "minClusterSize",
+      "Set the minimum size for a cluster for producing consensus spectra (default: 1).",
+      "int");
   cmd.defineOption("v",
       "verbatim",
       "Set the verbatim level (lowest: 0, highest: 5, default: 3).",
@@ -268,6 +273,7 @@ bool parseOptions(int argc, char **argv) {
   
   // file output option for maracluster consensus
   if (cmd.optionSet("o")) spectrumOutFN_ = cmd.options["o"];
+  if (cmd.optionSet("M")) minConsensusClusterSize_ = cmd.getInt("M", 0, 100000);
   
   // file input option for maracluster search
   if (cmd.optionSet("z")) spectrumLibraryFN_ = cmd.options["z"];
@@ -638,7 +644,7 @@ int main(int argc, char* argv[]) {
           MSFileMerger msFileMerger(spectrumOutFN_);
           
           std::cerr << "Parsing cluster file" << std::endl;
-          msFileMerger.parseClusterFileForMerge(clusterFileFN_);
+          msFileMerger.parseClusterFileForMerge(clusterFileFN_, minConsensusClusterSize_);
           std::cerr << "Finished parsing cluster file" << std::endl;
           
           std::cerr << "Merging clusters" << std::endl;

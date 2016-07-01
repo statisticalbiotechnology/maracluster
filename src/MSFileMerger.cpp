@@ -32,7 +32,8 @@ int MSFileMerger::maxConsensusSpectraPerFile_ = 200000; // search engine memory 
 int MSFileMerger::mergeMethod_ = 10;
 bool MSFileMerger::normalize_ = true;
 
-void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile) {
+void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile,
+    const size_t minClusterSize) {
   std::ifstream clusterStream(clusterFile.c_str());
   std::string line;
   if (clusterStream.is_open()) {
@@ -55,6 +56,9 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile) {
           ScanMergeInfoSet s;
           s.mergedScanId = fileList_.getScanId(spectrumOutFN_, ++mergeCount);
           s.peptide = peptide;
+          if (combineSets_.size() > 0 && combineSets_.back().size() < minClusterSize) {
+            combineSets_.pop_back();
+          }
           combineSets_.push_back(s);
           newCluster = false;
         }
@@ -64,6 +68,10 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile) {
         combineSets_.back().push_back(
             ScanMergeInfo(globalIdx, qvalue, isDecoy, charge, peptide));
       }
+    }
+    
+    if (combineSets_.size() > 0 && combineSets_.back().size() < minClusterSize) {
+      combineSets_.pop_back();
     }
   }
 }
@@ -320,11 +328,10 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
         unsigned int scannr = SpectrumHandler::getScannr(s);
         ScanId globalScannr = fileList_.getScanId(filePath, scannr);
         if (scannrToMergedScannr.find(globalScannr) != scannrToMergedScannr.end()) {
-          ScanId mergedScannr = scannrToMergedScannr[globalScannr];
-          
-          // since vectors are zero based and scannrs start at 1, we subtract 1
-          unsigned int clusterBin = (mergedScannr.scannr-1) % numClusterBins_; 
           s->id = "scan=" + boost::lexical_cast<std::string>(hash_value(globalScannr));
+          
+          ScanId mergedScannr = scannrToMergedScannr[globalScannr];
+          unsigned int clusterBin = getClusterBin(mergedScannr);
           spectrumLists[clusterBin]->spectra.push_back(s);
         }
       }
@@ -396,24 +403,26 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin,
   std::vector< std::vector<MergeScanIndex> > scanIndices(numBatches_);
   std::vector< std::pair< std::vector<SpectrumPtr>, ScanId> > spectra;
   
-  for (unsigned int i = clusterBin; i < combineSets_.size(); i += numClusterBins_) {
-    unsigned int posInCluster = 0;
-    BOOST_FOREACH (ScanMergeInfo scanMergeInfo, combineSets_[i].scans) {
-      ScanId scannr = scanMergeInfo.scannr;
-      unsigned int fileIdx = fileList_.getFileIdx(scannr);
-      //std::cerr << scannr << " " << i << " " << fileIdx << std::endl;
-      SpectrumListPtr sl = msdVector[fileIdx / numMSFilePtrsPerBatch_]->run.spectrumListPtr;
-      size_t result = getSpectrumIdxFromScannr(sl, hash_value(scannr));
-      if (result >= sl->size()) {
-        std::cerr << "  Warning: index " << result << " out of bounds: " 
-              << fileList_.getFilePath(scannr) << ": " << scannr << std::endl;
-      } else {
-        scanIndices[fileIdx / numMSFilePtrsPerBatch_].push_back( MergeScanIndex(result, posInCluster, spectra.size()) );
-        ++posInCluster;
+  for (unsigned int i = 0; i < combineSets_.size(); ++i) {
+    if (getClusterBin(combineSets_[i].mergedScanId) == clusterBin) {
+      unsigned int posInCluster = 0;
+      BOOST_FOREACH (ScanMergeInfo scanMergeInfo, combineSets_[i].scans) {
+        ScanId scannr = scanMergeInfo.scannr;
+        unsigned int fileIdx = fileList_.getFileIdx(scannr);
+        //std::cerr << scannr << " " << i << " " << fileIdx << std::endl;
+        SpectrumListPtr sl = msdVector[fileIdx / numMSFilePtrsPerBatch_]->run.spectrumListPtr;
+        size_t result = getSpectrumIdxFromScannr(sl, hash_value(scannr));
+        if (result >= sl->size()) {
+          std::cerr << "  Warning: index " << result << " out of bounds: " 
+                << fileList_.getFilePath(scannr) << ": " << scannr << std::endl;
+        } else {
+          scanIndices[fileIdx / numMSFilePtrsPerBatch_].push_back( MergeScanIndex(result, posInCluster, spectra.size()) );
+          ++posInCluster;
+        }
       }
+      // initialize container for spectra to be merged for mergedScanId
+      spectra.push_back(std::make_pair(std::vector<SpectrumPtr>(posInCluster), combineSets_[i].mergedScanId));
     }
-    // initialize container for spectra to be merged for mergedScanId
-    spectra.push_back(std::make_pair(std::vector<SpectrumPtr>(posInCluster), combineSets_[i].mergedScanId));
   }
   
   std::cerr << "  Processing consensus spectra." << std::endl;
