@@ -14,4 +14,3 @@ echo -n "make maracluster (this will take few minutes).....";
 make -j 4;
 make -j 4 package;
 sudo make install;
-

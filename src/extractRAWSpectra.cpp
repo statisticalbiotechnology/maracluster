@@ -19,11 +19,10 @@
 #include <vector>
 
 #include "pwiz/data/msdata/MSData.hpp"
+#include "pwiz/data/msdata/MSDataFile.hpp"
+#include "pwiz/data/common/cv.hpp"
 #include "pwiz/data/vendor_readers/ExtendedReaderList.hpp"
 #include "Option.h"
-#include "MSFileHandler.h"
-#include "MSFileExtractor.h"
-#include "SpectrumFileList.h"
 #include "SpectrumHandler.h"
 #include "MassChargeCandidate.h"
 
@@ -103,21 +102,18 @@ bool parseOptions(int argc, char **argv) {
 int main(int argc, char* argv[]) {
   try {
     if (parseOptions(argc, argv)) {
-      ReaderList::Config readerConfig();
+      pwiz::msdata::ExtendedReaderList readerList;
+      
+      pwiz::msdata::MSDataFile msd(filePathOrig_, &readerList);
+      pwiz::msdata::SpectrumListPtr sl = msd.run.spectrumListPtr;
 
-      vector<MSDataPtr> msdList;
-      readers.read(filename, msdList, readerConfig);
-
-      for (size_t i=0; i < msdList.size(); ++i) {
-        MSData& msd = *msdList[i];
-        pwiz::msdata::SpectrumListPtr sl = msd.run.spectrumListPtr;
-
-        for (unsigned int j = 0; j < sl->size(); ++j) {
-          pwiz::msdata::SpectrumPtr s = sl->spectrum(j, true);
+      for (unsigned int j = 0; j < sl->size(); ++j) {
+        pwiz::msdata::SpectrumPtr s = sl->spectrum(j, true);
+        if (s->cvParam(pwiz::cv::MS_ms_level).valueAs<int>() == 2) {
           std::vector<MassChargeCandidate> mccs;
           SpectrumHandler::getMassChargeCandidates(s, mccs);
           unsigned int scannr = SpectrumHandler::getScannr(s);
-          std::cerr << "scannr " << scannr << std::endl;
+          std::cerr << "scannr: " << scannr << ", prec m/z: " << mccs.at(0).precMz << ", charge: " << mccs.at(0).charge << std::endl;
         }
       }
       return EXIT_SUCCESS;

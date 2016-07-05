@@ -47,7 +47,7 @@
 #include "PvalueFilterAndSort.h"
 #include "SparseClustering.h"
 
-enum Mode { BATCH, PVALUE, UNIT_TEST, INDEX, CLUSTER, CONSENSUS, SEARCH };
+enum Mode { BATCH, PVALUE, UNIT_TEST, INDEX, CLUSTER, CONSENSUS, SEARCH, PROFILE_CONSENSUS, PROFILE_SEARCH };
 Mode mode_;
 
 std::string call_ = "";
@@ -212,6 +212,8 @@ bool parseOptions(int argc, char **argv) {
     else if (mode == "cluster") mode_ = CLUSTER;
     else if (mode == "consensus") mode_ = CONSENSUS;
     else if (mode == "search") mode_ = SEARCH;
+    else if (mode == "profile-consensus") mode_ = PROFILE_CONSENSUS;
+    else if (mode == "profile-search") mode_ = PROFILE_SEARCH;
     else {
       std::cerr << "Error: Unknown mode: " << mode << std::endl;
       std::cerr << "Invoke with -h option for help" << std::endl;
@@ -654,6 +656,75 @@ int main(int argc, char* argv[]) {
           return EXIT_SUCCESS;
         }
         case SEARCH:
+        {
+          if (spectrumLibraryFN_.size() == 0) {
+            std::cerr << "Error: no spectrum library file specified with -z flag" << std::endl;
+            return EXIT_FAILURE;
+          } else if (peakCountFN_.size() == 0) {
+            std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
+            return EXIT_FAILURE;
+          } else if (spectrumBatchFileFN_.size() == 0 && spectrumInFN_.size() == 0) {
+            std::cerr << "Error: no query spectrum file(s) specified with -i or -b flag" << std::endl;
+            return EXIT_FAILURE;
+          } else if (spectrumBatchFileFN_.size() != 0 && spectrumInFN_.size() != 0) {
+            std::cerr << "Error: ambiguous query spectrum file(s) input, please use only one of the -i and -b flags" << std::endl;
+            return EXIT_FAILURE;
+          }
+          
+          if (pvaluesFN_.size() == 0)
+            pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.dat";
+          
+          if (!BatchGlobals::fileExists(pvaluesFN_)) {
+            std::cerr << "Reading peak counts" << std::endl;
+            PeakCounts peakCounts;
+            peakCounts.readFromFile(peakCountFN_);
+            //peakCounts.setSmoothingMode(1);
+            std::cerr << "Finished reading peak counts" << std::endl;
+            
+            // read in the query spectra
+            BatchSpectra querySpectra;
+            SpectrumFileList fileList;
+            if (spectrumInFN_.size() > 0) {
+              querySpectra.convertToBatchSpectra(spectrumInFN_, fileList);
+            } else {
+              fileList.initFromFile(spectrumBatchFileFN_);
+              querySpectra.convertToBatchSpectra(fileList);
+            }
+            querySpectra.sortSpectraByPrecMz();
+            
+            // read in the library spectra
+            PvalueCalculator::kMinScoringPeaks = 5u;
+            BatchSpectra librarySpectra;
+            librarySpectra.convertToBatchSpectra(spectrumLibraryFN_, fileList);
+            librarySpectra.sortSpectraByPrecMz();
+            
+            BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            pvecs.calculatePvalueVectors(librarySpectra.getSpectra(), peakCounts);
+            pvecs.batchCalculatePvaluesLibrarySearch(querySpectra.getSpectra());
+          } else {
+            std::cerr << "Using p-values from " << pvaluesFN_ << 
+                ". Remove this file to generate new p-values." << std::endl;
+          }
+          
+          return EXIT_SUCCESS;
+        }
+        case PROFILE_CONSENSUS:
+        {
+          if (spectrumOutFN_.size() == 0)
+            spectrumOutFN_ = outputFolder_ + "/" + fnPrefix_ + ".consensus.ms2";
+          MSFileMerger msFileMerger(spectrumOutFN_);
+          
+          std::cerr << "Parsing cluster file" << std::endl;
+          msFileMerger.parseClusterFileForMerge(clusterFileFN_, minConsensusClusterSize_);
+          std::cerr << "Finished parsing cluster file" << std::endl;
+          
+          std::cerr << "Merging clusters" << std::endl;
+          msFileMerger.mergeSpectra();
+          std::cerr << "Finished merging clusters" << std::endl;
+          
+          return EXIT_SUCCESS;
+        }
+        case PROFILE_SEARCH:
         {
           if (spectrumLibraryFN_.size() == 0) {
             std::cerr << "Error: no spectrum library file specified with -z flag" << std::endl;

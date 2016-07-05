@@ -42,6 +42,15 @@ endif(PWIZ_FOUND)
 include_directories(${PWIZ_INCLUDE_DIR})
 
 find_package(Threads REQUIRED)
+if(MSVC)
+  if(THREADS_FOUND)
+    message(STATUS  "Threads found")
+  else(THREADS_FOUND)
+    message(FATAL_ERROR "The package Threads has not been not found")
+  endif()
+  include_directories(${Threads_INCLUDE_DIR})
+  set(CMAKE_THREAD_LIBS_INIT ${CMAKE_THREAD_LIBS_INIT} ${THREADS_LIBRARY})
+endif()
 
 #############################################################################
 # COMPILE MARACLUSTER

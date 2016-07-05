@@ -140,10 +140,7 @@ void BatchPvalueVectors::batchInsert(PeakCounts& peakCounts, bool forceInsert) {
 void BatchPvalueVectors::initPvalCalc(PvalueCalculator& pvalCalc, 
     PvalueVectorsDbRow& pvecRow, PeakCounts& peakCounts, 
     const int numQueryPeaks) {
-#ifdef DOT_PRODUCT
-  pvalCalc.initPolyfit(std::vector<unsigned int>(),
-                       std::vector<double>());
-#else
+#ifndef DOT_PRODUCT
   PeakDistribution distribution;
   peakCounts.generatePeakDistribution(pvecRow.precMz, pvecRow.queryCharge, 
                                       distribution, numQueryPeaks);
@@ -903,18 +900,11 @@ void BatchPvalueVectors::batchCalculatePvaluesOverlap(
   }
 }
 
-void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow, 
-    PvalueVectorsDbRow& queryPvecRow, std::vector<PvalueTriplet>& pvalBuffer) {
-  // skip if we are trying to score a spectrum against itself or if the charges
-  // do not match
-  if (queryPvecRow.scannr == pvecRow.scannr || 
-      !isPvecMatch(pvecRow, queryPvecRow)) {
-    return;
-  }
-#ifdef DOT_PRODUCT
+double BatchPvalueVectors::calculateCosineDistance(
+    std::vector<unsigned int>& peakBins,
+    std::vector<unsigned int>& queryPeakBins) {
   double numerator = 0.0, numerator2 = 0.0;
   std::vector<std::pair<unsigned int, double> > mziPairs, queryMziPairs;
-  std::vector<unsigned int> peakBins = pvecRow.pvalCalc.getPeakBins();
   double div = peakBins[1];
   for (size_t i = 0; i < peakBins.size(); i += 2) {
     double normalizedIntensity = static_cast<double>(peakBins[i+1])/div;
@@ -923,7 +913,6 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
   }
   std::sort(mziPairs.begin(), mziPairs.end());
   
-  std::vector<unsigned int> queryPeakBins = pvecRow.pvalCalc.getPeakBins();
   div = queryPeakBins[1];
   for (size_t i = 0; i < queryPeakBins.size(); i += 2) {
     double normalizedIntensity = static_cast<double>(queryPeakBins[i+1])/div;
@@ -946,7 +935,19 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
       ++candIdx;
     }
   }
-  double cosDist = -100.0 * dotProduct / numerator;
+  return -100.0 * dotProduct / numerator;
+}
+
+void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow, 
+    PvalueVectorsDbRow& queryPvecRow, std::vector<PvalueTriplet>& pvalBuffer) {
+  // skip if we are trying to score a spectrum against itself or if the charges
+  // do not match
+  if (queryPvecRow.scannr == pvecRow.scannr || 
+      !isPvecMatch(pvecRow, queryPvecRow)) {
+    return;
+  }
+#ifdef DOT_PRODUCT
+  double cosDist = calculateCosineDistance(pvecRow.pvalCalc.getPeakBinsRef(), pvecRow.pvalCalc.getPeakBinsRef());  
   if (cosDist <= dbPvalThreshold_) {
     pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
                                        std::max(pvecRow.scannr, queryPvecRow.scannr),
@@ -986,9 +987,18 @@ void BatchPvalueVectors::calculatePvalue(PvalueVectorsDbRow& pvecRow,
     }
   }
   
+#ifdef DOT_PRODUCT
+  double cosDist = calculateCosineDistance(pvecRow.pvalCalc.getPeakBinsRef(), 
+                                           peakBins);  
+  if (cosDist <= dbPvalThreshold_) {
+    pvalBuffer.push_back(PvalueTriplet(pvecRow.scannr, querySpectrum.scannr,
+                                       cosDist));
+  }
+#else
   double targetPval = pvecRow.pvalCalc.computePvalPolyfit(peakBins);
   if (targetPval <= dbPvalThreshold_) {
     pvalBuffer.push_back(PvalueTriplet(pvecRow.scannr, querySpectrum.scannr, 
                                        targetPval));
   }
+#endif
 }

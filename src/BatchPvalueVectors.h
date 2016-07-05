@@ -169,6 +169,9 @@ class BatchPvalueVectors {
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
+  double calculateCosineDistance(std::vector<unsigned int>& peakBins,
+    std::vector<unsigned int>& queryPeakBins);
+    
   void runClusterJob(ClusterJob& clusterJob,
     std::vector< std::vector<PvalueTriplet> >& pvalBuffers,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
@@ -196,7 +199,7 @@ class BatchPvalueVectors {
   bool isSafeToWrite(const ScanId& si,
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float upperPrecMz);
-        
+    
   inline double getLowerBound(double mass) { 
     return getLowerBound(mass, precursorTolerance_, precursorToleranceDa_);
   }
