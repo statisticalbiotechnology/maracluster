@@ -17,7 +17,6 @@
 #include "SpectrumHandler.h"
 
 unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
-  
   std::stringstream ss(s->id);
   while (ss.good()) {
     std::string tmp;
@@ -173,5 +172,9 @@ double SpectrumHandler::getRetentionTime(pwiz::msdata::SpectrumPtr s) {
   } else {
     return 0.0;
   }
+}
+
+bool SpectrumHandler::isMs2Scan(pwiz::msdata::SpectrumPtr s) {
+  return (s->cvParam(pwiz::cv::MS_ms_level).valueAs<int>() == 2);
 }
 

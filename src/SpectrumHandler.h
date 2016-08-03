@@ -23,10 +23,19 @@
 #include <numeric>
 #include <boost/foreach.hpp>
 #include "pwiz/data/msdata/MSData.hpp"
+#include "pwiz/data/msdata/MSDataFile.hpp"
 #include "pwiz/data/common/cv.hpp"
 
 #include "MZIntensityPair.h"
 #include "MassChargeCandidate.h"
+
+#ifdef WIN32
+#include "pwiz/data/vendor_readers/ExtendedReaderList.hpp"
+typedef pwiz::msdata::ExtendedReaderList MSReaderList;
+#else
+#include "pwiz/data/msdata/DefaultReaderList.hpp"
+typedef pwiz::msdata::DefaultReaderList MSReaderList;
+#endif
 
 const double PROTON_MASS = 1.00727646677;
 
@@ -66,6 +75,7 @@ class SpectrumHandler {
     static unsigned int getCharge(pwiz::msdata::SpectrumPtr s);
     static double getPrecMz(pwiz::msdata::SpectrumPtr s);
     static double getRetentionTime(pwiz::msdata::SpectrumPtr s);
+    static bool isMs2Scan(pwiz::msdata::SpectrumPtr s);
   private:
     static void convertMSDataMZIntensityPairs(std::vector<pwiz::msdata::MZIntensityPair>& MSDataMziPairs, std::vector<MZIntensityPair>& mziPairs);
     static void convertMSDataMZIntensityPairs(std::vector<MZIntensityPair>& mziPairs, std::vector<pwiz::msdata::MZIntensityPair>& MSDataMziPairs);

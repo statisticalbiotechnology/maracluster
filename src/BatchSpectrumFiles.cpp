@@ -17,15 +17,8 @@
 #include "BatchSpectrumFiles.h"
 
 using pwiz::msdata::SpectrumListPtr;
-using pwiz::msdata::SpectrumListSimple;
-using pwiz::msdata::SpectrumListSimplePtr;
-using pwiz::msdata::MSData;
-using pwiz::msdata::MSDataMerger;
-using pwiz::msdata::MSDataPtr;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumPtr;
-using pwiz::msdata::Spectrum;
-using pwiz::msdata::SelectedIon;
 
 void BatchSpectrumFiles::splitByPrecursorMz(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
@@ -71,7 +64,7 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
   
   std::vector<std::string> spectrumFNs = fileList.getFilePaths();
 #pragma omp parallel for schedule(dynamic, 1)  
-  for (int fileIdx = 0; fileIdx < spectrumFNs.size(); ++fileIdx) {
+  for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
     if (BatchGlobals::VERB > 1) {
       std::cerr << "  Processing " << spectrumFN << 
@@ -81,7 +74,8 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
     SpectrumListPtr specList;    
   #pragma omp critical (create_msdata)
     {  
-      MSDataFile msd(spectrumFN);
+      MSReaderList readerList;
+      MSDataFile msd(spectrumFN, &readerList);
       specList = msd.run.spectrumListPtr;
     }
     PeakCounts peakCounts;
@@ -89,9 +83,9 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
     
     size_t numSpectra = specList->size();
     //size_t numSpectra = 2;
-    
     for (size_t i = 0; i < numSpectra; ++i) {
       SpectrumPtr s = specList->spectrum(i, true);
+      if (!SpectrumHandler::isMs2Scan(s)) continue;
       
       std::vector<MZIntensityPair> mziPairs;
       SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
@@ -134,7 +128,7 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
   
   std::vector<std::string> spectrumFNs = fileList.getFilePaths();
 #pragma omp parallel for schedule(dynamic, 1)                
-  for (int fileIdx = 0; fileIdx < spectrumFNs.size(); ++fileIdx) {
+  for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
     if (BatchGlobals::VERB > 1) {
       std::cerr << "  Processing " << spectrumFN << 
@@ -175,14 +169,16 @@ void BatchSpectrumFiles::getBatchSpectra(
    
   SpectrumListPtr specList;
 #pragma omp critical (create_msdata)
-  {  
-    MSDataFile msd(spectrumFN);
+  {
+    MSReaderList readerList;
+    MSDataFile msd(spectrumFN, &readerList);
     specList = msd.run.spectrumListPtr;
   }
   
   size_t numSpectra = specList->size();
   for (size_t i = 0; i < numSpectra; ++i) {
     SpectrumPtr s = specList->spectrum(i, true);
+    if (!SpectrumHandler::isMs2Scan(s)) continue;
     
     std::vector<MZIntensityPair> mziPairs;
     SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
@@ -207,8 +203,8 @@ void BatchSpectrumFiles::getBatchSpectra(
           BatchSpectrum bs;
           peakBins.resize(BATCH_SPECTRUM_NUM_STORED_PEAKS, 0u);
           std::copy(peakBins.begin(), peakBins.end(), bs.fragBins);
-          bs.precMz = SpectrumHandler::calcPrecMz(mass, mcc.charge);
-          bs.retentionTime = retentionTime;
+          bs.precMz = static_cast<float>(SpectrumHandler::calcPrecMz(mass, mcc.charge));
+          bs.retentionTime = static_cast<float>(retentionTime);
           bs.charge = mcc.charge;
           bs.scannr = scanInfo.scanId;
           
@@ -358,7 +354,7 @@ void BatchSpectrumFiles::writePeakCounts(PeakCounts& peakCountsAccumulated,
   std::string serializedPeakCounts;
   PeakCounts::serializePeakCounts(peakCountsAccumulated, serializedPeakCounts);
   
-  std::ofstream peakCountStream(peakCountFN.c_str());
+  std::ofstream peakCountStream(peakCountFN.c_str(), std::ios_base::binary | std::ios_base::out);
   if (peakCountStream.is_open()) {
     peakCountStream << serializedPeakCounts;
   }

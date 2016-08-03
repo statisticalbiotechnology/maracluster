@@ -268,8 +268,8 @@ void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsF
     std::cerr << "Reading in pvalue vectors from " << pvalueVectorsFN << std::endl;
   }
 
-  if (!BatchGlobals::fileExists(pvalueVectorsFN)) {
-    std::cerr << "Ignoring missing file " << pvalueVectorsFN << std::endl;
+  if (BatchGlobals::fileIsEmpty(pvalueVectorsFN)) {
+    std::cerr << "Ignoring missing/empty file " << pvalueVectorsFN << std::endl;
     return;
   }
 

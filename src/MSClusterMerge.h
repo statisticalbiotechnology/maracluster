@@ -73,7 +73,7 @@ class PeakWeightTable {
 	  const double pOverOneMinusP = p/(1.0-p);
 	  double binomialCoeff = 1.0;				// n choose k
 	  double powerValue    = pow(1.0-p, n);   // p^k * (1-p)^n-k
-	  cdf[0] = powerValue;
+	  cdf[0] = static_cast<float>(powerValue);
 
 	  for (int k=1; k<=n; k++) {
 		  binomialCoeff *= static_cast<double>(n-k+1.0);
@@ -109,6 +109,10 @@ class MSClusterMerge {
 
   inline static int convertMassToInt(float mass) {
 	  return (static_cast<int>(MASS_TO_INT_RATIO * mass));
+  }
+  
+  inline static int convertMassToInt(double mass) {
+	  return convertMassToInt(static_cast<float>(mass));
   }
 
   inline static float convertIntToMass(int m) {

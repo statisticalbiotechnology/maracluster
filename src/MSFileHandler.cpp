@@ -16,7 +16,6 @@
  
 #include "MSFileHandler.h"
 
-using pwiz::msdata::MSDataPtr;
 using pwiz::msdata::MSData;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumListSimplePtr;
@@ -66,8 +65,9 @@ void MSFileHandler::writeMSData(MSData& msd, const std::string& outputFN) {
 }
 
 void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN) {
-  MSDataFile msdOrig(spectrumInFN);
-  SpectrumListPtr sl = msdOrig.run.spectrumListPtr;
+  MSReaderList readerList;
+  MSDataFile msd(spectrumInFN, &readerList);
+  SpectrumListPtr sl = msd.run.spectrumListPtr;
   
   SpectrumListSimplePtr slNew(new SpectrumListSimple);
   
@@ -210,10 +210,10 @@ void MSFileHandler::calcPeakCount(SpectrumListPtr specList, PeakCounts& mzMap,
 void MSFileHandler::calcRankDotProducts(const std::string& spectrumInFN) {
   std::cerr << "Calculating similarity scores!\n";
 
-  // create the MSData object in memory
-  MSDataPtr msdOrig(new MSDataFile(spectrumInFN));
   // manipulate your MSData object here
-  SpectrumListPtr sl = msdOrig->run.spectrumListPtr;
+  MSReaderList readerList;
+  MSDataFile msd(spectrumInFN, &readerList);
+  SpectrumListPtr sl = msd.run.spectrumListPtr;
 
   if (sl.get()) {
     std::cerr << "# of spectra in original dataset: " << sl->size() << std::endl;

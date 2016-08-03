@@ -116,7 +116,7 @@ class BatchStatement {
       float f = 0.0f;
       if (strings[pos].substr(0,1) != "f")
         std::cerr << "Warning: wrong type" << std::endl;
-      f = atof(strings[pos].substr(2).c_str());
+      f = static_cast<float>(atof(strings[pos].substr(2).c_str()));
       return f;
     } else {
       return 0.0f;

@@ -25,9 +25,6 @@
 #include <boost/foreach.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
-#include "pwiz/data/msdata/MSDataFile.hpp"
-#include "pwiz/data/msdata/MSDataMerger.hpp"
-
 #include "BatchGlobals.h"
 #include "BatchStatement.h"
 #include "BatchPvalues.h"

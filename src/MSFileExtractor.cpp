@@ -16,7 +16,6 @@
  
 #include "MSFileExtractor.h"
 
-using pwiz::msdata::MSDataPtr;
 using pwiz::msdata::MSData;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumListSimplePtr;
@@ -94,7 +93,8 @@ void MSFileExtractor::extractSpectra() {
       std::cerr << "Extracting spectra from file " << fileIdx+1 << "/" 
                 << scanIdsByFile.size() << std::endl; 
     }
-    MSDataFile msd(filepath);
+    MSReaderList readerList;
+    MSDataFile msd(filepath, &readerList);
     SpectrumListPtr sl = msd.run.spectrumListPtr;
     
     BOOST_FOREACH (const ScanId scanId, scanIdsByFile[fileIdx]) {
@@ -124,7 +124,8 @@ void MSFileExtractor::extractToBatchSpectrumList(
       std::cerr << "Extracting spectra from file " << fileIdx+1 << "/" 
                 << scanIdsByFile.size() << std::endl; 
     }
-    MSDataFile msd(filepath);
+    MSReaderList readerList;
+    MSDataFile msd(filepath, &readerList);
     SpectrumListPtr sl = msd.run.spectrumListPtr;
     
     BOOST_FOREACH (const ScanId scanId, scanIdsByFile[fileIdx]) {

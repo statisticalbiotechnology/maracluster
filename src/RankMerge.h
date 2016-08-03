@@ -39,7 +39,7 @@ class RankMerge {
                             double shift = 0.0, double scaling = 1.0);
   protected:
     static double dpThresh;
-    static unsigned int maxRankDiff;
+    static int maxRankDiff;
     static inline bool ranksInRange(unsigned int binRankIn, 
                                     unsigned int binRankFrom) {
       return (binRankIn > 0 && binRankFrom > 0 && 

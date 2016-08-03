@@ -27,7 +27,7 @@ using pwiz::msdata::Spectrum;
 
 int MSFileMerger::maxMSFilePtrs_ = 60; // memory constrained
 int MSFileMerger::maxSpectraPerFile_ = 500000; // memory constrained
-int MSFileMerger::maxConsensusSpectraPerFile_ = 200000; // search engine memory constrained
+unsigned int MSFileMerger::maxConsensusSpectraPerFile_ = 200000u; // search engine memory constrained
 
 int MSFileMerger::mergeMethod_ = 10;
 bool MSFileMerger::normalize_ = true;
@@ -51,7 +51,6 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile,
         newCluster = true;
         iss.clear();
       } else {
-        ScanId globalIdx = fileList_.getScanId(filepath, scannr);
         if (newCluster) {
           ScanMergeInfoSet s;
           s.mergedScanId = fileList_.getScanId(spectrumOutFN_, ++mergeCount);
@@ -65,6 +64,7 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile,
         
         bool isDecoy = false;
         int charge = 0;
+        ScanId globalIdx = fileList_.getScanId(filepath, scannr);
         combineSets_.back().push_back(
             ScanMergeInfo(globalIdx, qvalue, isDecoy, charge, peptide));
       }
@@ -126,8 +126,9 @@ void MSFileMerger::parseClusterFileForSingleFileMerge(
 }
 
 void MSFileMerger::mergeAllSpectra(const std::string& spectrumInFN) {
-  MSDataFile msdOrig(spectrumInFN);
-  SpectrumListPtr sl = msdOrig.run.spectrumListPtr;
+  MSReaderList readerList;
+  MSDataFile msd(spectrumInFN, &readerList);
+  SpectrumListPtr sl = msd.run.spectrumListPtr;
   
   MSClusterMerge::init();
   
@@ -240,7 +241,7 @@ void MSFileMerger::mergeSpectraSmall() {
       std::cerr << "Merged " << count << "/" << combineSets_.size() << std::endl;
       
     if (mergedSpectra->spectra.size() >= maxConsensusSpectraPerFile_ 
-          || count == combineSets_.size()) {
+          || count == static_cast<int>(combineSets_.size())) {
       std::cerr << "Creating merged MSData file" << std::endl;
       msdMerged.run.spectrumListPtr = mergedSpectra;
       
@@ -280,7 +281,7 @@ void MSFileMerger::mergeSpectraScalable() {
   unsigned int numSpectra = scannrToMergedScannr.size();
   size_t numClusterBinsIn = (numSpectra-1) / maxSpectraPerFile_ + 1;
   size_t numClusterBinsOut = 
-      (combineSets_.size()-1) / maxConsensusSpectraPerFile_ + 1;
+      (combineSets_.size()-1u) / maxConsensusSpectraPerFile_ + 1u;
   numClusterBins_ = std::max(numClusterBinsIn, numClusterBinsOut);
   
   splitSpecFilesByConsensusSpec(scannrToMergedScannr);
@@ -310,12 +311,13 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
       std::string filePath = fileList_.getFilePath(i);
       if (filePath == spectrumOutFN_) continue;
       std::cerr << "Splitting " << filePath
-                << " (" << (i+1)*100/fileList_.size() << "%)" << std::endl;
+                << " (" << i*100 / (fileList_.size()-1) << "%)" << std::endl;
       
       SpectrumListPtr sl;    
     #pragma omp critical (create_msdata)
       {  
-        MSDataFile msd(filePath);
+        MSReaderList readerList;
+        MSDataFile msd(filePath, &readerList);
         sl = msd.run.spectrumListPtr;
       }
       
@@ -365,7 +367,7 @@ void MSFileMerger::mergeSplitSpecFiles() {
     mergeSpectraBin(clusterBin, mergedSpectra);
     
     while (mergedSpectra->size() > maxConsensusSpectraPerFile_ 
-        || (mergedSpectra->size() > 0 && clusterBin == numClusterBins_ - 1)) {
+        || (mergedSpectra->size() > 0u && clusterBin == numClusterBins_ - 1)) {
       std::cerr << "Creating merged MSData file" << std::endl;
       MSData msdMerged;
       msdMerged.id = msdMerged.run.id = "merged_spectra";
@@ -391,55 +393,57 @@ void MSFileMerger::mergeSplitSpecFiles() {
 
 void MSFileMerger::mergeSpectraBin(size_t clusterBin,
     SpectrumListSimplePtr mergedSpectra) {
-  std::vector<MSDataPtr> msdVector;
-  for (unsigned int i = 0; i < numBatches_; ++i) {
-    std::string partSpecOutFN = getPartFN(spectrumOutFN_, "part" +
-          boost::lexical_cast<std::string>(clusterBin) + "_" + 
-          boost::lexical_cast<std::string>(i));
-    MSDataPtr msd(new MSDataFile(partSpecOutFN));
-    msdVector.push_back(msd);
-  }
-  
-  std::vector< std::vector<MergeScanIndex> > scanIndices(numBatches_);
-  std::vector< std::pair< std::vector<SpectrumPtr>, ScanId> > spectra;
-  
-  for (unsigned int i = 0; i < combineSets_.size(); ++i) {
-    if (getClusterBin(combineSets_[i].mergedScanId) == clusterBin) {
-      unsigned int posInCluster = 0;
-      BOOST_FOREACH (ScanMergeInfo scanMergeInfo, combineSets_[i].scans) {
-        ScanId scannr = scanMergeInfo.scannr;
-        unsigned int fileIdx = fileList_.getFileIdx(scannr);
-        //std::cerr << scannr << " " << i << " " << fileIdx << std::endl;
-        SpectrumListPtr sl = msdVector[fileIdx / numMSFilePtrsPerBatch_]->run.spectrumListPtr;
-        size_t result = getSpectrumIdxFromScannr(sl, hash_value(scannr));
-        if (result >= sl->size()) {
-          std::cerr << "  Warning: index " << result << " out of bounds: " 
-                << fileList_.getFilePath(scannr) << ": " << scannr << std::endl;
-        } else {
-          scanIndices[fileIdx / numMSFilePtrsPerBatch_].push_back( MergeScanIndex(result, posInCluster, spectra.size()) );
-          ++posInCluster;
+  {
+    std::vector<MSDataPtr> msdVector;
+    for (unsigned int i = 0; i < numBatches_; ++i) {
+      std::string partSpecOutFN = getPartFN(spectrumOutFN_, "part" +
+            boost::lexical_cast<std::string>(clusterBin) + "_" + 
+            boost::lexical_cast<std::string>(i));
+      MSDataPtr msd(new MSDataFile(partSpecOutFN));
+      msdVector.push_back(msd);
+    }
+    
+    std::vector< std::vector<MergeScanIndex> > scanIndices(numBatches_);
+    std::vector< std::pair< std::vector<SpectrumPtr>, ScanId> > spectra;
+    
+    for (unsigned int i = 0; i < combineSets_.size(); ++i) {
+      if (getClusterBin(combineSets_[i].mergedScanId) == clusterBin) {
+        unsigned int posInCluster = 0;
+        BOOST_FOREACH (ScanMergeInfo scanMergeInfo, combineSets_[i].scans) {
+          ScanId scannr = scanMergeInfo.scannr;
+          unsigned int fileIdx = fileList_.getFileIdx(scannr);
+          //std::cerr << scannr << " " << i << " " << fileIdx << std::endl;
+          SpectrumListPtr sl = msdVector[fileIdx / numMSFilePtrsPerBatch_]->run.spectrumListPtr;
+          size_t result = getSpectrumIdxFromScannr(sl, hash_value(scannr));
+          if (result >= sl->size()) {
+            std::cerr << "  Warning: index " << result << " out of bounds: " 
+                  << fileList_.getFilePath(scannr) << ": " << scannr << std::endl;
+          } else {
+            scanIndices[fileIdx / numMSFilePtrsPerBatch_].push_back( MergeScanIndex(result, posInCluster, spectra.size()) );
+            ++posInCluster;
+          }
         }
+        // initialize container for spectra to be merged for mergedScanId
+        spectra.push_back(std::make_pair(std::vector<SpectrumPtr>(posInCluster), combineSets_[i].mergedScanId));
       }
-      // initialize container for spectra to be merged for mergedScanId
-      spectra.push_back(std::make_pair(std::vector<SpectrumPtr>(posInCluster), combineSets_[i].mergedScanId));
     }
-  }
-  
-  std::cerr << "  Processing consensus spectra." << std::endl;
-  for (unsigned int j = 0; j < numBatches_; ++j) {
-    std::cerr << "  Batch " << j+1 << "/" << numBatches_ << std::endl;
-    SpectrumListPtr sl = msdVector[j]->run.spectrumListPtr;
-    std::sort(scanIndices[j].begin(), scanIndices[j].end(), lessIndex);
-    BOOST_FOREACH (MergeScanIndex msi, scanIndices[j]) {
-      SpectrumPtr s = sl->spectrum(msi.spectrumIndex, true);
-      spectra[msi.mergeIdx].first[msi.posInCluster] = s;
+    
+    std::cerr << "  Processing consensus spectra." << std::endl;
+    for (unsigned int j = 0; j < numBatches_; ++j) {
+      std::cerr << "  Batch " << j+1 << "/" << numBatches_ << std::endl;
+      SpectrumListPtr sl = msdVector[j]->run.spectrumListPtr;
+      std::sort(scanIndices[j].begin(), scanIndices[j].end(), lessIndex);
+      BOOST_FOREACH (MergeScanIndex msi, scanIndices[j]) {
+        SpectrumPtr s = sl->spectrum(msi.spectrumIndex, true);
+        spectra[msi.mergeIdx].first[msi.posInCluster] = s;
+      }
     }
-  }
-  std::cerr << "  Merging spectra" << std::endl;
-#pragma omp parallel for schedule(dynamic, 100)
-  for (int k = 0; k < spectra.size(); ++k) {
-    if (spectra[k].first.size() > 0) {
-      mergeSpectraSetMSCluster(spectra[k].first, spectra[k].second, mergedSpectra);
+    std::cerr << "  Merging spectra" << std::endl;
+  #pragma omp parallel for schedule(dynamic, 100)
+    for (int k = 0; k < static_cast<int>(spectra.size()); ++k) {
+      if (spectra[k].first.size() > 0) {
+        mergeSpectraSetMSCluster(spectra[k].first, spectra[k].second, mergedSpectra);
+      }
     }
   }
   
@@ -447,14 +451,17 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin,
     std::string partSpecOutFN = getPartFN(spectrumOutFN_, "part" + 
           boost::lexical_cast<std::string>(clusterBin) + "_" + 
           boost::lexical_cast<std::string>(i));
-    remove(partSpecOutFN.c_str());
+    if (remove(partSpecOutFN.c_str()) != 0) {
+      std::cerr << "Warning: Can't remove " << partSpecOutFN << ": "
+                << strerror(errno) << endl;
+    }
   }
 }
 
 void MSFileMerger::writeClusterBins(unsigned int batchIdx,
     std::vector<SpectrumListSimplePtr>& spectrumLists) {
 #pragma omp parallel for schedule(dynamic, 1)
-  for (int i = 0; i < numClusterBins_; ++i) {
+  for (int i = 0; i < static_cast<int>(numClusterBins_); ++i) {
     if (spectrumLists[i]->spectra.size() == 0) {
       continue; // in case there are so few spectra that not all bins are filled
     }

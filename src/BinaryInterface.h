@@ -47,24 +47,35 @@ class BinaryInterface {
   
   template <typename Type>
   static void read(const std::string& inputFN, std::vector<Type>& vec) {
-    boost::iostreams::mapped_file mmap(inputFN,
-              boost::iostreams::mapped_file::readonly);
-    
-    const char* f = mmap.const_data();
-    const char* l = f + mmap.size();
-    
-    errno = 0;
-    Type tmp;
-    while (errno == 0 && f && f<=(l-sizeof(tmp)) ) {
-      memcpy(&tmp, f, sizeof(tmp));
-      f += sizeof(tmp);
-      vec.push_back(tmp);
+    if (!fileIsEmpty(inputFN)) {
+      boost::iostreams::mapped_file mmap(inputFN,
+                boost::iostreams::mapped_file::readonly);
+      
+      const char* f = mmap.const_data();
+      const char* l = f + mmap.size();
+      
+      errno = 0;
+      Type tmp;
+      while (errno == 0 && f && f<=(l-sizeof(tmp)) ) {
+        memcpy(&tmp, f, sizeof(tmp));
+        f += sizeof(tmp);
+        vec.push_back(tmp);
+      }
+      
+      if (errno != 0) {
+        std::stringstream ss;
+        ss << "(BinaryInterface.h) error in reading binary file " << inputFN << std::endl;
+        throw MyException(ss);
+      }
     }
-    
-    if (errno != 0) {
-      std::stringstream ss;
-      ss << "(BinaryInterface.h) error in writing binary file " << inputFN << std::endl;
-      throw MyException(ss);
+  }
+  
+  static bool fileIsEmpty(const std::string& fileName) {
+    std::ifstream in(fileName.c_str(), std::ios::ate | std::ios::binary);
+    if (in.is_open()) {
+      return static_cast<long long>(in.tellg()) == 0ll;
+    } else {
+      return true;
     }
   }
 };

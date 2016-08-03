@@ -37,7 +37,7 @@ void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Reading in p-value tree." << std::endl;
   }
-  if (BatchGlobals::fileExists(pvalTreeFN)) {
+  if (!BatchGlobals::fileIsEmpty(pvalTreeFN)) {
     boost::iostreams::mapped_file mmap(pvalTreeFN, 
               boost::iostreams::mapped_file::readonly);
     const char* f = mmap.const_data();
@@ -51,10 +51,7 @@ void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
       pvals.push_back(tmp);
     }
   } else {
-    std::ostringstream ss;
-    ss << "ERROR: Could not open pvalue tree file " 
-       << pvalTreeFN << std::endl;
-    throw MyException(ss);
+    std::cerr << "WARNING: Empty pvalue tree file " << pvalTreeFN << std::endl;
   }
 }
 
@@ -70,7 +67,7 @@ void BatchSpectrumClusters::readScanDescs(const std::string& scanDescFN,
   if (BatchGlobals::VERB > 1) {
     std::cerr << "Reading in scan descriptions." << std::endl;
   }
-  if (BatchGlobals::fileExists(scanDescFN)) {
+  if (!BatchGlobals::fileIsEmpty(scanDescFN)) {
     boost::iostreams::mapped_file mmap(scanDescFN, 
               boost::iostreams::mapped_file::readonly);
     const char* f = mmap.const_data();
@@ -79,7 +76,6 @@ void BatchSpectrumClusters::readScanDescs(const std::string& scanDescFN,
     errno = 0;
     char* next = NULL;
     const char* nextConst = NULL;
-    char* substr;
     unsigned int globalScannrTmp, localScannr;
     ScanId globalScannr;
     std::string filePath, peptide;

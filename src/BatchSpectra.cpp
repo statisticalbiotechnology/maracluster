@@ -19,7 +19,7 @@
 void BatchSpectra::convertToBatchSpectra(SpectrumFileList& fileList) {
   std::vector<std::string> spectrumFNs = fileList.getFilePaths();
 #pragma omp parallel for schedule(dynamic, 1)                
-  for (int fileIdx = 0; fileIdx < spectrumFNs.size(); ++fileIdx) {
+  for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
     convertToBatchSpectra(spectrumFN, fileList);
   }

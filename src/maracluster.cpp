@@ -408,8 +408,10 @@ int main(int argc, char* argv[]) {
       switch (mode_) {
         case BATCH: {
           // This executes the entire pipeline in one go
-          // maracluster -b /media/storage/mergespec/data/batchcluster/Linfeng/all.txt \
-                         -f /media/storage/mergespec/data/batchcluster/Linfeng/output/
+          /* 
+          maracluster -b /media/storage/mergespec/data/Linfeng/batchcluster/all.txt \
+                      -f /media/storage/mergespec/data/Linfeng/batchcluster/output/ 
+          */
           if (spectrumBatchFileFN_.size() == 0) {
             std::cerr << "Error: no batch file specified with -b flag" << std::endl;
             return EXIT_FAILURE;
@@ -577,13 +579,15 @@ int main(int argc, char* argv[]) {
             PvalueFilterAndSort::convertBinaryPvalToTsv(pvaluesFN_, pvaluesFN_);
           } else {
             // calculate p-values
-            // maracluster pvalue -i /media/storage/mergespec/data/batchcluster/Linfeng/600.ms2 \
+            /*
+            maracluster pvalue -i /media/storage/mergespec/data/batchcluster/Linfeng/600.ms2 \
                             -b /media/storage/mergespec/data/batchcluster/Linfeng/all.txt \
                             -g /media/storage/mergespec/data/batchcluster/Linfeng/peak_counts.dat \
-            // maracluster pvalue -i /media/storage/mergespec/data/batchcluster/Linfeng/unit_test/601.dat \
+            maracluster pvalue -i /media/storage/mergespec/data/batchcluster/Linfeng/unit_test/601.dat \
                             -b /media/storage/mergespec/data/batchcluster/Linfeng/all.txt \
                             -g /media/storage/mergespec/data/batchcluster/Linfeng/unit_test/peak_counts.dat \
                             -t -10.0
+            */
             if (peakCountFN_.size() == 0) {
               std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
               return EXIT_FAILURE;

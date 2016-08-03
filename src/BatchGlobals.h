@@ -29,6 +29,7 @@ class BatchGlobals {
   static unsigned int VERB; 
   
   static bool fileExists(const std::string& fileName);
+  static bool fileIsEmpty(const std::string& fileName);
   static void reportProgress(time_t& startTime, clock_t& startClock,
     size_t currentIt, size_t totalIt);
 };

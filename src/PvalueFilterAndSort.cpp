@@ -156,13 +156,14 @@ void PvalueFilterAndSort::externalMergeSort(const std::string& resultFN, int num
   std::vector<long long> offsets(numFiles);
   int maxPvalSort = maxPvalsPerFile_;
   bool first = true;
+  bool tsvInput = false;
   long long numPvals = 0, numWrittenPvals = 0;
   while (closedFiles.size() < numFiles) {
     float maxMinPval = 0.0;
     
     for (int bin = 0; bin < numFiles; ++bin) {
       std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(bin);
-      
+      if (estimateNumPvals(partFileFN, tsvInput) == 0) continue;
       boost::iostreams::mapped_file mmap(partFileFN, 
             boost::iostreams::mapped_file::readonly);
       

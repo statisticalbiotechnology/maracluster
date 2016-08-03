@@ -45,7 +45,8 @@ class MSFileMerger : public MSFileHandler {
  public:
   static int mergeMethod_;
   static bool normalize_;
-  static int maxMSFilePtrs_, maxSpectraPerFile_, maxConsensusSpectraPerFile_;
+  static int maxMSFilePtrs_, maxSpectraPerFile_;
+  static unsigned int maxConsensusSpectraPerFile_;
   
   MSFileMerger(std::string& spectrumOutFN) : 
     numClusterBins_(0), numBatches_(0), 

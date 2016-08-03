@@ -16,14 +16,14 @@
  
 #include "MSClusterMerge.h"
 
-const float MSClusterMerge::MASS_TO_INT_RATIO = 10000.0;
-float MSClusterMerge::fragmentTolerance_ = 0.34; /* has to be > 0.1 */
+const float MSClusterMerge::MASS_TO_INT_RATIO = 10000.0f;
+float MSClusterMerge::fragmentTolerance_ = 0.34f; /* has to be > 0.1 */
 float MSClusterMerge::isoTolerance_ = 
-    0.1 + (MSClusterMerge::fragmentTolerance_ - 0.1) * 0.5;
+    0.1f + (MSClusterMerge::fragmentTolerance_ - 0.1f) * 0.5f;
 PeakWeightTable MSClusterMerge::peakWeightTable_;
 
 void MSClusterMerge::init() {
-  peakWeightTable_.initWeights(64, 0.15);
+  peakWeightTable_.initWeights(64, 0.15f);
 }
 
 /* Adapted from the MS-Cluster code base:
@@ -40,7 +40,7 @@ void MSClusterMerge::binMZIntensityPairs(std::vector<MZIntensityPair>& spectrum,
 	int prev = 0;
   for (int i = 1; i < totalPeaks; i++) {
     int curBinIdx = convertMassToInt(spectrum[i].mz);
-		if (curBinIdx - binnedSpectrum[prev].binIdx < maxIntProximity) {
+		if (curBinIdx - static_cast<int>(binnedSpectrum[prev].binIdx) < maxIntProximity) {
 			// join peaks with proportion to their intensities
 			const double intensitySum = 
 			    (binnedSpectrum[prev].intensity + spectrum[i].intensity);
@@ -84,7 +84,7 @@ void MSClusterMerge::mergeMccs(std::vector<MassChargeCandidate>& allMccs,
 		    candidateMccs.back().mass,
         candidateMccs.back().charge);
   mccCounts.push_back(1);
-  for (int i = 1; i < allMccs.size(); ++i) {
+  for (int i = 1; i < static_cast<int>(allMccs.size()); ++i) {
     double massTolerance = 10e-6 * candidateMccs.back().mass; /* 10 ppm */
     if (allMccs[i].charge == candidateMccs.back().charge &&
         allMccs[i].mass - candidateMccs.back().mass < massTolerance) {
@@ -152,7 +152,7 @@ void MSClusterMerge::merge(
 	const int maxIntProximity = convertMassToInt(isoTolerance_);
 	int prev = 0;
 	for (int i = 1; i < totalPeaks; i++) {
-		if (allPeaks[i].binIdx - mergedSpectrum[prev].binIdx < maxIntProximity ) {
+		if (static_cast<int>(allPeaks[i].binIdx - mergedSpectrum[prev].binIdx) < maxIntProximity ) {
 			// join peaks with proportion to their intensities
 			const double intensitySum = 
 			    (mergedSpectrum[prev].intensity + allPeaks[i].intensity);

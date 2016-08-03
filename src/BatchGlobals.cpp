@@ -23,6 +23,15 @@ bool BatchGlobals::fileExists(const std::string& fileName) {
   return infile.good();
 }
 
+bool BatchGlobals::fileIsEmpty(const std::string& fileName) {
+  std::ifstream in(fileName.c_str(), std::ios::ate | std::ios::binary);
+  if (in.is_open()) {
+    return static_cast<long long>(in.tellg()) == 0ll;
+  } else {
+    return true;
+  }
+}
+
 void BatchGlobals::reportProgress(time_t& startTime, clock_t& startClock,
     size_t currentIt, size_t totalIt) {
   time_t elapsedTime;

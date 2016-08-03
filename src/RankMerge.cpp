@@ -17,7 +17,7 @@
 #include "RankMerge.h"
 
 double RankMerge::dpThresh = 12.0;
-unsigned int RankMerge::maxRankDiff = 10u;
+int RankMerge::maxRankDiff = 10;
 
 void RankMerge::merge(std::vector<MZIntensityPair>& mziPairsIn, std::vector<MZIntensityPair>& mziPairsFrom, 
                               BinRanks& rankIn, BinRanks& rankFrom, double weight, double shift, double scaling) {

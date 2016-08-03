@@ -233,7 +233,7 @@ void PeakCounts::generatePeakDistribution(double precMz, unsigned int charge,
 
   unsigned int minPrecBin = precMzBin - precWindow;
   unsigned int maxPrecBin = precMzBin + precWindow;
-  int precMzInt = std::ceil(getPrecMz(precMzBin + 1));
+  int precMzInt = static_cast<int>(std::ceil(getPrecMz(precMzBin + 1)));
   unsigned int maxPeakBin = getPeakBin(precMzInt*charge) + 1;
 
   unsigned int totalSpecCount = priorCount*maxPeakBin / numQueryPeaks;
@@ -334,7 +334,7 @@ void PeakCounts::generateRelativePeakDistribution(unsigned int charge, PeakDistr
 }
 
 void PeakCounts::readFromFile(const std::string& peakCountFN) {
-  std::ifstream peakCountStream(peakCountFN.c_str());
+  std::ifstream peakCountStream(peakCountFN.c_str(), std::ios_base::binary | std::ios_base::in);
   std::string serializedPeakCounts(
       (std::istreambuf_iterator<char>(peakCountStream)),
       std::istreambuf_iterator<char>());
