@@ -21,7 +21,13 @@
 #include "pwiz/data/msdata/MSData.hpp"
 #include "pwiz/data/msdata/MSDataFile.hpp"
 #include "pwiz/data/common/cv.hpp"
+#if defined(WIN32) && defined(VENDOR_SUPPORT)
 #include "pwiz/data/vendor_readers/ExtendedReaderList.hpp"
+typedef pwiz::msdata::ExtendedReaderList MSReaderList;
+#else
+#include "pwiz/data/msdata/DefaultReaderList.hpp"
+typedef pwiz::msdata::DefaultReaderList MSReaderList;
+#endif
 #include "Option.h"
 #include "SpectrumHandler.h"
 #include "MassChargeCandidate.h"
@@ -102,7 +108,7 @@ bool parseOptions(int argc, char **argv) {
 int main(int argc, char* argv[]) {
   try {
     if (parseOptions(argc, argv)) {
-      pwiz::msdata::ExtendedReaderList readerList;
+      MSReaderList readerList;
       
       pwiz::msdata::MSDataFile msd(filePathOrig_, &readerList);
       pwiz::msdata::SpectrumListPtr sl = msd.run.spectrumListPtr;

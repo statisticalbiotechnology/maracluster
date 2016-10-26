@@ -29,7 +29,7 @@
 #include "MZIntensityPair.h"
 #include "MassChargeCandidate.h"
 
-#ifdef WIN32
+#if defined(WIN32) && defined(VENDOR_SUPPORT)
 #include "pwiz/data/vendor_readers/ExtendedReaderList.hpp"
 typedef pwiz::msdata::ExtendedReaderList MSReaderList;
 #else

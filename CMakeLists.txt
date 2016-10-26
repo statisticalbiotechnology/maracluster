@@ -15,18 +15,23 @@ my_set(CMAKE_PREFIX_PATH "../" "Default path to packages")
 
 option(FINGERPRINT_FILTER "Use pre-filtering of spectrum pairs by their fragment fingerprints." OFF)
 if(FINGERPRINT_FILTER)
-  add_definitions(-DFINGERPRINT_FILTER)
+  add_definitions(-DFINGERPRINT_FILTER) # triggers ifdef statements in the C++ code
 endif(FINGERPRINT_FILTER)
 
 option(DOT_PRODUCT "Use dot product similarity measure instead of p values." OFF)
 if(DOT_PRODUCT)
-  add_definitions(-DDOT_PRODUCT)
+  add_definitions(-DDOT_PRODUCT) # triggers ifdef statements in the C++ code
 endif(DOT_PRODUCT)
 
 option(SINGLE_LINKAGE "Use single instead of complete linkage for clustering." OFF)
 if(SINGLE_LINKAGE)
-  add_definitions(-DSINGLE_LINKAGE)
+  add_definitions(-DSINGLE_LINKAGE) # triggers ifdef statements in the C++ code
 endif(SINGLE_LINKAGE)
+
+option(VENDOR_SUPPORT "Add support for reading vendor RAW files using Proteowizard." OFF)
+if(VENDOR_SUPPORT)
+  add_definitions(-DVENDOR_SUPPORT) # triggers ifdef statements in the C++ code
+endif(VENDOR_SUPPORT)
 
 # PRINT VARIBALES TO STDOUT
 MESSAGE( STATUS )
@@ -49,6 +54,7 @@ MESSAGE( STATUS "MARACLUSTER options:" )
 MESSAGE( STATUS "FINGERPRINT_FILTER = ${FINGERPRINT_FILTER}")
 MESSAGE( STATUS "DOT_PRODUCT = ${DOT_PRODUCT}")
 MESSAGE( STATUS "SINGLE_LINKAGE = ${SINGLE_LINKAGE}")
+MESSAGE( STATUS "VENDOR_SUPPORT = ${VENDOR_SUPPORT}")
 MESSAGE( STATUS
 "-------------------------------------------------------------------------------"
 )
@@ -92,9 +98,12 @@ endif( MINGW )
 
 if( MSVC )
   message( STATUS "    Installing system-libraries: Win32 DLLs." )
-  set( DLL_LIBRARIES "${PWIZ_DATA_VENDOR_BRUKER_BAF2SQL_API_LIBRARY};${PWIZ_DATA_VENDOR_WATERS_API_LIBRARY};${PWIZ_DATA_VENDOR_WATERS_IMS_API_LIBRARY}" )
-  STRING(REPLACE ".lib" ".dll" DLL_LIBRARIES "${DLL_LIBRARIES}")
-  set( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${DLL_LIBRARIES} )
+  set( CMAKE_INSTALL_OPENMP_LIBRARIES TRUE )
+  if (VENDOR_SUPPORT)
+    set( DLL_LIBRARIES "${PWIZ_DATA_VENDOR_BRUKER_BAF2SQL_API_LIBRARY};${PWIZ_DATA_VENDOR_WATERS_API_LIBRARY};${PWIZ_DATA_VENDOR_WATERS_IMS_API_LIBRARY}" )
+    STRING(REPLACE ".lib" ".dll" DLL_LIBRARIES "${DLL_LIBRARIES}")
+    set( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${DLL_LIBRARIES} )
+  endif(VENDOR_SUPPORT)
   include( InstallRequiredSystemLibraries )
 endif( MSVC )
 

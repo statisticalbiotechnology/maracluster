@@ -25,8 +25,8 @@ using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
 using pwiz::msdata::Spectrum;
 
-int MSFileMerger::maxMSFilePtrs_ = 60; // memory constrained
-int MSFileMerger::maxSpectraPerFile_ = 500000; // memory constrained
+int MSFileMerger::maxMSFilePtrs_ = 40; // memory constrained
+int MSFileMerger::maxSpectraPerFile_ = 200000; // memory constrained
 unsigned int MSFileMerger::maxConsensusSpectraPerFile_ = 200000u; // search engine memory constrained
 
 int MSFileMerger::mergeMethod_ = 10;

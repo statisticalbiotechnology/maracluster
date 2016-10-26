@@ -10,7 +10,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 MESSAGE( STATUS "Checking packages:" )
 
 if(MSVC)
-  add_definitions(-DPWIZ_READER_THERMO)
+  if(VENDOR_SUPPORT)
+    add_definitions(-DPWIZ_READER_THERMO)
+  endif(VENDOR_SUPPORT)
   add_definitions(-DBOOST_ALL_NO_LIB)
   set(BOOST_NOWIDE "nowide")
 else(MSVC)
@@ -74,7 +76,6 @@ if(MSVC)
   add_executable(extractraw extractRAWSpectra.cpp)
 endif(MSVC)
 
-
 if(APPLE)
   set_property(TARGET maracluster PROPERTY LINK_SEARCH_START_STATIC FALSE)
   set_property(TARGET maracluster PROPERTY LINK_SEARCH_END_STATIC TRUE)
@@ -111,4 +112,3 @@ if(MSVC)
 else(MSVC)
   install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 endif(MSVC)
-
