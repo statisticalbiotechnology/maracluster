@@ -24,7 +24,7 @@ void BatchSpectrumFiles::splitByPrecursorMz(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
     const std::string& peakCountFN, const std::string& scanInfoFN,
     double precursorTolerance, bool precursorToleranceDa) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Splitting spectra by precursor Mz" << std::endl;
   }
   
@@ -56,7 +56,7 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
     SpectrumFileList& fileList, 
     std::vector<double>& precMzsAccumulated,
     const std::string& peakCountFN) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Accumulating peak counts and precursor Mzs" << std::endl;
   }
   
@@ -66,7 +66,7 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
 #pragma omp parallel for schedule(dynamic, 1)  
   for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
-    if (BatchGlobals::VERB > 1) {
+    if (Globals::VERB > 1) {
       std::cerr << "  Processing " << spectrumFN << 
           " (" << (fileIdx+1)*100/spectrumFNs.size() << "%)." << std::endl;
     }
@@ -121,7 +121,7 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
     std::vector<double>& limits,
     std::vector<std::string>& datFNs,
     const std::string& scanInfoFN) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Dividing spectra in " << limits.size() << 
                  " bins of ~2 CPU hours each." << std::endl;
   }
@@ -130,7 +130,7 @@ void BatchSpectrumFiles::writeSplittedPrecursorMzFiles(
 #pragma omp parallel for schedule(dynamic, 1)                
   for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
-    if (BatchGlobals::VERB > 1) {
+    if (Globals::VERB > 1) {
       std::cerr << "  Processing " << spectrumFN << 
           " (" << (fileIdx+1)*100/spectrumFNs.size() << "%)." << std::endl;
     }
@@ -296,7 +296,7 @@ void BatchSpectrumFiles::readPrecMzs(const std::string& precMzFN,
 
 void BatchSpectrumFiles::readPrecMzLimits(const std::string& scanInfoFN,
     std::map<ScanId, std::pair<float, float> >& precMzLimits) {
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Reading precursor m/z limits." << std::endl;
   }
   std::vector<ScanInfo> scanInfos;
@@ -335,7 +335,7 @@ void BatchSpectrumFiles::getPrecMzLimits(std::vector<double>& precMzs,
     } 
   }
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Estimated number of pair comparisons: " 
               << numComparisons << std::endl;
   }
@@ -348,7 +348,7 @@ int BatchSpectrumFiles::getPrecMzBin(double precMz, std::vector<double>& limits)
 
 void BatchSpectrumFiles::writePeakCounts(PeakCounts& peakCountsAccumulated, 
                                          const std::string& peakCountFN) {
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Writing peak counts to file" << std::endl;
   }
   std::string serializedPeakCounts;
@@ -359,7 +359,7 @@ void BatchSpectrumFiles::writePeakCounts(PeakCounts& peakCountsAccumulated,
     peakCountStream << serializedPeakCounts;
   }
   
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Finished writing peak counts to file" << std::endl;
   }
 }

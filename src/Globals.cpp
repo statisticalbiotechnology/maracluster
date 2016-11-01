@@ -14,16 +14,17 @@
   
  ******************************************************************************/
  
-#include "BatchGlobals.h"
+#include "Globals.h"
+#include "MyException.h"
 
-unsigned int BatchGlobals::VERB = 3;
+unsigned int Globals::VERB = 3;
 
-bool BatchGlobals::fileExists(const std::string& fileName) {
+bool Globals::fileExists(const std::string& fileName) {
   std::ifstream infile(fileName.c_str());
   return infile.good();
 }
 
-bool BatchGlobals::fileIsEmpty(const std::string& fileName) {
+bool Globals::fileIsEmpty(const std::string& fileName) {
   std::ifstream in(fileName.c_str(), std::ios::ate | std::ios::binary);
   if (in.is_open()) {
     return static_cast<long long>(in.tellg()) == 0ll;
@@ -32,7 +33,7 @@ bool BatchGlobals::fileIsEmpty(const std::string& fileName) {
   }
 }
 
-void BatchGlobals::reportProgress(time_t& startTime, clock_t& startClock,
+void Globals::reportProgress(time_t& startTime, clock_t& startClock,
     size_t currentIt, size_t totalIt) {
   time_t elapsedTime;
   time(&elapsedTime);

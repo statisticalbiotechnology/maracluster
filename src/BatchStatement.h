@@ -28,7 +28,7 @@
 #include <boost/foreach.hpp>
 
 #include "MyException.h"
-#include "BatchGlobals.h"
+#include "Globals.h"
 
 enum BatchStatementType {
   kSpectra, kPvalueVectors, kPvalueVectorsHead, kPvalueVectorsTail,

@@ -33,7 +33,7 @@
 
 #include "PercolatorInterface.cpp"
 
-#include "BatchGlobals.h"
+#include "Globals.h"
 #include "BatchSpectrumFiles.h"
 #include "BatchSpectrumClusters.h"
 #include "BatchSpectra.h"
@@ -194,6 +194,11 @@ bool parseOptions(int argc, char **argv) {
       "minClusterSize",
       "Set the minimum size for a cluster for producing consensus spectra (default: 1).",
       "int");
+  cmd.defineOption("S",
+      "splitMassChargeStates",
+      "Split mass charge states in spectrum output file into separate spectrum copies with the same peak list, as some formats (e.g. mgf) and software packages (e.g. MS-GF+) do not support multiple charge states for a single peak list (default: auto-detect from output file format).",
+      "",
+      TRUE_IF_SET);
   cmd.defineOption("v",
       "verbatim",
       "Set the verbatim level (lowest: 0, highest: 5, default: 3).",
@@ -276,6 +281,7 @@ bool parseOptions(int argc, char **argv) {
   // file output option for maracluster consensus
   if (cmd.optionSet("o")) spectrumOutFN_ = cmd.options["o"];
   if (cmd.optionSet("M")) minConsensusClusterSize_ = cmd.getInt("M", 0, 100000);
+  if (cmd.optionSet("S")) MSFileHandler::splitMassChargeStates_ = true;
   
   // file input option for maracluster search
   if (cmd.optionSet("z")) spectrumLibraryFN_ = cmd.options["z"];
@@ -294,7 +300,7 @@ bool parseOptions(int argc, char **argv) {
     }
   }
   if (cmd.optionSet("C")) chargeUncertainty_ = cmd.getInt("C", 0, 5);
-  if (cmd.optionSet("v")) BatchGlobals::VERB = cmd.getInt("v", 0, 5);
+  if (cmd.optionSet("v")) Globals::VERB = cmd.getInt("v", 0, 5);
 
   return true;
 }
@@ -318,7 +324,7 @@ int createIndex(const std::string& outputFolder, const std::string& fnPrefix,
   SpectrumFileList fileList;
   fileList.initFromFile(spectrumBatchFileFN);
   
-  if (!BatchGlobals::fileExists(datFNFile) || !BatchGlobals::fileExists(scanInfoFN)) {    
+  if (!Globals::fileExists(datFNFile) || !Globals::fileExists(scanInfoFN)) {    
     BatchSpectrumFiles spectrumFiles(outputFolder, chargeUncertainty);
     spectrumFiles.splitByPrecursorMz(fileList, datFNFile, peakCountFN, 
         scanInfoFN, precursorTolerance, precursorToleranceDa);
@@ -354,10 +360,10 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
   std::string clusterBaseFN = outputFolder + "/" + fnPrefix + ".clusters_";
   
   // start clustering
-  if (!BatchGlobals::fileExists(resultTreeFN)) {
+  if (!Globals::fileExists(resultTreeFN)) {
     std::cerr << "Starting p-value clustering." << std::endl;
     
-    if (!BatchGlobals::fileExists(matrixFN)) {
+    if (!Globals::fileExists(matrixFN)) {
       bool removeUnidirection = true;
       bool tsvInput = false;
       PvalueFilterAndSort::filterAndSort(pvalFNs, matrixFN, tsvInput, removeUnidirection);
@@ -436,7 +442,7 @@ int main(int argc, char* argv[]) {
           {
             for (size_t i = 0; i < datFNs.size(); ++i) {
               // make sure the file exists
-              if (!BatchGlobals::fileExists(datFNs[i])) {
+              if (!Globals::fileExists(datFNs[i])) {
                 std::cerr << "Ignoring missing data file " << datFNs[i] << std::endl;
                 continue;
               }
@@ -452,7 +458,7 @@ int main(int argc, char* argv[]) {
               std::string pvaluesFN = datFN + ".pvalues.dat";
               std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
               
-              if (!BatchGlobals::fileExists(pvalueTreeFN)) {
+              if (!Globals::fileExists(pvalueTreeFN)) {
                 BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
                 {
                   BatchSpectra spectra;
@@ -469,7 +475,7 @@ int main(int argc, char* argv[]) {
                 std::cerr << "Using p-value tree from " << pvalueTreeFN <<
                     ". Remove this file to generate a new p-value tree." << std::endl;
               }
-              if (BatchGlobals::fileExists(pvaluesFN)) {
+              if (Globals::fileExists(pvaluesFN)) {
                 pvalFNs.push_back(pvaluesFN);
               }
               pvalTreeFNs.push_back(pvalueTreeFN);
@@ -480,10 +486,10 @@ int main(int argc, char* argv[]) {
             resultTreeFN_ = outputFolder_ + "/overlap.pvalue_tree.tsv";
           }
           
-          if (!BatchGlobals::fileExists(resultTreeFN_)) {
+          if (!Globals::fileExists(resultTreeFN_)) {
             std::string pvaluesFN = outputFolder_ + "/overlap.pvalues.dat";
             if (overlapFNs.size() > 0) {
-              if (!BatchGlobals::fileExists(pvaluesFN)) {
+              if (!Globals::fileExists(pvaluesFN)) {
                 BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
                 pvecs.processOverlapFiles(overlapFNs);
               } else {
@@ -491,7 +497,7 @@ int main(int argc, char* argv[]) {
                     ". Remove this file to generate new p-values." << std::endl;
               }
               
-              if (BatchGlobals::fileExists(pvaluesFN)) {
+              if (Globals::fileExists(pvaluesFN)) {
                 pvalFNs.push_back(pvaluesFN);
               }
             }
@@ -647,6 +653,15 @@ int main(int argc, char* argv[]) {
         {
           if (spectrumOutFN_.size() == 0)
             spectrumOutFN_ = outputFolder_ + "/" + fnPrefix_ + ".consensus.ms2";
+          
+          if (!MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
+            return EXIT_FAILURE;
+          }
+          
+          if (MSFileHandler::getOutputFormat(spectrumOutFN_) == "mgf") {
+            MSFileHandler::splitMassChargeStates_ = true;
+          }
+          
           MSFileMerger msFileMerger(spectrumOutFN_);
           
           std::cerr << "Parsing cluster file" << std::endl;
@@ -678,7 +693,7 @@ int main(int argc, char* argv[]) {
           if (pvaluesFN_.size() == 0)
             pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.dat";
           
-          if (!BatchGlobals::fileExists(pvaluesFN_)) {
+          if (!Globals::fileExists(pvaluesFN_)) {
             std::cerr << "Reading peak counts" << std::endl;
             PeakCounts peakCounts;
             peakCounts.readFromFile(peakCountFN_);
@@ -747,7 +762,7 @@ int main(int argc, char* argv[]) {
           if (pvaluesFN_.size() == 0)
             pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.dat";
           
-          if (!BatchGlobals::fileExists(pvaluesFN_)) {
+          if (!Globals::fileExists(pvaluesFN_)) {
             std::cerr << "Reading peak counts" << std::endl;
             PeakCounts peakCounts;
             peakCounts.readFromFile(peakCountFN_);

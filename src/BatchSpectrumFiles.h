@@ -25,7 +25,7 @@
 #include <boost/foreach.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
-#include "BatchGlobals.h"
+#include "Globals.h"
 #include "BatchStatement.h"
 #include "BatchPvalues.h"
 #include "BatchPvalueVectors.h"

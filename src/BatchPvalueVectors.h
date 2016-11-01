@@ -27,7 +27,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 
-#include "BatchGlobals.h"
+#include "Globals.h"
 #include "BatchPvalueVector.h"
 #include "BatchPvalues.h"
 #include "BatchSpectrum.h"

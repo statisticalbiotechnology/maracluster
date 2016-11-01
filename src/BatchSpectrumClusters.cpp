@@ -34,10 +34,10 @@ void BatchSpectrumClusters::printClusters(
 
 void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Reading in p-value tree." << std::endl;
   }
-  if (!BatchGlobals::fileIsEmpty(pvalTreeFN)) {
+  if (!Globals::fileIsEmpty(pvalTreeFN)) {
     boost::iostreams::mapped_file mmap(pvalTreeFN, 
               boost::iostreams::mapped_file::readonly);
     const char* f = mmap.const_data();
@@ -64,10 +64,10 @@ void BatchSpectrumClusters::createScanDescriptionMap(
 
 void BatchSpectrumClusters::readScanDescs(const std::string& scanDescFN,
     SpectrumFileList& fileList) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Reading in scan descriptions." << std::endl;
   }
-  if (!BatchGlobals::fileIsEmpty(scanDescFN)) {
+  if (!Globals::fileIsEmpty(scanDescFN)) {
     boost::iostreams::mapped_file mmap(scanDescFN, 
               boost::iostreams::mapped_file::readonly);
     const char* f = mmap.const_data();
@@ -107,7 +107,7 @@ void BatchSpectrumClusters::readScanDescs(const std::string& scanDescFN,
 }
 
 void BatchSpectrumClusters::readScanNrs(const std::string& scanInfoFN) {
-  if (BatchGlobals::fileExists(scanInfoFN)) {
+  if (Globals::fileExists(scanInfoFN)) {
     std::vector<ScanInfo> scanInfos;
     BinaryInterface::read<ScanInfo>(scanInfoFN, scanInfos);
     
@@ -123,7 +123,7 @@ void BatchSpectrumClusters::createClusterings(
     std::vector<PvalueTriplet>& pvals, 
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList,
     const std::string& resultBaseFN) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Writing clusterings for " << clusterThresholds.size()
         << " thresholds." << std::endl;
   }
@@ -185,7 +185,7 @@ void BatchSpectrumClusters::createClusterings(
     ++thresholdIdx;
   }
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Finished writing clusterings." << std::endl;
   }
 }
@@ -193,7 +193,7 @@ void BatchSpectrumClusters::createClusterings(
 void BatchSpectrumClusters::writeClusters(
     std::map<ScanId, std::vector<ScanId> >& clusters,
     SpectrumFileList& fileList, const std::string& resultFN) {
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Writing clustering to " << resultFN << std::endl;
   }
   std::ofstream resultStream(resultFN.c_str());

@@ -58,6 +58,7 @@ class MSFileHandler {
   }
   
   static bool validMs2OutputFN(std::string& outputFN);
+  static std::string getOutputFormat(const std::string& outputFN);
   static void calcPeakCount(pwiz::msdata::SpectrumListPtr specList, 
       PeakCounts& mzMap,
       std::string resultFN = "", bool normalizeXCorr = false, 

@@ -30,7 +30,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
-#include "BatchGlobals.h"
+#include "Globals.h"
 #include "BatchSpectrumFiles.h"
 #include "SpectrumFileList.h"
 #include "PvalueTriplet.h"

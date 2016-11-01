@@ -25,6 +25,14 @@ using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
 using pwiz::msdata::Spectrum;
 
+using pwiz::msdata::Software;
+using pwiz::msdata::SoftwarePtr;
+using pwiz::msdata::SourceFile;
+using pwiz::msdata::SourceFilePtr;
+using pwiz::msdata::DataProcessing;
+using pwiz::msdata::DataProcessingPtr;
+using pwiz::msdata::ProcessingMethod;
+
 int MSFileMerger::maxMSFilePtrs_ = 40; // memory constrained
 int MSFileMerger::maxSpectraPerFile_ = 200000; // memory constrained
 unsigned int MSFileMerger::maxConsensusSpectraPerFile_ = 200000u; // search engine memory constrained
@@ -139,6 +147,8 @@ void MSFileMerger::mergeAllSpectra(const std::string& spectrumInFN) {
   }
   
   SpectrumListSimplePtr mergedSpectra(new SpectrumListSimple);
+  mergedSpectra->dp = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
+  
   ScanId mergedScanId = fileList_.getScanId(spectrumOutFN_,1u);
   mergeSpectraSetMSCluster(spectra, mergedScanId, mergedSpectra);
   
@@ -206,6 +216,7 @@ void MSFileMerger::mergeSpectraSmall() {
   msdMerged.id = msdMerged.run.id = "merged_spectra";
   
   SpectrumListSimplePtr mergedSpectra(new SpectrumListSimple);
+  mergedSpectra->dp = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
   
   std::cerr << "Merging spectra" << std::endl;
   int count = 0;
@@ -259,6 +270,7 @@ void MSFileMerger::mergeSpectraSmall() {
       writeMSData(msdMerged, partSpecOutFN);
       
       mergedSpectra = SpectrumListSimplePtr(new SpectrumListSimple);
+      mergedSpectra->dp = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
     }
   }
 }
@@ -303,6 +315,7 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
     std::vector<SpectrumListSimplePtr> spectrumListsAcc(numClusterBins_);
     for (size_t k = 0; k < numClusterBins_; ++k) {
       spectrumListsAcc[k] = SpectrumListSimplePtr(new SpectrumListSimple);
+      spectrumListsAcc[k]->dp = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
     }
     int startIdx = batchNr*numMSFilePtrsPerBatch_;
     int endIdx = (std::min)((batchNr+1)*numMSFilePtrsPerBatch_, fileList_.size());
@@ -324,6 +337,7 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
       std::vector<SpectrumListSimplePtr> spectrumLists(numClusterBins_);
       for (size_t k = 0; k < numClusterBins_; ++k) {
         spectrumLists[k] = SpectrumListSimplePtr(new SpectrumListSimple);
+        spectrumLists[k]->dp = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
       }
       for (unsigned int j = 0; j < sl->size(); ++j) {
         SpectrumPtr s = sl->spectrum(j, true);
@@ -359,6 +373,15 @@ void MSFileMerger::mergeSplitSpecFiles() {
   MSClusterMerge::init();
   
   SpectrumListSimplePtr mergedSpectra(new SpectrumListSimple);
+
+  SoftwarePtr softwarePtr = SoftwarePtr(new Software("MaRaCluster"));
+  softwarePtr->version = VERSION;
+  DataProcessingPtr dpPtr = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
+  ProcessingMethod pm;
+  pm.softwarePtr = softwarePtr;
+  dpPtr->processingMethods.push_back(pm);
+  mergedSpectra->dp = dpPtr;
+  
   unsigned int partIdx = 0u;
   
   for (size_t clusterBin = 0; clusterBin < numClusterBins_; ++clusterBin) {
@@ -370,9 +393,17 @@ void MSFileMerger::mergeSplitSpecFiles() {
         || (mergedSpectra->size() > 0u && clusterBin == numClusterBins_ - 1)) {
       std::cerr << "Creating merged MSData file" << std::endl;
       MSData msdMerged;
-      msdMerged.id = msdMerged.run.id = "merged_spectra";
+      msdMerged.id = msdMerged.run.id = "consensus_spectra";
+      msdMerged.softwarePtrs.push_back(softwarePtr);
+      std::vector<std::string>::const_iterator fileNamePtr = fileList_.getFilePaths().begin();
+      ++fileNamePtr; // skip the output file
+      for ( ; fileNamePtr != fileList_.getFilePaths().end(); ++fileNamePtr) {
+        msdMerged.fileDescription.sourceFilePtrs.push_back(SourceFilePtr(new SourceFile(*fileNamePtr, "", *fileNamePtr)));
+      }
       
       SpectrumListSimplePtr writeSpectra(new SpectrumListSimple);
+      writeSpectra->dp = dpPtr;
+      
       size_t idx = 0;
       BOOST_FOREACH (SpectrumPtr& s, mergedSpectra->spectra) {
         s->index = idx;

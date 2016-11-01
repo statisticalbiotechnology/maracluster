@@ -21,7 +21,7 @@
 #include <vector>
 #include <string>
 
-#include "BatchGlobals.h"
+#include "Globals.h"
 #include "BinaryInterface.h"
 #include "PvalueTriplet.h"
 

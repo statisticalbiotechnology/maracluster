@@ -24,14 +24,17 @@ using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
 using pwiz::msdata::Spectrum;
 using pwiz::msdata::SelectedIon;
+using pwiz::msdata::Software;
+using pwiz::msdata::SoftwarePtr;
+using pwiz::msdata::DataProcessingPtr;
+using pwiz::msdata::DataProcessing;
+using pwiz::msdata::ProcessingMethod;
 
 unsigned int MSFileHandler::chargeErrorTolerance_ = 0u;
 bool MSFileHandler::splitMassChargeStates_ = false;
 
 bool MSFileHandler::validMs2OutputFN(std::string& outputFN) {
-  size_t found = outputFN.find_last_of(".");
-  std::string outputFormat = outputFN.substr(found+1);
-  std::transform(outputFormat.begin(), outputFormat.end(), outputFormat.begin(), ::tolower);
+  std::string outputFormat = getOutputFormat(outputFN);
   if (outputFormat != "ms2" && outputFormat != "mzml" && outputFormat != "mzxml" && outputFormat != "mgf") {
     std::cerr << "Unknown output format:" << outputFormat << "; valid extensions are mgf, ms2, mzml and mzxml." << std::endl;
     return false;
@@ -40,14 +43,22 @@ bool MSFileHandler::validMs2OutputFN(std::string& outputFN) {
   }
 }
 
-void MSFileHandler::writeMSData(MSData& msd, const std::string& outputFN) {
-  std::cerr << "Writing file " << outputFN << std::endl;
-  
-  msd.cvs = pwiz::msdata::defaultCVList();
-  
+std::string MSFileHandler::getOutputFormat(const std::string& outputFN) {
   size_t found = outputFN.find_last_of(".");
   std::string outputFormat = outputFN.substr(found+1);
   std::transform(outputFormat.begin(), outputFormat.end(), outputFormat.begin(), ::tolower);
+  return outputFormat;
+}
+
+void MSFileHandler::writeMSData(MSData& msd, const std::string& outputFN) {
+  std::cerr << "Writing file " << outputFN << std::endl;
+  
+  msd.cvs = pwiz::msdata::defaultCVList();  
+  if (msd.id.empty()) {
+    msd.id = msd.run.id = "MaRacluster_consensus_spectra";
+  }
+  
+  std::string outputFormat = getOutputFormat(outputFN);
   /* see http://proteowizard.sourceforge.net/dox/_m_s_data_file_8hpp.html */
   if (outputFormat == "mgf") {
     MSDataFile::write(msd, outputFN, MSDataFile::Format_MGF); 

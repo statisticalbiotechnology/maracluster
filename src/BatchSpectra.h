@@ -21,7 +21,7 @@
 #include <vector>
 #include <string>
 
-#include "BatchGlobals.h"
+#include "Globals.h"
 #include "BatchSpectrumFiles.h"
 #include "BatchSpectrum.h"
 

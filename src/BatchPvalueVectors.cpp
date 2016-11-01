@@ -19,7 +19,7 @@
 void BatchPvalueVectors::calculatePvalueVectors(
     std::vector<BatchSpectrum>& spectra, 
     PeakCounts& peakCounts) {
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Inserting spectra into database" << std::endl;
   }
   
@@ -31,7 +31,7 @@ void BatchPvalueVectors::calculatePvalueVectors(
   clock_t startClock = clock();
   
   for (size_t i = 0; i < numSpectra; ++i) {    
-    if (BatchGlobals::VERB > 4) {
+    if (Globals::VERB > 4) {
       std::cerr << "Global scannr " << spectra[i].scannr << std::endl;
     }
     
@@ -43,10 +43,10 @@ void BatchPvalueVectors::calculatePvalueVectors(
     bool forceInsert = false;
     batchInsert(peakCounts, forceInsert);
     
-    if ((i % 50000 == 0 && BatchGlobals::VERB > 2) || BatchGlobals::VERB > 3) {
+    if ((i % 50000 == 0 && Globals::VERB > 2) || Globals::VERB > 3) {
       std::cerr << "Successfully inserted spectrum " << i + 1 << "/" << 
           numSpectra << " (" << (i+1)*100/numSpectra << "%)" << std::endl;
-      BatchGlobals::reportProgress(startTime, startClock, i, numSpectra);
+      Globals::reportProgress(startTime, startClock, i, numSpectra);
     }
   }
   
@@ -55,7 +55,7 @@ void BatchPvalueVectors::calculatePvalueVectors(
   sortPvalueVectors();
   reloadPvalueVectors();
   
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Successfully inserted spectra into database" << std::endl;
   }
 }
@@ -96,7 +96,7 @@ void BatchPvalueVectors::initPvecRow(const MassChargeCandidate& mcc,
 
 void BatchPvalueVectors::insertMassChargeCandidate(
     MassChargeCandidate& mcc, BatchSpectrum& spec) {
-  if (BatchGlobals::VERB > 4) {
+  if (Globals::VERB > 4) {
     std::cerr << "Inserting mass charge candidate into database" << std::endl;
   }
   
@@ -114,14 +114,14 @@ void BatchPvalueVectors::insertMassChargeCandidate(
     pvalVecBatch_.push_back(pvecRow);
   }
   
-  if (BatchGlobals::VERB > 4) {
+  if (Globals::VERB > 4) {
     std::cerr << "Inserted mass charge candidate into database" << std::endl;
   }
 }
 
 void BatchPvalueVectors::batchInsert(PeakCounts& peakCounts, bool forceInsert) {
   if (pvalVecBatch_.size() >= 5000 || forceInsert) {
-    if (BatchGlobals::VERB > 3) {
+    if (Globals::VERB > 3) {
       std::cerr << "Inserting " << pvalVecBatch_.size() << " spectra into database" << std::endl;
     }
     //std::cerr << "Calculating " << pvalVecBatch_.size() << " p-value vectors" << std::endl;
@@ -131,7 +131,7 @@ void BatchPvalueVectors::batchInsert(PeakCounts& peakCounts, bool forceInsert) {
     }
     pvalVecBatch_.clear();
     
-    if (BatchGlobals::VERB > 3) {
+    if (Globals::VERB > 3) {
       std::cerr << "Currently there are " << pvalVecCollection_.size() << " spectra in the database" << std::endl;
     }
   }
@@ -151,7 +151,7 @@ void BatchPvalueVectors::initPvalCalc(PvalueCalculator& pvalCalc,
 
 void BatchPvalueVectors::calculatePvalueVector(PvalueVectorsDbRow& pvecRow,
     PeakCounts& peakCounts) {
-  if (BatchGlobals::VERB > 4) {
+  if (Globals::VERB > 4) {
     std::cerr << "Inserting pvalue vector " << pvecRow.scannr << std::endl;
   }
   float precMass = SpectrumHandler::calcMass(pvecRow.precMz, pvecRow.charge);
@@ -164,16 +164,16 @@ void BatchPvalueVectors::calculatePvalueVector(PvalueVectorsDbRow& pvecRow,
       pvalVecCollection_.push_back(pvecRow);
     }
         
-    if (BatchGlobals::VERB > 4) {
+    if (Globals::VERB > 4) {
       std::cerr << "Inserted pvalue vector " << pvecRow.scannr << std::endl;
     }
-  } else if (BatchGlobals::VERB > 2) {
+  } else if (Globals::VERB > 2) {
     std::cerr << "Ignoring " << pvecRow.scannr << ". Not enough scoring peaks: " << pvecRow.pvalCalc.getNumScoringPeaks() << std::endl;
   }
 }
 
 void BatchPvalueVectors::sortPvalueVectors() {
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Sorting pvalue vectors" << std::endl;
   }
   std::sort(pvalVecCollection_.begin(), pvalVecCollection_.end());
@@ -185,7 +185,7 @@ void BatchPvalueVectors::writePvalueVectors(
   std::string pvalueVectorsHeadFN = pvalueVectorsBaseFN + ".head.dat";
   std::string pvalueVectorsTailFN = pvalueVectorsBaseFN + ".tail.dat";
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Writing pvalue vectors" << std::endl;
   }
 
@@ -195,7 +195,7 @@ void BatchPvalueVectors::writePvalueVectors(
   size_t n = pvalVecCollection_.size();
   
   for (size_t i = 0; i < n; ++i) {
-    if (i % 100000 == 0 && BatchGlobals::VERB > 2) {
+    if (i % 100000 == 0 && Globals::VERB > 2) {
       std::cerr << "Writing pvalue vector " << i << "/" << n << std::endl;
     }
 
@@ -214,13 +214,13 @@ void BatchPvalueVectors::writePvalueVectors(
   BinaryInterface::write<BatchPvalueVector>(headList, pvalueVectorsHeadFN, append);
   BinaryInterface::write<BatchPvalueVector>(tailList, pvalueVectorsTailFN, append);
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Finished writing pvalue vectors" << std::endl;
   }
 }
 
 void BatchPvalueVectors::insert(PvalueVectorsDbRow& pvecRow, std::vector<BatchPvalueVector>& pvecList) {
-  if (BatchGlobals::VERB > 4) {
+  if (Globals::VERB > 4) {
     std::cerr << "Inserting pvalue vector into pvalue vectors " <<
                  "table asynchronously" << std::endl;
   }  
@@ -237,7 +237,7 @@ void BatchPvalueVectors::insert(PvalueVectorsDbRow& pvecRow, std::vector<BatchPv
   
   pvecList.push_back(pvec);
   
-  if (BatchGlobals::VERB > 4) {
+  if (Globals::VERB > 4) {
     std::cerr << "Put pvalue vector insertion into queue" << std::endl;
   }
 }
@@ -249,7 +249,7 @@ void BatchPvalueVectors::reloadPvalueVectors() {
   }
   pvalVecCollection_.swap(pvalVecCollection);
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Reloaded " << pvalVecCollection.size() << " pvalue vectors." << std::endl;
   }
 }
@@ -264,11 +264,11 @@ void BatchPvalueVectors::transferPvalueVectors(BatchPvalueVectors& pvecs) {
 
 void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsFN,
     std::vector<PvalueVectorsDbRow>& pvalVecCollection) {  
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Reading in pvalue vectors from " << pvalueVectorsFN << std::endl;
   }
 
-  if (BatchGlobals::fileIsEmpty(pvalueVectorsFN)) {
+  if (Globals::fileIsEmpty(pvalueVectorsFN)) {
     std::cerr << "Ignoring missing/empty file " << pvalueVectorsFN << std::endl;
     return;
   }
@@ -313,7 +313,7 @@ void BatchPvalueVectors::readPvalueVectorsFile(const std::string& pvalueVectorsF
     pvalVecCollection.push_back(pvecRow);
   }
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Read " << pvalVecCollection.size() << " pvalue vectors." << std::endl;
   }
 }
@@ -354,11 +354,11 @@ void BatchPvalueVectors::processOverlapFiles(
 }
 
 void BatchPvalueVectors::parsePvalueVectorFile(const std::string& pvalVecInFileFN) {
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Reading p-value vectors file" << std::endl;
   }
   readPvalueVectorsFile(pvalVecInFileFN, pvalVecCollection_);
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Read in " << pvalVecCollection_.size() 
               << " p-value vectors from file" << std::endl;
   }
@@ -367,7 +367,7 @@ void BatchPvalueVectors::parsePvalueVectorFile(const std::string& pvalVecInFileF
 /* This function presumes that the pvalue vectors are sorted by precursor
    mass by writePvalueVectors() */
 void BatchPvalueVectors::batchCalculatePvalues() {    
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues" << std::endl;
   }
   
@@ -379,10 +379,10 @@ void BatchPvalueVectors::batchCalculatePvalues() {
   
 #pragma omp parallel for schedule(dynamic, 1000)
   for (int i = 0; i < n; ++i) {
-    if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
+    if (i % 10000 == 0 && Globals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n << " (" <<
                    i*100/n << "%)." << std::endl;
-      BatchGlobals::reportProgress(startTime, startClock, i, n);
+      Globals::reportProgress(startTime, startClock, i, n);
     }
     double precLimit = getUpperBound(pvalVecCollection_[i].precMz);
     std::vector<PvalueTriplet> pvalBuffer;                       
@@ -397,7 +397,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
   }
   clearPvalueVectors();
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Finished calculating pvalues." << std::endl;
   }
 }
@@ -422,7 +422,7 @@ void BatchPvalueVectors::getPrecMzLimits(
 void BatchPvalueVectors::batchCalculateAndClusterPvalues(
     const std::string& resultTreeFN,
     const std::string& scanInfoFN) {    
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues" << std::endl;
   }
   
@@ -453,7 +453,7 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
   poisonedClusterJob.finished = true;
 #pragma omp parallel for schedule(dynamic)
   for (int b = 0; b < n; b += pvecBatchSize) {
-    if (BatchGlobals::VERB > 2) {
+    if (Globals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << b+1 << "/" << n << " (" 
                 << b*100/n << "%)." << std::endl;
     }
@@ -510,12 +510,12 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
     }
     
     if (doClustering) {
-      if (BatchGlobals::VERB > 2) {
+      if (Globals::VERB > 2) {
         std::cerr << "Starting clustering job " << clusterJobIdx + 1 << std::endl;
       }
       runClusterJob(clusterJobs[clusterJobIdx], pvalBuffers, precMzLimits, resultTreeFN);
-      if (BatchGlobals::VERB > 2) {
-        BatchGlobals::reportProgress(startTime, startClock, clusterJobs[clusterJobIdx].endIdx, n);
+      if (Globals::VERB > 2) {
+        Globals::reportProgress(startTime, startClock, clusterJobs[clusterJobIdx].endIdx, n);
       }
     }
     
@@ -575,9 +575,9 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
   
   clearPvalueVectors();
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Finished calculating pvalues." << std::endl;
-    BatchGlobals::reportProgress(startTime, startClock, n - 1, n);
+    Globals::reportProgress(startTime, startClock, n - 1, n);
   }
 }
 
@@ -600,7 +600,7 @@ void BatchPvalueVectors::runClusterJob(ClusterJob& clusterJob,
       clusterJob.lowerPrecMz, clusterJob.upperPrecMz, resultTreeFN);
   clusterJob.finished = true;
   
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Retained " << clusterJob.poisonedPvals.size() << " pvalues" << std::endl;
   }
 }
@@ -636,7 +636,7 @@ void BatchPvalueVectors::runPoisonedClusterJob(ClusterJob& clusterJob,
   }
   clusterJob.finished = true;
   
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Retained " << clusterJobs[clusterJob.endBatch].poisonedPvals.size() << " pvalues" << std::endl;
   }
 }
@@ -647,7 +647,7 @@ void BatchPvalueVectors::clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
     float lowerPrecMz, float upperPrecMz, const std::string& resultTreeFN) {
   PvalueFilterAndSort::filter(pvalBuffer);
       
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Clustering " << pvalBuffer.size() << " pvalues" << std::endl;
   }
   
@@ -701,7 +701,7 @@ bool BatchPvalueVectors::isSafeToWrite(const ScanId& si,
    mass by writePvalueVectors() */
 void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
     std::vector<BatchSpectrum>& querySpectra) {    
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues" << std::endl;
   }
   
@@ -715,10 +715,10 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
   int k = 0;
 #pragma omp parallel for schedule(dynamic, 1000)
   for (int i = 0; i < n; ++i) {
-    if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
+    if (i % 10000 == 0 && Globals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n << " (" <<
                    i*100/n << "%)." << std::endl;
-      BatchGlobals::reportProgress(startTime, startClock, i, n);
+      Globals::reportProgress(startTime, startClock, i, n);
     }
     std::vector<PvalueTriplet> pvalBuffer;
     double precLimitLower = getLowerBound(pvalVecCollection_[i].precMz);
@@ -737,7 +737,7 @@ void BatchPvalueVectors::batchCalculatePvaluesLibrarySearch(
   }
   clearPvalueVectors();
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     //std::cerr << "Finished calculating pvalues (" << numPvalsNoThresh << " total)." << std::endl;
     std::cerr << "Finished calculating pvalues." << std::endl;
   }
@@ -775,7 +775,7 @@ void BatchPvalueVectors::readFingerprints(
       ++mol_count;
     }
   }
-  if (BatchGlobals::VERB > 2) {
+  if (Globals::VERB > 2) {
     std::cerr << "Molecules read: " << mol_count << endl;
   }
 }
@@ -798,7 +798,7 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
   bfm.setLibraryFeatures(lib_features);
   bfm.initInvertedIndicesWithPrecMasses(lib_prec_masses);
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues" << std::endl;
   }
   
@@ -816,10 +816,10 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
   for (int i = 0; i < numBlockPairs; ++i) {
     int col = std::floor(std::sqrt(2 * i + 0.25) - 0.5);
     int row = i - ((col * col + col) / 2);
-    if (col % 100 == 0 && row == 0 && BatchGlobals::VERB > 2) {
+    if (col % 100 == 0 && row == 0 && Globals::VERB > 2) {
       std::cerr << "Processing column " << col+1 << "/" << numBlocks << " (" <<
                    col*100/numBlocks << "%)." << std::endl;
-      BatchGlobals::reportProgress(startTime, startClock, col, numBlocks);
+      Globals::reportProgress(startTime, startClock, col, numBlocks);
     }
     std::vector<PvalueTriplet> pvalBuffer, tmpPvalBuffer;
     bool blocksInRange = bfm.pairwiseSimilaritiesOMPThread(i, tmpPvalBuffer);
@@ -857,7 +857,7 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
   }
   clearPvalueVectors();
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     //std::cerr << "Finished calculating pvalues (" << numPvalsNoThresh << " total)." << std::endl;
     std::cerr << "Finished calculating pvalues." << std::endl;
     std::cerr << "Significant pairs found: " << pvaluePairsPassed << "/" 
@@ -872,14 +872,14 @@ void BatchPvalueVectors::batchCalculatePvaluesJaccardFilter() {
 void BatchPvalueVectors::batchCalculatePvaluesOverlap(
     std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
     std::vector<PvalueVectorsDbRow>& pvalVecCollectionHead) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues of overlap" << std::endl;
   }
   
   size_t n1 = pvalVecCollectionTail.size();
   size_t n2 = pvalVecCollectionHead.size();
   for (size_t i = 0; i < n1; ++i) {
-    if (i % 10000 == 0 && BatchGlobals::VERB > 2) {
+    if (i % 10000 == 0 && Globals::VERB > 2) {
       std::cerr << "Processing pvalue vector " << i+1 << "/" << n1 << std::endl;
     }
     double precLimit = getUpperBound(pvalVecCollectionTail[i].precMz);
@@ -895,7 +895,7 @@ void BatchPvalueVectors::batchCalculatePvaluesOverlap(
     pvalues_.batchWrite(pvalBuffer);
   }
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Finished calculating pvalues of overlap" << std::endl;
   }
 }

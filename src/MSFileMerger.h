@@ -28,6 +28,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 
+#include "Globals.h"
 #include "MSFileHandler.h"
 #include "MSClusterMerge.h"
 #include "ClusterMerge.h"

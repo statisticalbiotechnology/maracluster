@@ -27,7 +27,7 @@ void BatchSpectra::convertToBatchSpectra(SpectrumFileList& fileList) {
 
 void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN, 
     SpectrumFileList& fileList) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Reading in spectra from " << spectrumFN << std::endl;
   }
   
@@ -41,13 +41,13 @@ void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN,
     spectra_.insert(spectra_.end(), localSpectra.begin(), localSpectra.end());
   }
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Read " << spectra_.size() << " mass charge states." << std::endl;
   }
 }
 
 void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Reading in spectra from " << batchSpectraFN << std::endl;
   }
 
@@ -58,7 +58,7 @@ void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
   
   BinaryInterface::read<BatchSpectrum>(batchSpectraFN, spectra_);
   
-  if (BatchGlobals::VERB > 1) {
+  if (Globals::VERB > 1) {
     std::cerr << "Read " << spectra_.size() << " mass charge states." << std::endl;
   }
 }

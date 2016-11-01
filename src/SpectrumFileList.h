@@ -38,14 +38,9 @@ class SpectrumFileList {
     inline unsigned int getScannr(const ScanId& scanId) const { 
       return scanId.scannr; 
     }
+    
     inline std::string getFilePath(const ScanId& scanId) const {
-      if (scanId.fileIdx < fileIndexVector_.size()) {
-        return fileIndexVector_[scanId.fileIdx]; 
-      } else {
-        std::stringstream ss;
-        ss << "(SpectrumFileList.h) ScanId " << scanId << " out of range" << std::endl;
-        throw MyException(ss);
-      }
+      return getFilePath(scanId.fileIdx); 
     }
     
     inline std::string getFilePath(const unsigned int fileIdx) const {

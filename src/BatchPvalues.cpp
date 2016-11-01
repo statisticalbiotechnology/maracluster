@@ -17,7 +17,7 @@
 #include "BatchPvalues.h"
 
 void BatchPvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer) {
-  if (BatchGlobals::VERB > 4) {
+  if (Globals::VERB > 4) {
     std::cerr << "Writing " << pvalBuffer.size() << " pvalues." << std::endl;
   }
   

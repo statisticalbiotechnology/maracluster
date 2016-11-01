@@ -14,17 +14,39 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_GLOBALS_H
-#define BATCH_GLOBALS_H
+#ifndef GLOBALS_H
+#define GLOBALS_H
+
+#ifndef VERSION_MAJOR
+  #define VERSION_MAJOR "@CPACK_PACKAGE_VERSION_MAJOR@"
+#endif
+
+#ifndef VERSION_MINOR
+   #define VERSION_MINOR "@CPACK_PACKAGE_VERSION_MINOR@"
+#endif
+
+#ifndef VERSION_PATCH
+   #define VERSION_PATCH "@CPACK_PACKAGE_VERSION_PATCH@"
+#endif
+
+#ifndef VERSION
+  #define VERSION "@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@"
+#endif
+
+#ifndef VERSION_NAME
+  #define VERSION_NAME "v@CPACK_PACKAGE_VERSION_MAJOR@-@CPACK_PACKAGE_VERSION_MINOR@-@CPACK_PACKAGE_VERSION_PATCH@"
+#endif
+
+#ifndef LVERSION_NAME
+  #define LVERSION_NAME L"v@CPACK_PACKAGE_VERSION_MAJOR@-@CPACK_PACKAGE_VERSION_MINOR@-@CPACK_PACKAGE_VERSION_PATCH@"
+#endif
 
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <ctime>
 
-#include "MyException.h"
-
-class BatchGlobals {
+class Globals {
  public:
   static unsigned int VERB; 
   
@@ -34,4 +56,4 @@ class BatchGlobals {
     size_t currentIt, size_t totalIt);
 };
 
-#endif // BATCH_GLOBALS_H
+#endif // GLOBALS_H
