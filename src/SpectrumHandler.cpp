@@ -30,8 +30,21 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
   std::cerr << "Warning: could not extract scannr. Returning index " << s->index << " (" << s->id << ")" << std::endl;
   
   // using the spectrum index should be more robust and
-  // independent of the input format's indexing system
+  // independent of the input format's indexing system, 
+  // but makes it harder to search for the original spectra 
+  // in the original files, e.g. for the mgf and ms2 format
   return s->index;
+}
+
+// TODO: this could be made a bit nicer by retaining other attributes and only replacing the scan attribute
+void SpectrumHandler::setScannr(pwiz::msdata::SpectrumPtr s, unsigned int scanNr) {
+  std::string id = "scan=" + boost::lexical_cast<std::string>(scanNr);
+  s->id = id;
+  s->set(pwiz::msdata::MS_spectrum_title, id); // sets the TITLE attribute in mgf files
+}
+
+void SpectrumHandler::setScannr(pwiz::msdata::SpectrumPtr s, const ScanId& scanId) {
+  setScannr(s, hash_value(scanId));
 }
 
 double SpectrumHandler::interpolateIntensity(MZIntensityPair p1, MZIntensityPair p2, double mz) {
@@ -146,6 +159,28 @@ void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
     
     std::sort(mcc.begin(), mcc.end(), MassChargeCandidate::lessChargeMass);
   }
+}
+
+void SpectrumHandler::setMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
+    std::vector<MassChargeCandidate>& mccs) {
+  s->precursors.at(0).selectedIons.clear();
+  BOOST_FOREACH (const MassChargeCandidate& mcc, mccs) {
+    s->precursors.at(0).selectedIons.push_back(
+        pwiz::msdata::SelectedIon(mcc.precMz, mcc.charge));
+    s->precursors.at(0).selectedIons.back().cvParams.push_back(
+        pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass));
+    s->precursors.at(0).selectedIons.back().cvParams.push_back(
+        pwiz::data::CVParam(pwiz::cv::MS_selected_ion_m_z, mcc.precMz, pwiz::cv::MS_m_z));
+    s->precursors.at(0).isolationWindow.set(
+        pwiz::cv::MS_isolation_window_target_m_z, mcc.precMz, pwiz::cv::MS_m_z);
+  }
+}
+
+void SpectrumHandler::updateMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
+    int chargeUncertainty) {
+  std::vector<MassChargeCandidate> mccs;
+  getMassChargeCandidates(s, mccs, chargeUncertainty);
+  setMassChargeCandidates(s, mccs);
 }
 
 unsigned int SpectrumHandler::getCharge(pwiz::msdata::SpectrumPtr s) {

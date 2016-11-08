@@ -101,7 +101,7 @@ void MSFileExtractor::extractSpectra() {
       size_t result = getSpectrumIdxFromScannr(sl, scanId.scannr);
       SpectrumPtr s = sl->spectrum(result, true);
       
-      s->id = "scan=" + boost::lexical_cast<std::string>(hash_value(scanId));
+      SpectrumHandler::setScannr(s, scanId);
       s->index = idx++;
       extractedSpectra->spectra.push_back(s);
     }

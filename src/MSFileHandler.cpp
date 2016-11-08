@@ -112,39 +112,20 @@ void MSFileHandler::addSpectrumWithMccs(SpectrumPtr consensusSpec,
     int i = 0;
     BOOST_FOREACH (const MassChargeCandidate& mcc, consensusMccs) {
       SpectrumPtr consensusSpecCopy(new Spectrum(*consensusSpec));
-      consensusSpecCopy->id = 
-          "scan=" + boost::lexical_cast<std::string>(scannr*100+(++i));
-      consensusSpecCopy->set(pwiz::cv::MS_spectrum_title, consensusSpecCopy->id); // rescue attempt for MGF files
-      double precMz = SpectrumHandler::calcPrecMz(mcc.mass, mcc.charge);
-      consensusSpecCopy->precursors.at(0).selectedIons.push_back(
-          SelectedIon(precMz, mcc.charge));
-      consensusSpecCopy->precursors.at(0).selectedIons.back().cvParams.push_back(
-          pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass));
-      consensusSpecCopy->precursors.at(0).selectedIons.back().cvParams.push_back(
-          pwiz::data::CVParam(pwiz::cv::MS_selected_ion_m_z, precMz, pwiz::cv::MS_m_z));
-      consensusSpecCopy->precursors.at(0).isolationWindow.set(
-          pwiz::cv::MS_isolation_window_target_m_z, precMz, pwiz::cv::MS_m_z);
+      SpectrumHandler::setScannr(consensusSpecCopy, scannr*100+(++i));
+      
+      std::vector<MassChargeCandidate> mccs;
+      mccs.push_back(mcc);
+      SpectrumHandler::setMassChargeCandidates(consensusSpecCopy, mccs);
+      
     #pragma omp critical (add_to_merged_speclist)
       {
         mergedSpectra->spectra.push_back(consensusSpecCopy);
       }
     }
   } else {
-    consensusSpec->precursors.at(0).selectedIons.clear();
-    consensusSpec->id = 
-          "scan=" + boost::lexical_cast<std::string>(scannr);
-    consensusSpec->set(pwiz::cv::MS_spectrum_title, consensusSpec->id); // rescue attempt for MGF files
-    BOOST_FOREACH (const MassChargeCandidate& mcc, consensusMccs) {
-      consensusSpec->precursors.at(0).selectedIons.push_back(
-          SelectedIon(mcc.precMz, mcc.charge));
-      consensusSpec->precursors.at(0).selectedIons.back().cvParams.push_back(
-          pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass));
-      consensusSpec->precursors.at(0).selectedIons.back().cvParams.push_back(
-          pwiz::data::CVParam(pwiz::cv::MS_selected_ion_m_z, mcc.precMz, pwiz::cv::MS_m_z));
-      consensusSpec->precursors.at(0).isolationWindow.set(
-          pwiz::cv::MS_isolation_window_target_m_z, mcc.precMz, pwiz::cv::MS_m_z);
-    }
-    
+    SpectrumHandler::setScannr(consensusSpec, scannr);
+    SpectrumHandler::setMassChargeCandidates(consensusSpec, consensusMccs);    
   #pragma omp critical (add_to_merged_speclist)
     {
       mergedSpectra->spectra.push_back(consensusSpec);

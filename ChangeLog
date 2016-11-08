@@ -1,8 +1,15 @@
+v0.02
+* Fixed missing attribute 'defaultDataProcessingRef' in mzML output (#4).
+* Switched to distributed clustering scheme and removed temporary files to reduce disk space usage. For a data set with 10 million spectra this reduced the disk space usage from 250GB to just 5GB.
+* Added windows 32-bit build, with optional Vendor reader support. Vendor reader support is not yet available in the windows binary, but can be compiled from source.
+* Added flag `-S`/`-splitMassChargeStates` for consensus spectra generation. This splits multiple candidate precursors in spectrum output file into separate spectrum copies with the same peak list, as some formats (e.g. mgf) and software packages (e.g. MS-GF+) do not support multiple charge states for a single peak list.
+* Added flag `-M`/`-minClusterSize` to specify the minimum cluster size to create consensus spectra for.
+
 v0.01
-* Fixed segmentation fault during clustering on sample data
-* Fixed duplicate p-value writing during filter-sort procedure
-* Switched to undirected p-value edges to save disk space
-* Use spectrum indices if scan numbers are not available or cannot be parsed from the title (mzML, mgf)
-* Fixed bug in CPack.txt in RedHat related REGEX command (jgriss)
-* Added guard to detect insufficient disk space while writing binary files
-* Added support for precursor window in `Da`, in addition to the default `ppm`
+* Fixed segmentation fault during clustering on sample data.
+* Fixed duplicate p-value writing during filter-sort procedure.
+* Switched to undirected p-value edges to save disk space.
+* Use spectrum indices if scan numbers are not available or cannot be parsed from the title (mzML, mgf).
+* Fixed bug in CPack.txt in RedHat related REGEX command (jgriss).
+* Added guard to detect insufficient disk space while writing binary files.
+* Added support for precursor window in `Da`, in addition to the default `ppm`.

@@ -263,7 +263,7 @@ bool parseOptions(int argc, char **argv) {
     while(std::getline(ss, token, ',')) {
       clusterThresholds_.push_back(atof(token.c_str()));
     }
-    if (clusterThresholds_.size() == 0) {
+    if (clusterThresholds_.empty()) {
       std::cerr << "Error: invalid input for clusterThreshold parameter: " << 
                     cmd.options["c"] << std::endl;
       return false;
@@ -309,16 +309,16 @@ int createIndex(const std::string& outputFolder, const std::string& fnPrefix,
     const std::string& spectrumBatchFileFN, std::string& peakCountFN,
     std::string& scanInfoFN, std::string& datFNFile, int chargeUncertainty,
     double precursorTolerance, bool precursorToleranceDa) {
-  if (spectrumBatchFileFN.size() == 0) {
+  if (spectrumBatchFileFN.empty()) {
     std::cerr << "Error: no batch file specified with -b flag" << std::endl;
     return EXIT_FAILURE;
   }
   
-  if (peakCountFN.size() == 0)
+  if (peakCountFN.empty())
     peakCountFN = outputFolder + "/" + fnPrefix + ".peak_counts.dat";
-  if (scanInfoFN.size() == 0)
+  if (scanInfoFN.empty())
     scanInfoFN = outputFolder + "/" + fnPrefix + ".scan_info.dat";
-  if (datFNFile.size() == 0)
+  if (datFNFile.empty())
     datFNFile = outputFolder + "/" + fnPrefix + ".dat_file_list.txt";
   
   SpectrumFileList fileList;
@@ -344,17 +344,17 @@ int doClustering(const std::string& outputFolder, const std::string& fnPrefix,
     SpectrumFileList& fileList, bool skipFilterAndSort, 
     std::string& matrixFN, std::string& resultTreeFN) {
   // input checks
-  if (scanInfoFN.size() == 0) {
+  if (scanInfoFN.empty()) {
     std::cerr << "Error: no scannrs file specified with -s flag" << std::endl;
     return EXIT_FAILURE;
   }
-  if (matrixFN.size() == 0 && resultTreeFN.size() == 0) {
+  if (matrixFN.empty() && resultTreeFN.empty()) {
     std::cerr << "Error: no input file specified with -m or -u flag" << std::endl;
     return EXIT_FAILURE;
   }
 
   // create output file paths
-  if (resultTreeFN.size() == 0) {
+  if (resultTreeFN.empty()) {
     resultTreeFN = outputFolder + "/overlap.pvalue_tree.tsv";
   }
   std::string clusterBaseFN = outputFolder + "/" + fnPrefix + ".clusters_";
@@ -418,7 +418,7 @@ int main(int argc, char* argv[]) {
           maracluster -b /media/storage/mergespec/data/Linfeng/batchcluster/all.txt \
                       -f /media/storage/mergespec/data/Linfeng/batchcluster/output/ 
           */
-          if (spectrumBatchFileFN_.size() == 0) {
+          if (spectrumBatchFileFN_.empty()) {
             std::cerr << "Error: no batch file specified with -b flag" << std::endl;
             return EXIT_FAILURE;
           }
@@ -482,7 +482,7 @@ int main(int argc, char* argv[]) {
             }
           }
           
-          if (resultTreeFN_.size() == 0) {
+          if (resultTreeFN_.empty()) {
             resultTreeFN_ = outputFolder_ + "/overlap.pvalue_tree.tsv";
           }
           
@@ -503,7 +503,7 @@ int main(int argc, char* argv[]) {
             }
           }
           
-          if (matrixFN_.size() == 0) {
+          if (matrixFN_.empty()) {
             matrixFN_ = outputFolder_ + "/poisoned.pvalues.dat";
           }
           
@@ -534,7 +534,7 @@ int main(int argc, char* argv[]) {
         }
         case PVALUE:
         {
-          if (pvaluesFN_.size() == 0)
+          if (pvaluesFN_.empty())
             pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.tsv";
             
           if (pvalVecInFileFN_.size() > 0) { 
@@ -559,7 +559,7 @@ int main(int argc, char* argv[]) {
           } else if (clusterFileFN_.size() > 0) {
             // calculate p-values from a cluster in a scan description list
             // maracluster pvalue -l <scan_desc_file> -g <peak_counts_file>
-            if (peakCountFN_.size() == 0) {
+            if (peakCountFN_.empty()) {
               std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
               return EXIT_FAILURE;
             }
@@ -594,11 +594,11 @@ int main(int argc, char* argv[]) {
                             -g /media/storage/mergespec/data/batchcluster/Linfeng/unit_test/peak_counts.dat \
                             -t -10.0
             */
-            if (peakCountFN_.size() == 0) {
+            if (peakCountFN_.empty()) {
               std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
               return EXIT_FAILURE;
             }
-            if (spectrumBatchFileFN_.size() == 0 && spectrumInFN_.size() == 0) {
+            if (spectrumBatchFileFN_.empty() && spectrumInFN_.empty()) {
               std::cerr << "Error: no input file specified with -i or -b flag" << std::endl;
               return EXIT_FAILURE;
             }
@@ -638,7 +638,7 @@ int main(int argc, char* argv[]) {
           std::vector<std::string> pvalFNs, pvalTreeFNs;
           pvalFNs.push_back(matrixFN_);
           
-          if (spectrumBatchFileFN_.size() == 0) {
+          if (spectrumBatchFileFN_.empty()) {
             std::cerr << "Error: no batch file specified with -b flag" << std::endl;
             return EXIT_FAILURE;
           }
@@ -651,7 +651,7 @@ int main(int argc, char* argv[]) {
         }
         case CONSENSUS:
         {
-          if (spectrumOutFN_.size() == 0)
+          if (spectrumOutFN_.empty())
             spectrumOutFN_ = outputFolder_ + "/" + fnPrefix_ + ".consensus.ms2";
           
           if (!MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
@@ -660,6 +660,11 @@ int main(int argc, char* argv[]) {
           
           if (MSFileHandler::getOutputFormat(spectrumOutFN_) == "mgf") {
             MSFileHandler::splitMassChargeStates_ = true;
+          }
+          
+          if (clusterFileFN_.empty() || !Globals::fileExists(clusterFileFN_)) {
+            std::cerr << "Error: Could not find cluster input file (-l flag) " << clusterFileFN_ << std::endl;
+            return EXIT_FAILURE;
           }
           
           MSFileMerger msFileMerger(spectrumOutFN_);
@@ -676,21 +681,21 @@ int main(int argc, char* argv[]) {
         }
         case SEARCH:
         {
-          if (spectrumLibraryFN_.size() == 0) {
+          if (spectrumLibraryFN_.empty()) {
             std::cerr << "Error: no spectrum library file specified with -z flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (peakCountFN_.size() == 0) {
+          } else if (peakCountFN_.empty()) {
             std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (spectrumBatchFileFN_.size() == 0 && spectrumInFN_.size() == 0) {
+          } else if (spectrumBatchFileFN_.empty() && spectrumInFN_.empty()) {
             std::cerr << "Error: no query spectrum file(s) specified with -i or -b flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (spectrumBatchFileFN_.size() != 0 && spectrumInFN_.size() != 0) {
+          } else if (!spectrumBatchFileFN_.empty() && !spectrumInFN_.empty()) {
             std::cerr << "Error: ambiguous query spectrum file(s) input, please use only one of the -i and -b flags" << std::endl;
             return EXIT_FAILURE;
           }
           
-          if (pvaluesFN_.size() == 0)
+          if (pvaluesFN_.empty())
             pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.dat";
           
           if (!Globals::fileExists(pvaluesFN_)) {
@@ -729,7 +734,7 @@ int main(int argc, char* argv[]) {
         }
         case PROFILE_CONSENSUS:
         {
-          if (spectrumOutFN_.size() == 0)
+          if (spectrumOutFN_.empty())
             spectrumOutFN_ = outputFolder_ + "/" + fnPrefix_ + ".consensus.ms2";
           MSFileMerger msFileMerger(spectrumOutFN_);
           
@@ -745,21 +750,21 @@ int main(int argc, char* argv[]) {
         }
         case PROFILE_SEARCH:
         {
-          if (spectrumLibraryFN_.size() == 0) {
+          if (spectrumLibraryFN_.empty()) {
             std::cerr << "Error: no spectrum library file specified with -z flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (peakCountFN_.size() == 0) {
+          } else if (peakCountFN_.empty()) {
             std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (spectrumBatchFileFN_.size() == 0 && spectrumInFN_.size() == 0) {
+          } else if (spectrumBatchFileFN_.empty() && spectrumInFN_.empty()) {
             std::cerr << "Error: no query spectrum file(s) specified with -i or -b flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (spectrumBatchFileFN_.size() != 0 && spectrumInFN_.size() != 0) {
+          } else if (!spectrumBatchFileFN_.empty() && !spectrumInFN_.empty()) {
             std::cerr << "Error: ambiguous query spectrum file(s) input, please use only one of the -i and -b flags" << std::endl;
             return EXIT_FAILURE;
           }
           
-          if (pvaluesFN_.size() == 0)
+          if (pvaluesFN_.empty())
             pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.dat";
           
           if (!Globals::fileExists(pvaluesFN_)) {

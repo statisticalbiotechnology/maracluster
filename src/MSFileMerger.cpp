@@ -342,11 +342,12 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
       for (unsigned int j = 0; j < sl->size(); ++j) {
         SpectrumPtr s = sl->spectrum(j, true);
         unsigned int scannr = SpectrumHandler::getScannr(s);
-        ScanId globalScannr = fileList_.getScanId(filePath, scannr);
-        if (scannrToMergedScannr.find(globalScannr) != scannrToMergedScannr.end()) {
-          s->id = "scan=" + boost::lexical_cast<std::string>(hash_value(globalScannr));
+        ScanId scanId = fileList_.getScanId(filePath, scannr);
+        if (scannrToMergedScannr.find(scanId) != scannrToMergedScannr.end()) {
+          SpectrumHandler::setScannr(s, scanId);
+          SpectrumHandler::updateMassChargeCandidates(s); // fixes some incompatibility issues between mgf and ms2
           
-          ScanId mergedScannr = scannrToMergedScannr[globalScannr];
+          ScanId mergedScannr = scannrToMergedScannr[scanId];
           unsigned int clusterBin = getClusterBin(mergedScannr);
           spectrumLists[clusterBin]->spectra.push_back(s);
         }

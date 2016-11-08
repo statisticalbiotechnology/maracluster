@@ -47,15 +47,15 @@ set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
 ::: Also needed for Thermo RAW Reader is the MSFileReader executable, which can be downloaded from https://thermo.flexnetoperations.com/. Search for "MSFileReader" and download and install the 3.0 SP3 version :::
 ::: For the Waters RAW Reader, Visual C++ runtime is necessary to run http://www.microsoft.com/en-us/download/details.aspx?id=30679 :::
 set PWIZ_DIR=%INSTALL_DIR%\proteowizard
+set SVN_URL=https://sourceforge.net/projects/win32svn/files/latest/download
 set REV=7692
 if not exist "%PWIZ_DIR%" (
-  set SVN_URL=https://sourceforge.net/projects/win32svn/files/latest/download
   WHERE svn >nul 2>&1
   IF ERRORLEVEL 1 (
     echo Downloading and installing SVN
     PowerShell "(new-object System.Net.WebClient).DownloadFile('%SVN_URL%','%INSTALL_DIR%\svn.msi')"
     cd /D "%INSTALL_DIR%"
-    msiexec /i svn.msi /quiet /Li svn_install.log
+    msiexec TARGETDIR="%INSTALL_DIR%\svn" /i svn.msi /quiet /Li svn_install.log 
   )
   echo Downloading and installing ProteoWizard
   svn co -r %REV% --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz %PWIZ_DIR%
