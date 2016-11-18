@@ -2,8 +2,8 @@
 set MSVC_VER=12
 set VCTARGET=C:\Program Files\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
 set SRC_DIR=%~dp0
-set BUILD_DIR=%SRC_DIR%\..\build-32bit
-set RELEASE_DIR=%SRC_DIR%\..\release-32bit
+set BUILD_DIR=%SRC_DIR%\..\build\win32
+set RELEASE_DIR=%SRC_DIR%\..\release\win32
 set BUILD_TYPE=Release
 
 :parse

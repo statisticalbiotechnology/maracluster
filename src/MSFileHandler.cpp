@@ -24,8 +24,6 @@ using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
 using pwiz::msdata::Spectrum;
 using pwiz::msdata::SelectedIon;
-using pwiz::msdata::Software;
-using pwiz::msdata::SoftwarePtr;
 using pwiz::msdata::DataProcessingPtr;
 using pwiz::msdata::DataProcessing;
 using pwiz::msdata::ProcessingMethod;
@@ -57,6 +55,8 @@ void MSFileHandler::writeMSData(MSData& msd, const std::string& outputFN) {
   if (msd.id.empty()) {
     msd.id = msd.run.id = "MaRacluster_consensus_spectra";
   }
+  msd.fileDescription.fileContent.set(pwiz::cv::MS_MSn_spectrum);
+  msd.fileDescription.fileContent.set(pwiz::cv::MS_centroid_spectrum);
   
   std::string outputFormat = getOutputFormat(outputFN);
   /* see http://proteowizard.sourceforge.net/dox/_m_s_data_file_8hpp.html */

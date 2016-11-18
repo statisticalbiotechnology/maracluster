@@ -2,7 +2,8 @@
 # managing input arguments
 
 src_dir=$(pwd)
-build_dir=$src_dir/bin/build
+build_dir=$src_dir/../build/ubuntu
+release_dir=$src_dir/../release/ubuntu
 
 mkdir -p $build_dir/maracluster
 #-----cmake-----
@@ -14,3 +15,6 @@ echo -n "make maracluster (this will take few minutes).....";
 make -j 4;
 make -j 4 package;
 sudo make install;
+
+mkdir -p $release_dir
+cp -v $build_dir/maracluster/mar*.deb $release_dir

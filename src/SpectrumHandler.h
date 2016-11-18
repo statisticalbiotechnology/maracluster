@@ -81,7 +81,9 @@ class SpectrumHandler {
     std::vector<MassChargeCandidate>& mccs);
   static void updateMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
     int chargeUncertainty = 0);
-    
+  
+  static void fixMetaData(pwiz::msdata::SpectrumPtr s);
+  
   static unsigned int getCharge(pwiz::msdata::SpectrumPtr s);
   static double getPrecMz(pwiz::msdata::SpectrumPtr s);
   static double getRetentionTime(pwiz::msdata::SpectrumPtr s);
@@ -89,6 +91,9 @@ class SpectrumHandler {
  private:
   static void convertMSDataMZIntensityPairs(std::vector<pwiz::msdata::MZIntensityPair>& MSDataMziPairs, std::vector<MZIntensityPair>& mziPairs);
   static void convertMSDataMZIntensityPairs(std::vector<MZIntensityPair>& mziPairs, std::vector<pwiz::msdata::MZIntensityPair>& MSDataMziPairs);
+  
+  static void replaceCvParam(pwiz::msdata::ParamContainer& pc, 
+    pwiz::cv::CVID cvid, double value, pwiz::cv::CVID unit);
     
 };
 

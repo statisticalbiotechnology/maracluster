@@ -193,6 +193,9 @@ void MSFileMerger::mergeSpectraSetMSCluster(
   
   SpectrumHandler::setMZIntensityPairs(consensusSpec, mziPairs);
   
+  SpectrumHandler::fixMetaData(consensusSpec);
+  consensusSpec->scanList.set(pwiz::cv::MS_mean_of_spectra);
+  
   std::vector<MassChargeCandidate> consensusMccs;
   MSClusterMerge::mergeMccs(allMccs, consensusMccs);
   /*consensusMccs = allMccs;*/
@@ -331,6 +334,17 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
       {  
         MSReaderList readerList;
         MSDataFile msd(filePath, &readerList);
+        
+        // hack: apparently proteowizard's SHA1 function trips over the location
+        std::string location = msd.fileDescription.sourceFilePtrs.front()->location;
+        std::string name = msd.fileDescription.sourceFilePtrs.front()->name;
+        msd.fileDescription.sourceFilePtrs.front()->location = "file://" + filePath; 
+        msd.fileDescription.sourceFilePtrs.front()->name = "";
+        pwiz::msdata::calculateSHA1Checksums(msd);
+        msd.fileDescription.sourceFilePtrs.front()->location = location; 
+        msd.fileDescription.sourceFilePtrs.front()->name = name;
+        
+        sourceFilePtrs_.push_back(msd.fileDescription.sourceFilePtrs.front());
         sl = msd.run.spectrumListPtr;
       }
       
@@ -377,9 +391,12 @@ void MSFileMerger::mergeSplitSpecFiles() {
 
   SoftwarePtr softwarePtr = SoftwarePtr(new Software("MaRaCluster"));
   softwarePtr->version = VERSION;
+  // FIXME: get proper PSI:MS Id for MaRaCluster?
+  softwarePtr->set(pwiz::cv::MS_custom_unreleased_software_tool);
   DataProcessingPtr dpPtr = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
   ProcessingMethod pm;
   pm.softwarePtr = softwarePtr;
+  pm.set(pwiz::cv::MS_precursor_recalculation);
   dpPtr->processingMethods.push_back(pm);
   mergedSpectra->dp = dpPtr;
   
@@ -395,12 +412,8 @@ void MSFileMerger::mergeSplitSpecFiles() {
       std::cerr << "Creating merged MSData file" << std::endl;
       MSData msdMerged;
       msdMerged.id = msdMerged.run.id = "consensus_spectra";
-      msdMerged.softwarePtrs.push_back(softwarePtr);
-      std::vector<std::string>::const_iterator fileNamePtr = fileList_.getFilePaths().begin();
-      ++fileNamePtr; // skip the output file
-      for ( ; fileNamePtr != fileList_.getFilePaths().end(); ++fileNamePtr) {
-        msdMerged.fileDescription.sourceFilePtrs.push_back(SourceFilePtr(new SourceFile(*fileNamePtr, "", *fileNamePtr)));
-      }
+      msdMerged.softwarePtrs.push_back(softwarePtr);      
+      msdMerged.fileDescription.sourceFilePtrs = sourceFilePtrs_;
       
       SpectrumListSimplePtr writeSpectra(new SpectrumListSimple);
       writeSpectra->dp = dpPtr;

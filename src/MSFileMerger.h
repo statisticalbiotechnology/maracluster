@@ -75,6 +75,7 @@ class MSFileMerger : public MSFileHandler {
     const MergeScanIndex& b) { return (a.spectrumIndex < b.spectrumIndex); }
  protected:
   unsigned int numClusterBins_, numBatches_, numMSFilePtrsPerBatch_;
+  std::vector<pwiz::msdata::SourceFilePtr> sourceFilePtrs_;
   
   static std::string getPartFN(const std::string& outputFN, 
                                const std::string& partString);

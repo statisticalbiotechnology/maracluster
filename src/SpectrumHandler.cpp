@@ -163,14 +163,16 @@ void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
 
 void SpectrumHandler::setMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
     std::vector<MassChargeCandidate>& mccs) {
+  if (s->precursors.at(0).activation.empty()) {
+    s->precursors.at(0).activation.set(pwiz::cv::MS_dissociation_method);
+  }
   s->precursors.at(0).selectedIons.clear();
   BOOST_FOREACH (const MassChargeCandidate& mcc, mccs) {
     s->precursors.at(0).selectedIons.push_back(
         pwiz::msdata::SelectedIon(mcc.precMz, mcc.charge));
+    // used by ms2 output format for EZ lines
     s->precursors.at(0).selectedIons.back().cvParams.push_back(
-        pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass));
-    s->precursors.at(0).selectedIons.back().cvParams.push_back(
-        pwiz::data::CVParam(pwiz::cv::MS_selected_ion_m_z, mcc.precMz, pwiz::cv::MS_m_z));
+        pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass, pwiz::cv::UO_mass_unit));
     s->precursors.at(0).isolationWindow.set(
         pwiz::cv::MS_isolation_window_target_m_z, mcc.precMz, pwiz::cv::MS_m_z);
   }
@@ -213,3 +215,51 @@ bool SpectrumHandler::isMs2Scan(pwiz::msdata::SpectrumPtr s) {
   return (s->cvParam(pwiz::cv::MS_ms_level).valueAs<int>() == 2);
 }
 
+/* 
+ *
+ * The following two functions are copies (with small modifications) of
+ * proteowizard/pwiz/analysis/spectrum_processing/SpectrumList_MetadataFixer.cpp
+ *
+ */
+void SpectrumHandler::replaceCvParam(pwiz::msdata::ParamContainer& pc, 
+    pwiz::cv::CVID cvid, double value, pwiz::cv::CVID unit = pwiz::cv::CVID_Unknown) {
+  std::vector<pwiz::data::CVParam>::iterator itr;
+  
+  itr = std::find(pc.cvParams.begin(), pc.cvParams.end(), cvid);
+  if (itr == pc.cvParams.end()) {
+    pc.set(cvid, value, unit);
+  } else {
+    itr->value = boost::lexical_cast<std::string>(value);
+    itr->units = unit;
+  }
+}
+
+
+void SpectrumHandler::fixMetaData(pwiz::msdata::SpectrumPtr s) {
+  pwiz::msdata::BinaryDataArrayPtr mzArray = s->getMZArray();
+  pwiz::msdata::BinaryDataArrayPtr intensityArray = s->getIntensityArray();
+  if (!mzArray.get() || !intensityArray.get())
+      return;
+
+  std::vector<double>& mzs = mzArray->data;
+  std::vector<double>& intensities = intensityArray->data;
+
+  double tic = 0;
+  if (!mzs.empty()) {
+    double bpmz, bpi = -1;
+    for (size_t i=0, end=mzs.size(); i < end; ++i) {
+      tic += intensities[i];
+      if (bpi < intensities[i]) {
+        bpi = intensities[i];
+        bpmz = mzs[i];
+      }
+    }
+
+    replaceCvParam(*s, pwiz::cv::MS_base_peak_intensity, bpi, pwiz::cv::MS_number_of_detector_counts);
+    replaceCvParam(*s, pwiz::cv::MS_base_peak_m_z, bpmz, pwiz::cv::MS_m_z);
+    replaceCvParam(*s, pwiz::cv::MS_lowest_observed_m_z, mzs.front(), pwiz::cv::MS_m_z);
+    replaceCvParam(*s, pwiz::cv::MS_highest_observed_m_z, mzs.back(), pwiz::cv::MS_m_z);
+  }
+
+  replaceCvParam(*s, pwiz::cv::MS_TIC, tic);
+}
