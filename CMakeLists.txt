@@ -112,7 +112,12 @@ endif( MSVC )
 # # PACKAGING
 # ###############################################################################
 # # PACKAGING OPTIONS: GENERAL
-set(PACKAGE_NICKNAME "maracluster")
+
+if(VENDOR_SUPPORT)
+  set(NICKNAME_SUFFIX "-vendor-support")
+endif(VENDOR_SUPPORT)
+
+set(PACKAGE_NICKNAME "maracluster${NICKNAME_SUFFIX}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Clustering spectra")
 include("CPack.txt")
 

@@ -330,23 +330,20 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
                 << " (" << i*100 / (fileList_.size()-1) << "%)" << std::endl;
       
       SpectrumListPtr sl;    
-    #pragma omp critical (create_msdata)
-      {  
-        MSReaderList readerList;
-        MSDataFile msd(filePath, &readerList);
-        
-        // hack: apparently proteowizard's SHA1 function trips over the location
-        std::string location = msd.fileDescription.sourceFilePtrs.front()->location;
-        std::string name = msd.fileDescription.sourceFilePtrs.front()->name;
-        msd.fileDescription.sourceFilePtrs.front()->location = "file://" + filePath; 
-        msd.fileDescription.sourceFilePtrs.front()->name = "";
-        pwiz::msdata::calculateSHA1Checksums(msd);
-        msd.fileDescription.sourceFilePtrs.front()->location = location; 
-        msd.fileDescription.sourceFilePtrs.front()->name = name;
-        
-        sourceFilePtrs_.push_back(msd.fileDescription.sourceFilePtrs.front());
-        sl = msd.run.spectrumListPtr;
-      }
+      MSReaderList readerList;
+      MSDataFile msd(filePath, &readerList);
+      
+      // hack: apparently proteowizard's SHA1 function trips over the location
+      std::string location = msd.fileDescription.sourceFilePtrs.front()->location;
+      std::string name = msd.fileDescription.sourceFilePtrs.front()->name;
+      msd.fileDescription.sourceFilePtrs.front()->location = "file://" + filePath; 
+      msd.fileDescription.sourceFilePtrs.front()->name = "";
+      pwiz::msdata::calculateSHA1Checksums(msd);
+      msd.fileDescription.sourceFilePtrs.front()->location = location; 
+      msd.fileDescription.sourceFilePtrs.front()->name = name;
+      
+      sourceFilePtrs_.push_back(msd.fileDescription.sourceFilePtrs.front());
+      sl = msd.run.spectrumListPtr;
       
       std::vector<SpectrumListSimplePtr> spectrumLists(numClusterBins_);
       for (size_t k = 0; k < numClusterBins_; ++k) {

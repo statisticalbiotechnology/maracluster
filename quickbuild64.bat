@@ -1,6 +1,8 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::                                                                           :::
-::: tested on a Windows 7 632-bit installation with VS2012 Express            :::
+::: tested on a Windows 10 64-bit installation with VS2015 Community          :::
+:::                                                                           :::
+::: N.B.: VS2015 Express cannot compile x64 natively and will break the build :::
 :::                                                                           :::
 ::: To support reading Thermo RAW Files you need the MSFileReader executable, :::
 ::: which can be downloaded from https://thermo.flexnetoperations.com/.       :::
@@ -12,11 +14,11 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 @echo off
-set MSVC_VER=12
-set VCTARGET=C:\Program Files\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
+set MSVC_VER=14
+set VCTARGET=C:\Program Files (x86)\MSBuild\Microsoft.cpp\v4.0\V%MSVC_VER%0
 set SRC_DIR=%~dp0
-set BUILD_DIR=%SRC_DIR%\..\build\win32
-set RELEASE_DIR=%SRC_DIR%\..\release\win32
+set BUILD_DIR=%SRC_DIR%\..\build\win64
+set RELEASE_DIR=%SRC_DIR%\..\release\win64
 set BUILD_TYPE=Release
 
 :parse
@@ -29,7 +31,8 @@ GOTO parse
 :endparse
 
 :: use the VS command prompt settings to set-up paths for compiler and builder
-call "C:\Program Files\Microsoft Visual Studio %MSVC_VER%.0\Common7\Tools\VsDevCmd.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VER%.0\Common7\Tools\VsDevCmd.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VER%.0\VC\vcvarsall.bat" amd64
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::::: START INSTALL DEPENDENCIES ::::::::::::::::
@@ -57,24 +60,31 @@ if not exist "%INSTALL_DIR%\%CMAKE_BASE%" (
 )
 set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
 
-set PWIZ_DIR=%INSTALL_DIR%\proteowizard
+::: have not figured out how to install SVN in a custom folder, msiexec + INSTALLDIR/TARGETDIR doesn't work
 set SVN_URL=https://sourceforge.net/projects/win32svn/files/latest/download
-set REV=7692
-if not exist "%PWIZ_DIR%" (
-  WHERE svn >nul 2>&1
-  IF ERRORLEVEL 1 (
-    echo Downloading and installing SVN
-    PowerShell "(new-object System.Net.WebClient).DownloadFile('%SVN_URL%','%INSTALL_DIR%\svn.msi')"
-    cd /D "%INSTALL_DIR%"
-    msiexec TARGETDIR="%INSTALL_DIR%\svn" /i svn.msi /quiet /Li svn_install.log 
-  )
+WHERE svn >nul 2>&1
+IF ERRORLEVEL 1 (
+  echo Downloading and installing SVN
+  PowerShell "(new-object System.Net.WebClient).DownloadFile('%SVN_URL%','%INSTALL_DIR%\svn.msi')"
+  cd /D "%INSTALL_DIR%"
+  msiexec /i svn.msi /quiet /Li svn_install.log
+)
+setlocal
+set PATH=%PATH%;"C:\Program Files (x86)\Subversion\bin\svn.exe"
+
+set PWIZ_DIR=%INSTALL_DIR%\proteowizard
+::: The Shimadzu API build has to be changed to include VS2015 in the Jamfile :::
+set REV=10210
+if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
-  svn co -r %REV% --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz %PWIZ_DIR%
-  svn update -r %REV% --set-depth infinity %PWIZ_DIR%\pwiz
-  svn update -r %REV% --set-depth infinity %PWIZ_DIR%\pwiz_aux
-  svn update -r %REV% --set-depth infinity %PWIZ_DIR%\libraries
-  cd /D %PWIZ_DIR%
-  call quickbuild.bat -j4 --toolset=msvc-%MSVC_VER%.0 --i-agree-to-the-vendor-licenses ^
+  if not exist "%PWIZ_DIR%" (
+    svn co -r %REV% --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz %PWIZ_DIR%
+    svn update -r %REV% --set-depth infinity %PWIZ_DIR%\pwiz
+    svn update -r %REV% --set-depth infinity %PWIZ_DIR%\pwiz_aux
+    svn update -r %REV% --set-depth infinity %PWIZ_DIR%\libraries
+  )
+  cd /D "%PWIZ_DIR%"
+  call quickbuild.bat address-model=64 -j4 --toolset=msvc-%MSVC_VER%.0 --i-agree-to-the-vendor-licenses ^
                 pwiz/data/common//pwiz_data_common ^
                 pwiz/data/identdata//pwiz_data_identdata ^
                 pwiz/data/identdata//pwiz_data_identdata_version ^
@@ -103,8 +113,8 @@ if not exist "%PWIZ_DIR%" (
                 pwiz/data/vendor_readers/ABI//pwiz_reader_abi ^
                 pwiz_aux/msrc/utility/vendor_api/ABI//pwiz_vendor_api_abi ^
                 /ext/zlib//z ^
-                /ext/hdf5//hdf5pp ^
                 /ext/hdf5//hdf5 ^
+                /ext/hdf5//hdf5pp ^
                 libraries/SQLite//sqlite3 ^
                 libraries/SQLite//sqlite3pp ^
                 /ext/boost//system ^
@@ -118,16 +128,19 @@ if not exist "%PWIZ_DIR%" (
                 /ext/boost//serialization > pwiz_installation.log 2>&1
   
   mkdir lib
-  for /r build-nt-x86 %%x in (*.lib) do copy "%%x" lib\ /Y
+  for /r build-nt-x86_64 %%x in (*.lib) do copy "%%x" lib\ /Y
   cd lib
-  PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace '-vc120-mt','' })"
+  PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace '-vc%MSVC_VER%0-mt','' })"
   PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace 'libpwiz_','pwiz_' })"
   Ren libzlib.lib zlib.lib
   Ren libhdf5pp.lib hdf5pp.lib
   Ren libhdf5.lib hdf5.lib
   Ren libSHA1.lib SHA1.lib
-  COPY ..\pwiz_aux\msrc\utility\vendor_api\Waters\vc12_x86\* .
-  COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x86\baf2sql_c.* .
+  Ren libsqlite3pp.lib sqlite3pp.lib
+  Ren libsqlite3.lib sqlite3.lib
+  ::: these DLLs might not work, as they are for VS2013 :::
+  COPY ..\pwiz_aux\msrc\utility\vendor_api\Waters\vc12_x64\* .
+  COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x64\baf2sql_c.* .
   cd ..
 
   mkdir include
@@ -159,10 +172,9 @@ if not exist "%BUILD_DIR%" (md "%BUILD_DIR%")
 
 ::::::: Building maracluster :::::::
 if not exist "%BUILD_DIR%\maracluster" (md "%BUILD_DIR%\maracluster")
-cd /D "%BUILD_DIR%\maracluster....."
+cd /D "%BUILD_DIR%\maracluster"
 echo cmake maracluster.....
-%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_56_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%"
-::%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_56_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%"
+%CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_56_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%"
 
 echo build maracluster (this will take a few minutes).....
 msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
@@ -174,7 +186,7 @@ msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TY
 if not exist "%BUILD_DIR%\maracluster-vendor-support" (md "%BUILD_DIR%\maracluster-vendor-support")
 cd /D "%BUILD_DIR%\maracluster-vendor-support"
 echo cmake maracluster with vendor support.....
-%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_56_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%"
+%CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_56_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%"
 
 echo build maracluster with vendor support (this will take a few minutes).....
 msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m

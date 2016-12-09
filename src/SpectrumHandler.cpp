@@ -17,6 +17,11 @@
 #include "SpectrumHandler.h"
 
 unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
+  // special check for the SCANS field in mgf files
+  if (s->hasCVParam(pwiz::cv::MS_peak_list_scans)) {
+    std::string mgfScansField = s->cvParam(pwiz::cv::MS_peak_list_scans).valueAs<std::string>();
+    return atoi(mgfScansField.c_str());
+  }
   std::stringstream ss(s->id);
   while (ss.good()) {
     std::string tmp;

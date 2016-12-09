@@ -72,12 +72,10 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
     }
     
     SpectrumListPtr specList;    
-  #pragma omp critical (create_msdata)
-    {  
-      MSReaderList readerList;
-      MSDataFile msd(spectrumFN, &readerList);
-      specList = msd.run.spectrumListPtr;
-    }
+    MSReaderList readerList;
+    MSDataFile msd(spectrumFN, &readerList);
+    specList = msd.run.spectrumListPtr;
+    
     PeakCounts peakCounts;
     std::vector<double> precMzs;
     
@@ -168,12 +166,9 @@ void BatchSpectrumFiles::getBatchSpectra(
   }
    
   SpectrumListPtr specList;
-#pragma omp critical (create_msdata)
-  {
-    MSReaderList readerList;
-    MSDataFile msd(spectrumFN, &readerList);
-    specList = msd.run.spectrumListPtr;
-  }
+  MSReaderList readerList;
+  MSDataFile msd(spectrumFN, &readerList);
+  specList = msd.run.spectrumListPtr;
   
   size_t numSpectra = specList->size();
   for (size_t i = 0; i < numSpectra; ++i) {
