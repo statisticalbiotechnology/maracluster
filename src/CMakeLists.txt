@@ -29,7 +29,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(ZLIB REQUIRED)
 if(ZLIB_FOUND)
-  message(STATUS "Zlib found")
+  message(STATUS "Zlib found at: ${ZLIB_INCLUDE_DIR}; ${ZLIB_LIBRARY}")
 else(ZLIB_FOUND)
   message(FATAL_ERROR "The package Zlib has not been found")
 endif(ZLIB_FOUND)
