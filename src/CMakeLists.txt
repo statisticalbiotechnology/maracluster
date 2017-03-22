@@ -72,9 +72,9 @@ add_library(batchlibrary STATIC BatchPvalues.cpp BatchPvalueVectors.cpp BatchSpe
 #add_executable(msgffixmzml msgfFixMzML.cpp)
 
 add_executable(maracluster maracluster.cpp)
-if(MSVC)
-  add_executable(extractraw extractRAWSpectra.cpp)
-endif(MSVC)
+#if(MSVC)
+#  add_executable(extractraw extractRAWSpectra.cpp)
+#endif(MSVC)
 
 if(APPLE)
   set_property(TARGET maracluster PROPERTY LINK_SEARCH_START_STATIC FALSE)
@@ -98,17 +98,16 @@ endif()
 set(COMMON_LIBRARIES ${PWIZ_LIBRARIES} ${Boost_LIBRARIES} ${ZLIB_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
 # SET LIBRARIES FOR MARACLUSTER
+target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
 #target_link_libraries(extractspec maraclusterlibrary ${COMMON_LIBRARIES})
 #target_link_libraries(msgffixmzml maraclusterlibrary ${COMMON_LIBRARIES})
+#if(MSVC)
+#  target_link_libraries(extractraw batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
+#endif(MSVC)
 
-target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
-if(MSVC)
-  target_link_libraries(extractraw batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
-endif(MSVC)
 # INSTALL MARACLUSTER
-#install(TARGETS extractspec msgffixmzml maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
-if(MSVC)
-  install(TARGETS extractraw maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
-else(MSVC)
-  install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
-endif(MSVC)
+install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+#install(TARGETS extractspec msgffixmzml EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+#if(MSVC)
+#  install(TARGETS extractraw EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+#endif(MSVC)

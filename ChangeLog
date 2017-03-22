@@ -1,3 +1,9 @@
+v0.03
+* Fixed error with mgf consensus output (#5)
+* Resolved most mzML validation issues, except a few that msconvert output also produces (#6)
+* Fixed problem parsing scan numbers in mgf files (#7)
+* Added CentOS, Fedora, Windows 32 and 64-bit builds
+
 v0.02
 * Fixed missing attribute 'defaultDataProcessingRef' in mzML output (#4).
 * Switched to distributed clustering scheme and removed temporary files to reduce disk space usage. For a data set with 10 million spectra this reduced the disk space usage from 250GB to just 5GB.

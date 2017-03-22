@@ -13,7 +13,7 @@ usage: $0
                   [[-h]] [[-a]]
                   [[-b branch]]|[[-s source_directory]]
                   [[-r release_directory]]
-                  -p ubuntu|centos|fedora|w32|w64|nw32|nw64
+                  -p ubuntu|centos|fedora|nw32|nw64
 
 If no branch and source_directory is provided, the source
 code from which the sourcecode is checked out from will be used.
@@ -61,26 +61,18 @@ while getopts “hab:s:r:p:” OPTION; do
                     vagbox_url=""
                     package_ext="rpm"
                     ;;
-                w64) 
-                    post="mingw64"
-                    package_ext="exe"
-                    ;;
-                w32) 
-                    post="mingw32"
-                    package_ext="exe"
-                    ;;
                 nw32) 
                     post="nativew32"
                     batfile=true
-                    vagbox_name="win7vs12"
-                    vagbox_url="~/VagrantWin7/win7vs12.box"
+                    vagbox_name="win10vs15"
+                    vagbox_url="~/VagrantWin7/win10vs15.box"
                     package_ext="exe"
                     ;;
                 nw64) 
                     post="nativew64"
                     batfile=true
-                    vagbox_name="win7vs12"
-                    vagbox_url="~/VagrantWin7/win7vs12.box"
+                    vagbox_name="win10vs15"
+                    vagbox_url="~/VagrantWin7/win10vs15.box"
                     package_ext="exe"
                       ;;
                 *)
@@ -199,8 +191,6 @@ Vagrant.configure("2") do |config|
   config.vm.box = "${vagbox_name}"
   config.vm.box_url = "${vagbox_url}"
   config.vm.guest = :windows
-  config.winrm.username = "IEUser"
-  config.winrm.password = "Passw0rd!"
   config.windows.halt_timeout = 30
   config.vm.boot_timeout = 1200
 
@@ -208,7 +198,7 @@ Vagrant.configure("2") do |config|
   config.vm.communicator = "winrm"
   
   config.vm.provider "virtualbox" do |vb|
-    vb.customize ["modifyvm", :id, "--memory", "2048", "--cpus", "4"]
+    vb.customize ["modifyvm", :id, "--memory", "8192", "--cpus", "4"]
     # vb.gui = true # turn on for trouble shooting, e.g. if boot times out repeatedly
   end
   
@@ -232,8 +222,10 @@ cp -v ${tmp_dir}/mara*.${package_ext} ${release};
 
 #---------------------------------------------------------------------------------------
 
-if [[ -z ${alive} ]]; then
+if [[ $? -eq 0 ]] && [[ -z ${alive} ]]; then
   vagrant destroy -f
+else
+  echo "-a option set or encountered error: keeping the VM alive, remember to close and delete the VM manually."
 fi
 
 #---------------------------------------------------------------------------------------

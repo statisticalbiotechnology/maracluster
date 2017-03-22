@@ -3,7 +3,7 @@
 
 cd ../src/
 
-for f in *.cpp; do
+for f in *.cpp *.h; do
   if (grep Copyright $f);then 
     echo "No need to copy the License Header to $f"
   else
@@ -11,14 +11,4 @@ for f in *.cpp; do
     mv $f.new $f
     echo "License Header copied to $f"
   fi 
-done 
-
-for f in *.h; do
-  if (grep Copyright $f);then 
-    echo "No need to copy the License Header to $f"
-  else
-    cat license.txt $f > $f.new
-    mv $f.new $f
-    echo "License Header copied to $f"
-  fi 
-done 
+done

@@ -19,6 +19,9 @@
 const double BinSpectra::kBinWidth = 1.000508;
 const double BinSpectra::kBinShift = 0.32;
 
+// const double BinSpectra::kBinWidth = 0.05;
+// const double BinSpectra::kBinShift = 0.0;
+
 const unsigned int BinSpectra::kRankWindow = 10u;
 const unsigned int BinSpectra::kMaxRank = 3u;
 

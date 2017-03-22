@@ -38,14 +38,23 @@ function(get_arch TARGET_ARCH)
 endfunction()
 
 ###############################################################################
+# SET LOCATION OF MODULE FINDERS
+###############################################################################
+
+set(CMAKE_MODULE_PATH ${MARACLUSTER_SOURCE_DIR}/cmake)
+
+###############################################################################
 # SET GLOBAL VARIABLES
 ###############################################################################
 
-
 # VERSION AND NAMESPACES
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "00")
+set(CPACK_PACKAGE_VERSION_MINOR "03")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
+
+# UPDATE PATCH VERSION FOR INTERMEDIATE BUILDS
+INCLUDE(VersionGen)
+NIGHTLY_VERSION_GEN(CPACK_PACKAGE_VERSION_PATCH ${CPACK_PACKAGE_VERSION_MAJOR} ${CPACK_PACKAGE_VERSION_MINOR} ${CPACK_PACKAGE_VERSION_PATCH} ${MARACLUSTER_SOURCE_DIR})
 
 IF(MINGW OR MSVC) 
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib" ".dll" ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -91,12 +100,6 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 set(BOOST_MIN_VERSION "1.43.0")
 set(Boost_ADDITIONAL_VERSIONS "1.43.0")
-
-###############################################################################
-# SET LOCATION OF MODULE FINDERS
-###############################################################################
-
-set(CMAKE_MODULE_PATH ${MARACLUSTER_SOURCE_DIR}/cmake)
 
 ###############################################################################
 # SET SHARED DYNAMIC LINKING LIBRARIES

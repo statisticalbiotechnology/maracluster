@@ -13,23 +13,33 @@
   limitations under the License.
   
  ******************************************************************************/
- 
-#ifndef GLOBALS_H
-#define GLOBALS_H
 
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <ctime>
+#ifndef VERSION_H_
+#define VERSION_H_
 
-class Globals {
- public:
-  static unsigned int VERB; 
-  
-  static bool fileExists(const std::string& fileName);
-  static bool fileIsEmpty(const std::string& fileName);
-  static void reportProgress(time_t& startTime, clock_t& startClock,
-    size_t currentIt, size_t totalIt);
-};
+#ifndef VERSION_MAJOR
+  #define VERSION_MAJOR "@CPACK_PACKAGE_VERSION_MAJOR@"
+#endif
 
-#endif // GLOBALS_H
+#ifndef VERSION_MINOR
+   #define VERSION_MINOR "@CPACK_PACKAGE_VERSION_MINOR@"
+#endif
+
+#ifndef VERSION_PATCH
+   #define VERSION_PATCH "@CPACK_PACKAGE_VERSION_PATCH@"
+#endif
+
+#ifndef VERSION
+  #define VERSION "@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@"
+#endif
+
+#ifndef VERSION_NAME
+  #define VERSION_NAME "v@CPACK_PACKAGE_VERSION_MAJOR@-@CPACK_PACKAGE_VERSION_MINOR@"
+#endif
+
+#ifndef LVERSION_NAME
+  #define LVERSION_NAME L"v@CPACK_PACKAGE_VERSION_MAJOR@-@CPACK_PACKAGE_VERSION_MINOR@"
+#endif
+
+#endif /*VERSION_H_*/
+

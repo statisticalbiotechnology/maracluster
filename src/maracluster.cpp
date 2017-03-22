@@ -34,6 +34,7 @@
 #include "PercolatorInterface.cpp"
 
 #include "Globals.h"
+#include "Version.h"
 #include "BatchSpectrumFiles.h"
 #include "BatchSpectrumClusters.h"
 #include "BatchSpectra.h"
@@ -80,6 +81,16 @@ double dbPvalThreshold_ = -5.0; // logPval
 int chargeUncertainty_;
 size_t minConsensusClusterSize_ = 1u;
 
+string greeter() {
+  ostringstream oss;
+  oss << "MaRaCluster version " << VERSION << ", ";
+  oss << "Build Date " << __DATE__ << " " << __TIME__ << endl;
+  oss << "Copyright (c) 2015-17 Matthew The. All rights reserved.\n"
+      << "Written by Matthew The (matthew.the@scilifelab.se) in the\n"
+      << "School of Biotechnology at the Royal Institute of Technology in Stockholm.\n";
+  return oss.str();
+}
+
 bool parseOptions(int argc, char **argv) {
   std::ostringstream callStream;
   callStream << argv[0];
@@ -91,7 +102,7 @@ bool parseOptions(int argc, char **argv) {
   call_ = call_.substr(0,call_.length()-1); // trim ending carriage return
   
   std::ostringstream intro;
-  intro << "Usage:\n";
+  intro << greeter() << "\nUsage:\n";
   intro << "  maracluster batch -b <msfile_list> [-f <output_folder>]\n";
   intro << "    where msfile_list is a flat text file with absolute paths\n";
   intro << "    to the spectrum files to be clustered, one on each line.\n";

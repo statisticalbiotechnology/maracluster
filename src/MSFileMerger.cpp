@@ -15,6 +15,7 @@
  ******************************************************************************/
  
 #include "MSFileMerger.h"
+#include "Version.h"
 
 using pwiz::msdata::MSDataPtr;
 using pwiz::msdata::MSData;
