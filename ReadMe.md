@@ -4,7 +4,7 @@ This repository holds the source code for clustering and merging of fragment spe
 
 ### Installation
 
-Installers for Ubuntu (`.deb` packages) can be found on the [Release page](https://github.com/statisticalbiotechnology/maracluster/releases).
+Installers for several operating systems can be found on the [Release page](https://github.com/statisticalbiotechnology/maracluster/releases).
 
 If you prefer to compile from source, or are running on a different operating system, [click here](#installation-from-source).
 
