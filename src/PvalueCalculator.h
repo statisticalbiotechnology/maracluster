@@ -53,11 +53,18 @@ class PvalueCalculator {
   
   PvalueCalculator() : maxScore_(0u) {}
   inline unsigned int getNumScoringPeaks() const { return peakBins_.size(); }
+  
+  // prevents ODR usage of kMaxScoringPeaks: http://en.cppreference.com/w/cpp/language/definition#ODR-use
+  static unsigned int getMaxScoringPeaksConstant() {
+    return kMaxScoringPeaks;
+  }
+  
   static unsigned int getMaxScoringPeaks(double mass) { 
+    unsigned int maxScoringPeaks = getMaxScoringPeaksConstant();
     if (kVariableScoringPeaks) {
-      return std::min(kMaxScoringPeaks, static_cast<unsigned int>(mass / 50.0));
+      return std::min(maxScoringPeaks, static_cast<unsigned int>(mass / 50.0));
     } else {
-      return kMaxScoringPeaks;
+      return maxScoringPeaks;
     }
   }
   

@@ -23,7 +23,7 @@ ScanId SpectrumFileList::getScanId(const std::string& filePath,
   return ScanId(fileIndexMap_[filePath], scannr);
 }
 
-bool SpectrumFileList::initFromFile(const std::string& fileListFN) {
+void SpectrumFileList::initFromFile(const std::string& fileListFN) {
   std::ifstream specListFN(fileListFN.c_str());
   std::string line;
   if (specListFN.is_open()) {

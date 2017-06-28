@@ -17,7 +17,7 @@ if [[ -z ${src_dir} ]]; then
   if [[ -n  ${branch} ]]; then
     sudo apt-get install git;
     src_dir="$(mktemp -d --tmpdir build_XXXX)";
-    git clone --branch "$1" https://github.com/percolator/percolator.git "${src_dir}/percolator";
+    git clone --branch "$1" https://github.com/statisticalbiotechnology/maracluster.git "${src_dir}/maracluster";
   else
     src_dir=$(dirname ${BASH_SOURCE})/../../../
   fi

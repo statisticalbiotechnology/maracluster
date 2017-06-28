@@ -43,7 +43,7 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
 
 // TODO: this could be made a bit nicer by retaining other attributes and only replacing the scan attribute
 void SpectrumHandler::setScannr(pwiz::msdata::SpectrumPtr s, unsigned int scanNr) {
-  std::string id = "scan=" + boost::lexical_cast<std::string>(scanNr);
+  std::string id = "scan=" + boost::lexical_cast<std::string>(scanNr) + "\nSCANS=" + boost::lexical_cast<std::string>(scanNr);
   s->id = id;
   s->set(pwiz::msdata::MS_spectrum_title, id); // sets the TITLE attribute in mgf files
 }

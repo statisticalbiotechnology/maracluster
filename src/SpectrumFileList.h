@@ -65,7 +65,7 @@ class SpectrumFileList {
       return fileIndexVector_;
     }
     void addFile(const std::string& filePath);
-    bool initFromFile(const std::string& fileListFN);
+    void initFromFile(const std::string& fileListFN);
   protected:
     std::map<std::string, unsigned int> fileIndexMap_;
     std::vector<std::string> fileIndexVector_;

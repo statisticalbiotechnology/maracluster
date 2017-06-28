@@ -14,7 +14,7 @@ usage: $0
                   [[-s source_directory]]
                   [[-b build_directory]]
                   [[-r release_directory]]
-                  [[-p ubuntu|centos|fedora|w32|w64|nw32|nw64]]
+                  [[-p ubuntu|centos|fedora|osx]]
 
 If no branch and source_directory is provided, the source
 code from which the sourcecode is checked out from will be used.
@@ -38,6 +38,9 @@ while getopts “hs:b:r:p:” OPTION; do
                 centos) 
                     post="centos64"
                     ;;
+                osx) 
+                    post="osx64"
+                    ;;
                 *)
                     if [[ $OPTARG == *,* ]]; then
                       arr=$(echo $OPTARG | tr "," "\n");
@@ -60,6 +63,8 @@ if [[ -z $post ]]; then
     linux_issue=$(cat /etc/redhat-release)
   elif [ -f /etc/issue ]; then
     linux_issue=$(cat /etc/issue)
+  else
+    linux_issue=$(uname -s)
   fi
   
   case "$linux_issue" in 
@@ -71,6 +76,9 @@ if [[ -z $post ]]; then
       ;;
     *CentOS*|*Red*)
       post="centos64"
+      ;;
+    *Darwin*)
+      post="osx64"
       ;;
   esac
 fi

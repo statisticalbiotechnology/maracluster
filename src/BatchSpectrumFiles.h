@@ -66,6 +66,9 @@ class BatchSpectrumFiles {
       const std::string& scanInfoFN, double precursorTolerance, 
       bool precursorToleranceDa);
   
+  void getPeakCountsAndPrecursorMzs(SpectrumFileList& fileList,
+    std::vector<double>& precMzsAccumulated, const std::string& peakCountFN);
+    
   void writeDatFNsToFile(std::vector<std::string>& datFNs,
     const std::string& datFNFile);
   void getDatFNs(std::vector<double>& limits, std::vector<std::string>& datFNs);
@@ -93,8 +96,6 @@ class BatchSpectrumFiles {
     bool precursorToleranceDa);
   int getPrecMzBin(double precMz, std::vector<double>& limits);
   
-  void getPeakCountsAndPrecursorMzs(SpectrumFileList& fileList,
-    std::vector<double>& precMzsAccumulated, const std::string& peakCountFN);
   void writeSplittedPrecursorMzFiles(SpectrumFileList& fileList, 
     std::vector<double>& limits, std::vector<std::string>& datFNs,
     const std::string& scanInfoFN);

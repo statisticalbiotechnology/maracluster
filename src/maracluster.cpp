@@ -695,9 +695,6 @@ int main(int argc, char* argv[]) {
           if (spectrumLibraryFN_.empty()) {
             std::cerr << "Error: no spectrum library file specified with -z flag" << std::endl;
             return EXIT_FAILURE;
-          } else if (peakCountFN_.empty()) {
-            std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
-            return EXIT_FAILURE;
           } else if (spectrumBatchFileFN_.empty() && spectrumInFN_.empty()) {
             std::cerr << "Error: no query spectrum file(s) specified with -i or -b flag" << std::endl;
             return EXIT_FAILURE;
@@ -710,12 +707,6 @@ int main(int argc, char* argv[]) {
             pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.dat";
           
           if (!Globals::fileExists(pvaluesFN_)) {
-            std::cerr << "Reading peak counts" << std::endl;
-            PeakCounts peakCounts;
-            peakCounts.readFromFile(peakCountFN_);
-            //peakCounts.setSmoothingMode(1);
-            std::cerr << "Finished reading peak counts" << std::endl;
-            
             // read in the query spectra
             BatchSpectra querySpectra;
             SpectrumFileList fileList;
@@ -726,6 +717,19 @@ int main(int argc, char* argv[]) {
               querySpectra.convertToBatchSpectra(fileList);
             }
             querySpectra.sortSpectraByPrecMz();
+            
+            if (peakCountFN_.empty()) {
+              peakCountFN_ = outputFolder_ + "/" + fnPrefix_ + ".peak_counts.dat";
+              
+              BatchSpectrumFiles spectrumFiles(outputFolder_);
+              std::vector<double> precMzsAccumulated;
+              spectrumFiles.getPeakCountsAndPrecursorMzs(fileList, precMzsAccumulated, peakCountFN_);
+            }
+            std::cerr << "Reading peak counts" << std::endl;
+            PeakCounts peakCounts;
+            peakCounts.readFromFile(peakCountFN_);
+            //peakCounts.setSmoothingMode(1);
+            std::cerr << "Finished reading peak counts" << std::endl;
             
             // read in the library spectra
             PvalueCalculator::kMinScoringPeaks = 5u;

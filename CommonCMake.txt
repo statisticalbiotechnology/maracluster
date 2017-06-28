@@ -50,7 +50,7 @@ set(CMAKE_MODULE_PATH ${MARACLUSTER_SOURCE_DIR}/cmake)
 # VERSION AND NAMESPACES
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "03")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_PACKAGE_VERSION_PATCH "1")
 
 # UPDATE PATCH VERSION FOR INTERMEDIATE BUILDS
 INCLUDE(VersionGen)
@@ -72,26 +72,38 @@ IF(MINGW)
   IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
     SET(MINGW64 1)
     SET(MINGW_PATH /usr/x86_64-w64-mingw32/sys-root/mingw/)  
-    SET(MINGW_PACK_NAME win64)  
+    SET(MINGW_PACK_NAME win64-mingw-x64)  
   ELSE()
     SET(MINGW32 1)
     SET(MINGW_PATH /usr/i686-w64-mingw32/sys-root/mingw/)  
-    SET(MINGW_PACK_NAME win32)  
+    SET(MINGW_PACK_NAME win32-mingw-x86)  
   ENDIF()
 ENDIF(MINGW)
+
+IF(MSVC)
+  IF(CMAKE_SIZEOF_VOID_P EQUAL 8)  
+    SET(MSVC_PACK_NAME win64-msvc-x64) 
+  ELSE()
+    SET(MSVC_PACK_NAME win32-msvc-x86)  
+  ENDIF()
+ENDIF(MSVC)
 
 set(PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 
 #STATIC/DYNAMIC LIBRARY INCLUSION
 if(APPLE)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
 if(MINGW OR WIN32 OR APPLE)
   OPTION(BUILD_SHARED_LIBS "build static binaries." OFF)
-  OPTION(STATIC "build a static binaries. This is mainly intended for the win32-package and the MACOSX-bundle." ON )
+  OPTION(STATIC "build static binaries. This is mainly intended for the win32-package and the MACOSX-bundle." ON )
 else(MINGW OR WIN32 OR APPLE)
-  OPTION(STATIC "build a static binaries. This is mainly intended for the win32-package and the MACOSX-bundle." OFF )
+  OPTION(STATIC "build static binaries. This is mainly intended for the win32-package and the MACOSX-bundle." OFF )
 endif()
 
 # Link Boost static and single threaded
@@ -130,9 +142,9 @@ ENDIF("${isSystemDir}" STREQUAL "-1")
 ###############################################################################
 
 IF(APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.7")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.7")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmacosx-version-min=10.7 -lc++")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.12")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.12")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmacosx-version-min=10.12")
 ENDIF(APPLE)
 
 if(UNIX OR APPLE OR MINGW)
