@@ -99,6 +99,8 @@ void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN) {
     s->index = idx++;
   }
   
+  slNew->dp = DataProcessingPtr(new DataProcessing("deconvolute_charge_states"));
+  
   MSDataFile msdNew(spectrumInFN);
   msdNew.run.spectrumListPtr = slNew;
   writeMSData(msdNew, spectrumOutFN_); 

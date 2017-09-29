@@ -91,6 +91,17 @@ string greeter() {
   return oss.str();
 }
 
+string extendedGreeter(time_t& startTime) {
+  ostringstream oss;
+  char* host = getenv("HOSTNAME");
+  oss << greeter();
+  oss << "Issued command:" << endl << call_ << endl;
+  oss << "Started " << ctime(&startTime) << endl;
+  oss.seekp(-1, ios_base::cur);
+  if (host) oss << " on " << host << endl;
+  return oss.str();
+}
+
 bool parseOptions(int argc, char **argv) {
   std::ostringstream callStream;
   callStream << argv[0];
@@ -410,8 +421,9 @@ int main(int argc, char* argv[]) {
       time(&startTime);
       startClock = clock();
       
-      std::cerr << "Issued command:" << std::endl << call_ << std::endl;
-      std::cerr << "Started " << ctime(&startTime) << std::endl;
+      if (Globals::VERB > 0) {
+        std::cerr << extendedGreeter(startTime);
+      }
       
       boost::filesystem::path rootPath (outputFolder_);
       boost::system::error_code returnedError;
