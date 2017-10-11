@@ -16,6 +16,8 @@
  
 #include "BinSpectra.h"
 
+namespace maracluster {
+
 const double BinSpectra::kBinWidth = 1.000508;
 const double BinSpectra::kBinShift = 0.32;
 
@@ -165,3 +167,5 @@ void BinSpectra::printIntensities(std::vector<BinnedMZIntensityPair>& mziPairsBi
 	}
 	std::cout << std::endl;
 }
+
+} /* namespace maracluster */

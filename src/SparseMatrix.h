@@ -14,8 +14,8 @@
   
  ******************************************************************************/
 
-#ifndef SPARSE_MATRIX_H
-#define SPARSE_MATRIX_H
+#ifndef MARACLUSTER_SPARSEMATRIX_H_
+#define MARACLUSTER_SPARSEMATRIX_H_
 
 #include <queue>
 #include <vector>
@@ -25,6 +25,8 @@
 
 #include "ScanId.h"
 #include "SparseEdge.h"
+
+namespace maracluster {
 
 //typedef boost::unordered_map<ScanId, std::map<ScanId, double> > SparseMatrix
 class SparseMatrix {
@@ -107,5 +109,7 @@ class SparseMatrix {
   }
 };
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPARSEMATRIX_H_ */
 

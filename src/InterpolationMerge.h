@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef INTERPOLATION_MERGE_H
-#define INTERPOLATION_MERGE_H
+#ifndef MARACLUSTER_INTERPOLATIONMERGE_H_
+#define MARACLUSTER_INTERPOLATIONMERGE_H_
 
 #include <boost/foreach.hpp>
 #include <iostream>
@@ -24,6 +24,8 @@
 
 #include "MZIntensityPair.h"
 #include "SpectrumHandler.h"
+
+namespace maracluster {
 
 class InterpolationMerge {
   public:
@@ -42,4 +44,6 @@ class InterpolationMerge {
     
 };
 
-#endif // INTERPOLATION_MERGE_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_INTERPOLATIONMERGE_H_ */

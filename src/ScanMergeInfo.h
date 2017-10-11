@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef SCANMERGEINFO_H
-#define SCANMERGEINFO_H
+#ifndef MARACLUSTER_SCANMERGEINFO_H_
+#define MARACLUSTER_SCANMERGEINFO_H_
 
 #include <vector>
 #include <map>
@@ -27,6 +27,8 @@
 #include <boost/foreach.hpp>
 
 #include "ScanId.h"
+
+namespace maracluster {
 
 struct ScanMergeInfo {
   ScanMergeInfo(ScanId _scannr, double _score, bool _isDecoy, 
@@ -104,4 +106,6 @@ std::ostream& operator<<(std::ostream& os, const ScanMergeInfoSet& sms);
 /* map: peptide -> ScanMergeInfoSet */
 typedef std::map<std::string, ScanMergeInfoSet> SpectraMergeMap;
 
-#endif //SCANMERGEINFO_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SCANMERGEINFO_H_ */

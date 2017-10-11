@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef SPARSE_CLUSTERING_H
-#define SPARSE_CLUSTERING_H
+#ifndef MARACLUSTER_SPARSECLUSTERING_H_
+#define MARACLUSTER_SPARSECLUSTERING_H_
 
 #include <map>
 #include <utility>
@@ -35,6 +35,8 @@
 #include "PvalueTriplet.h"
 #include "SparseEdge.h"
 #include "SparseMatrix.h"
+
+namespace maracluster {
 
 class SparseClustering {
  public:
@@ -127,5 +129,7 @@ class SparseClustering {
   }
 };
 
-#endif // SPARSE_CLUSTERING_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPARSECLUSTERING_H_ */
 

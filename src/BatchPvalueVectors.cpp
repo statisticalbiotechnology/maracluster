@@ -16,6 +16,8 @@
  
 #include "BatchPvalueVectors.h"
 
+namespace maracluster {
+
 void BatchPvalueVectors::calculatePvalueVectors(
     std::vector<BatchSpectrum>& spectra, 
     PeakCounts& peakCounts) {
@@ -776,7 +778,7 @@ void BatchPvalueVectors::readFingerprints(
     }
   }
   if (Globals::VERB > 2) {
-    std::cerr << "Molecules read: " << mol_count << endl;
+    std::cerr << "Molecules read: " << mol_count << std::endl;
   }
 }
 
@@ -1002,3 +1004,5 @@ void BatchPvalueVectors::calculatePvalue(PvalueVectorsDbRow& pvecRow,
   }
 #endif
 }
+
+} /* namespace maracluster */

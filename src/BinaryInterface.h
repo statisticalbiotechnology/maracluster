@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BINARY_INTERFACE_H
-#define BINARY_INTERFACE_H
+#ifndef MARACLUSTER_BINARYINTERFACE_H_
+#define MARACLUSTER_BINARYINTERFACE_H_
 
 #include <vector>
 #include <cerrno>
@@ -23,6 +23,8 @@
 
 #include "MyException.h"
 #include <boost/iostreams/device/mapped_file.hpp>
+
+namespace maracluster {
 
 // TODO: add exception handling
 class BinaryInterface {
@@ -80,4 +82,6 @@ class BinaryInterface {
   }
 };
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BINARYINTERFACE_H_ */

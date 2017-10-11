@@ -98,5 +98,5 @@ if [[ -z $release_dir ]]; then
 fi
 
 cd ${src_dir}/admin/builders
-./${builder} -b ${build_dir} -r ${release_dir}
+./${builder} -b ${build_dir} -r ${release_dir} -s ${src_dir}/../
 

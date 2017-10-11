@@ -20,8 +20,8 @@
 // Adapted from the BALL project (www.ball-project.org)
 // BALL/STRUCTURE/binaryFingerprintMethods.h
 
-#ifndef BALL_STRUCTURE_BINARYFINGERPRINTMETHODS_H
-#define BALL_STRUCTURE_BINARYFINGERPRINTMETHODS_H
+#ifndef MARACLUSTER_BINARYFINGERPRINTMETHODS_H_
+#define MARACLUSTER_BINARYFINGERPRINTMETHODS_H_
 
 
 #include <boost/graph/adjacency_list.hpp>
@@ -40,6 +40,8 @@
 
 // MT: reuse the binary I/O of the p-value filter and sorting
 #include "PvalueFilterAndSort.h"
+
+namespace maracluster {
 
 namespace BALL {
   typedef unsigned long LongSize;
@@ -1007,4 +1009,6 @@ namespace BALL {
   };
 } // namespace BALL 
 
-#endif // BALL_STRUCTURE_BINARYFINGERPRINTMETHODS_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BINARYFINGERPRINTMETHODS_H_ */

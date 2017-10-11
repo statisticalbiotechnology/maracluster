@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef MS_FILE_HANDLER_H
-#define MS_FILE_HANDLER_H
+#ifndef MARACLUSTER_MSFILEHANDLER_H_
+#define MARACLUSTER_MSFILEHANDLER_H_
 
 #include <iostream>
 #include <string>
@@ -38,6 +38,8 @@
 #include "PvalueCalculator.h"
 
 #include "BatchSpectrum.h"
+
+namespace maracluster {
 
 class MSFileHandler {
  public:
@@ -78,4 +80,6 @@ class MSFileHandler {
      unsigned int scannr, pwiz::msdata::SpectrumListSimplePtr mergedSpectra);
 };
 
-#endif // MS_FILE_HANDLER_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MSFILEHANDLER_H_ */

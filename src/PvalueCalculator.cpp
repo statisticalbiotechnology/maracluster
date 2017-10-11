@@ -20,6 +20,8 @@ Adapted from https://code.google.com/p/in-silico-mass-fingerprinting/
 */
 #include "PvalueCalculator.h"
 
+namespace maracluster {
+
 // to avoid 0 scoring peaks we have to ensure that: 
 //
 //     log((1-minProb)/minProb) / log((1-maxProb)/maxProb) < PvalueCalculator::probDiscretizationLevels_
@@ -570,3 +572,5 @@ bool PvalueCalculator::pvalPolyfitUnitTest() {
     return false;
   }
 }
+
+} /* namespace maracluster */

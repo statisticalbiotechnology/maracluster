@@ -16,6 +16,8 @@
  
 #include "MSFileHandler.h"
 
+namespace maracluster {
+
 using pwiz::msdata::MSData;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumListSimplePtr;
@@ -241,3 +243,5 @@ void MSFileHandler::calcRankDotProducts(const std::string& spectrumInFN) {
   	std::cout << it->first << '\t' << it->second.second << std::endl;
   }
 }
+
+} /* namespace maracluster */

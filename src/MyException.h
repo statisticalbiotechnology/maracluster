@@ -15,28 +15,27 @@ limitations under the License.
 
 *******************************************************************************/
 
-#ifndef MYEXCEPTION_HH
-#define MYEXCEPTION_HH
+#ifndef MARACLUSTER_MYEXCEPTION_H_
+#define MARACLUSTER_MYEXCEPTION_H_
 
 #include <string>
 #include <exception>
 #include <sstream>
 
-using namespace std;
+namespace maracluster {
 
-  class MyException : public std::exception 
-  {
-  
-    public:
+class MyException : public std::exception {
+ public:
+  MyException(const std::string &ss);
+  MyException(const std::ostream &ss);
+  ~MyException() throw();
+  const char* what() const throw();
 
-      MyException(const std::string &ss);
-      MyException(const std::ostream &ss);
-      ~MyException() throw();
-      const char* what() const throw();
+ protected: 
+  std::string msg;
 
-    protected:
-      
-      std::string msg;
-  };
+};
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MYEXCEPTION_H_ */

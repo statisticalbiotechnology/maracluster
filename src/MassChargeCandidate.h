@@ -14,8 +14,10 @@
   
  ******************************************************************************/
  
-#ifndef MASS_CHARGE_CANDIDATE_H
-#define MASS_CHARGE_CANDIDATE_H
+#ifndef MARACLUSTER_MASSCHARGECANDIDATE_H_
+#define MARACLUSTER_MASSCHARGECANDIDATE_H_
+
+namespace maracluster {
 
 struct MassChargeCandidate {
   MassChargeCandidate(unsigned int _charge, double _precMz, double _mass) : charge(_charge), precMz(_precMz), mass(_mass) {}
@@ -34,4 +36,6 @@ struct MassChargeCandidate {
   }
 };
 
-#endif // MASS_CHARGE_CANDIDATE_H
+} /* namespace maracluster */
+
+#endif // MARACLUSTER_MASSCHARGECANDIDATE_H_

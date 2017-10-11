@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BIN_AND_RANK_H
-#define BIN_AND_RANK_H
+#ifndef MARACLUSTER_BINANDRANK_H_
+#define MARACLUSTER_BINANDRANK_H_
 
 #include <map>
 #include <vector>
@@ -28,6 +28,8 @@
 #include "SpectrumHandler.h"
 #include "BinSpectra.h"
 #include "MZIntensityPair.h"
+
+namespace maracluster {
 
 typedef std::map<unsigned int, unsigned int> BinRanks;
 typedef std::map<unsigned int, double> BinRankScores;
@@ -66,4 +68,6 @@ std::ostream &operator<<(std::ostream &out, std::vector<MZIntensityPair>& mziPai
 std::ostream &operator<<(std::ostream &out, BinRanks &ranks);
 std::ostream &operator<<(std::ostream &out, BinRankScores &rankScores);
 
-#endif // BIN_AND_RANK_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BINANDRANK_H_ */

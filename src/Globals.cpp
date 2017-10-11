@@ -17,6 +17,8 @@
 #include "Globals.h"
 #include "MyException.h"
 
+namespace maracluster {
+
 unsigned int Globals::VERB = 3;
 
 bool Globals::fileExists(const std::string& fileName) {
@@ -58,3 +60,5 @@ void Globals::reportProgress(time_t& startTime, clock_t& startClock,
                timeLeftSecMod << " sec wall time." << std::endl;
 }
 
+
+} /* namespace maracluster */

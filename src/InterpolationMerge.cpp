@@ -16,6 +16,8 @@
  
 #include "InterpolationMerge.h"
 
+namespace maracluster {
+
 //double InterpolationMerge::maxScaling = 0.001;
 //double InterpolationMerge::maxShift = 0.5;
 double InterpolationMerge::maxScaling = 0.0;
@@ -100,3 +102,5 @@ void InterpolationMerge::findBestAffineTransform(std::vector<MZIntensityPair>& m
     }
   }
 }
+
+} /* namespace maracluster */

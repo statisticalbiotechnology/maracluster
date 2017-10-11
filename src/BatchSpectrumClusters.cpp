@@ -16,6 +16,8 @@
  
 #include "BatchSpectrumClusters.h"
 
+namespace maracluster {
+
 void BatchSpectrumClusters::printClusters(
     const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
@@ -259,3 +261,5 @@ bool BatchSpectrumClusters::scanDescReadUnitTest() {
     return true;
   } 
 }
+
+} /* namespace maracluster */

@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_PVALUES_H
-#define BATCH_PVALUES_H
+#ifndef MARACLUSTER_BATCHPVALUES_H_
+#define MARACLUSTER_BATCHPVALUES_H_
 
 #include <iostream>
 #include <vector>
@@ -24,6 +24,8 @@
 #include "Globals.h"
 #include "BinaryInterface.h"
 #include "PvalueTriplet.h"
+
+namespace maracluster {
 
 class BatchPvalues {
  public:
@@ -37,4 +39,6 @@ class BatchPvalues {
   std::string pvaluesFN_;
 };
 
-#endif // CASS_PVALUES_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHPVALUES_H_ */

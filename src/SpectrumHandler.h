@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef SPECTRUMHANDLER_H
-#define SPECTRUMHANDLER_H
+#ifndef MARACLUSTER_SPECTRUMHANDLER_H_
+#define MARACLUSTER_SPECTRUMHANDLER_H_
 
 #include <iostream>
 #include <vector>
@@ -32,9 +32,15 @@
 
 #if defined(WIN32) && defined(VENDOR_SUPPORT)
 #include "pwiz/data/vendor_readers/ExtendedReaderList.hpp"
-typedef pwiz::msdata::ExtendedReaderList MSReaderList;
 #else
 #include "pwiz/data/msdata/DefaultReaderList.hpp"
+#endif
+
+namespace maracluster {
+
+#if defined(WIN32) && defined(VENDOR_SUPPORT)
+typedef pwiz::msdata::ExtendedReaderList MSReaderList;
+#else
 typedef pwiz::msdata::DefaultReaderList MSReaderList;
 #endif
 
@@ -97,4 +103,6 @@ class SpectrumHandler {
     
 };
 
-#endif //SPECTRUMHANDLER_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPECTRUMHANDLER_H_ */

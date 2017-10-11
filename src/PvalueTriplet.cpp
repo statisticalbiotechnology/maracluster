@@ -16,6 +16,8 @@
  
 #include "PvalueTriplet.h"
 
+namespace maracluster {
+
 void PvalueTriplet::readFromString(const char* f, char** next) {
   scannr1.readFromString(f, next); f = *next;
   scannr2.readFromString(f, next); f = *next;
@@ -27,3 +29,5 @@ std::ostream& operator<<(std::ostream& stream, const PvalueTriplet& t) {
   return stream;
 }
 
+
+} /* namespace maracluster */

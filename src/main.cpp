@@ -13,18 +13,26 @@
   limitations under the License.
   
  ******************************************************************************/
- 
-#include "ScanMergeInfo.h"
 
-namespace maracluster {
+#include <cstdlib>
 
-std::ostream& operator<<(std::ostream& os, const ScanMergeInfoSet& sms) {
-  os << sms.mergedScanId << '\t' << sms.peptide;
-  BOOST_FOREACH(const ScanMergeInfo scanMergeInfo, sms.scans) {
-    os << '\t' << scanMergeInfo.scannr.fileIdx << '\t' << scanMergeInfo.scannr.scannr << '\t' << std::setprecision(3) << scanMergeInfo.weight;
+#include "MaRaCluster.h"
+
+int main(int argc, char** argv) {
+  maracluster::MaRaCluster maracluster;
+  int retVal = EXIT_FAILURE; 
+  
+  try {
+    if (maracluster.parseOptions(argc, argv)) {
+    	retVal = maracluster.run();
+	  }
+  } catch (const std::exception& e) {
+    std::cerr << "Exception caught: " << e.what() << std::endl;
+    retVal = EXIT_FAILURE;
+  } catch(...) {
+    std::cerr << "Unknown exception, contact the developer.." << std::endl;
+    retVal = EXIT_FAILURE;
   }
-  os << std::endl;
-  return os;
+  
+  return retVal;
 }
-
-} /* namespace maracluster */

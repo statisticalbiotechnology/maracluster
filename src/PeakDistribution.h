@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef PEAK_DISTRIBUTION_H
-#define PEAK_DISTRIBUTION_H
+#ifndef MARACLUSTER_PEAKDISTRIBUTION_H_
+#define MARACLUSTER_PEAKDISTRIBUTION_H_
 
 #include <vector>
 #include <map>
@@ -33,6 +33,8 @@
 #include <sstream>
 
 #include <boost/foreach.hpp>
+
+namespace maracluster {
 
 class PeakDistribution {
  public:    
@@ -83,4 +85,6 @@ class PeakDistribution {
   static unsigned long seed;
 };
 
-#endif // PEAK_DISTRIBUTION_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_PEAKDISTRIBUTION_H_ */

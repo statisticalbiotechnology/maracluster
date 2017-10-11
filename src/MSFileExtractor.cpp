@@ -16,6 +16,8 @@
  
 #include "MSFileExtractor.h"
 
+namespace maracluster {
+
 using pwiz::msdata::MSData;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumListSimplePtr;
@@ -165,3 +167,5 @@ void MSFileExtractor::extractToBatchSpectrumList(
     }
   }
 }
+
+} /* namespace maracluster */

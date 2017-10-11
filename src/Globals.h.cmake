@@ -14,13 +14,15 @@
   
  ******************************************************************************/
  
-#ifndef GLOBALS_H
-#define GLOBALS_H
+#ifndef MARACLUSTER_GLOBALS_H_
+#define MARACLUSTER_GLOBALS_H_
 
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <ctime>
+
+namespace maracluster {
 
 class Globals {
  public:
@@ -32,4 +34,6 @@ class Globals {
     size_t currentIt, size_t totalIt);
 };
 
-#endif // GLOBALS_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_GLOBALS_H_ */

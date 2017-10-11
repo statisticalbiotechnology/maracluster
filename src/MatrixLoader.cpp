@@ -16,6 +16,8 @@
  
 #include "MatrixLoader.h"
 
+namespace maracluster {
+
 /* for non-binary input
 bool MatrixLoader::initStream(const std::string& matrixFN) {
   matrixStream_.open(matrixFN.c_str());
@@ -138,3 +140,5 @@ long long MatrixLoader::getFileSize(const std::string& pvalFN) {
   std::ifstream in(pvalFN.c_str(), std::ios::ate | std::ios::binary);
   return static_cast<long long>(in.tellg());
 }
+
+} /* namespace maracluster */

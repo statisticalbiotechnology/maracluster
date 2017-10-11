@@ -66,12 +66,12 @@ endif(FINGERPRINT_FILTER)
 
 add_library(maraclusterlibrary STATIC Globals.cpp SparseClustering.cpp SparsePoisonedClustering.cpp MatrixLoader.cpp PvalueCalculator.cpp PvalueFilterAndSort.cpp PeakDistribution.cpp PercolatorInterface.cpp BinSpectra.cpp BinAndRank.cpp InterpolationMerge.cpp RankMerge.cpp ClusterMerge.cpp PeakCounts.cpp ScanMergeInfo.cpp SpectrumFileList.cpp SpectrumHandler.cpp MSFileHandler.cpp MSFileExtractor.cpp MSFileMerger.cpp MZIntensityPair.cpp MSClusterMerge.cpp Option.cpp MyException.cpp  ScanId.cpp PvalueTriplet.cpp ${BFM_SRC})
 
-add_library(batchlibrary STATIC BatchPvalues.cpp BatchPvalueVectors.cpp BatchSpectra.cpp BatchSpectrumClusters.cpp BatchSpectrumFiles.cpp)
+add_library(batchlibrary STATIC MaRaCluster.cpp BatchPvalues.cpp BatchPvalueVectors.cpp BatchSpectra.cpp BatchSpectrumClusters.cpp BatchSpectrumFiles.cpp)
 
 #add_executable(extractspec extractSpectra.cpp)
 #add_executable(msgffixmzml msgfFixMzML.cpp)
 
-add_executable(maracluster maracluster.cpp)
+add_executable(maracluster main.cpp)
 #if(MSVC)
 #  add_executable(extractraw extractRAWSpectra.cpp)
 #endif(MSVC)

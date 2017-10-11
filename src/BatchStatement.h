@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_STATEMENT_H
-#define BATCH_STATEMENT_H
+#ifndef MARACLUSTER_BATCHSTATEMENT_H_
+#define MARACLUSTER_BATCHSTATEMENT_H_
 
 #include <cstdlib>
 #include <string>
@@ -29,6 +29,8 @@
 
 #include "MyException.h"
 #include "Globals.h"
+
+namespace maracluster {
 
 enum BatchStatementType {
   kSpectra, kPvalueVectors, kPvalueVectorsHead, kPvalueVectorsTail,
@@ -160,4 +162,6 @@ class BatchStatement {
   std::stringstream *buffer;
 };
 
-#endif // BATCH_STATEMENT_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHSTATEMENT_H_ */

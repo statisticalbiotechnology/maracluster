@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef SPECTRUM_FILE_LIST_H
-#define SPECTRUM_FILE_LIST_H
+#ifndef MARACLUSTER_SPECTRUMFILELIST_H_
+#define MARACLUSTER_SPECTRUMFILELIST_H_
 
 #include <iostream>
 #include <fstream>
@@ -26,6 +26,8 @@
 
 #include "MyException.h"
 #include "ScanId.h"
+
+namespace maracluster {
 
 class SpectrumFileList {
   public:
@@ -71,4 +73,6 @@ class SpectrumFileList {
     std::vector<std::string> fileIndexVector_;
 };
 
-#endif // SPECTRUM_FILE_LIST_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPECTRUMFILELIST_H_ */

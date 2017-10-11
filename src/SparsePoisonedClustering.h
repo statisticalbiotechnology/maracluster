@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef SPARSE_POISONED_CLUSTERING_H
-#define SPARSE_POISONED_CLUSTERING_H
+#ifndef MARACLUSTER_SPARSEPOISONEDCLUSTERING_H_
+#define MARACLUSTER_SPARSEPOISONEDCLUSTERING_H_
 
 #include <map>
 #include <utility>
@@ -32,6 +32,8 @@
 #include <boost/unordered_map.hpp>
 
 #include "SparseClustering.h"
+
+namespace maracluster {
 
 class SparsePoisonedClustering : public SparseClustering {
  public:
@@ -68,5 +70,7 @@ class SparsePoisonedClustering : public SparseClustering {
   bool edgesLeft() { return edgesLeft_; }
 };
 
-#endif // SPARSE_POISONED_CLUSTERING_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPARSEPOISONEDCLUSTERING_H_ */
 

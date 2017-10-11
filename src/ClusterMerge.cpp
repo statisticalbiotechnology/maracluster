@@ -16,6 +16,8 @@
  
 #include "ClusterMerge.h"
 
+namespace maracluster {
+
 double ClusterMerge::mzWeight = 1.0;
 double ClusterMerge::intWeight = 0.1;
 
@@ -71,3 +73,5 @@ void ClusterMerge::merge(std::vector<MZIntensityPair>& mziPairsIn, std::vector<M
   //std::cerr << mziPairsIn.size() << " " << *mziPairsIn.begin() << std::endl;
 }
   
+
+} /* namespace maracluster */

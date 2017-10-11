@@ -16,6 +16,8 @@
  
 #include "SpectrumHandler.h"
 
+namespace maracluster {
+
 unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
   // special check for the SCANS field in mgf files
   if (s->hasCVParam(pwiz::cv::MS_peak_list_scans)) {
@@ -268,3 +270,5 @@ void SpectrumHandler::fixMetaData(pwiz::msdata::SpectrumPtr s) {
 
   replaceCvParam(*s, pwiz::cv::MS_TIC, tic);
 }
+
+} /* namespace maracluster */

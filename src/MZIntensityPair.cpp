@@ -16,7 +16,11 @@
  
 #include "MZIntensityPair.h"
 
+namespace maracluster {
+
 std::ostream& operator<<(std::ostream& os, const MZIntensityPair& mzi) {
   os << "(" << mzi.mz << "," << mzi.intensity << "," << mzi.multiplicity << ")";
   return os;
 }
+
+} /* namespace maracluster */

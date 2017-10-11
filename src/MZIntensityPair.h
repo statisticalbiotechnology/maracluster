@@ -14,13 +14,15 @@
   
  ******************************************************************************/
  
-#ifndef MZINTENSITYPAIR_H
-#define MZINTENSITYPAIR_H
+#ifndef MARACLUSTER_MZINTENSITYPAIR_H_
+#define MARACLUSTER_MZINTENSITYPAIR_H_
 
 #include <vector>
 #include <iostream>
 
 #include "pwiz/data/msdata/MSData.hpp"
+
+namespace maracluster {
 
 struct MZIntensityPair : public pwiz::msdata::MZIntensityPair {
   public:
@@ -51,4 +53,6 @@ struct MZIntensityPair : public pwiz::msdata::MZIntensityPair {
 
 std::ostream& operator<<(std::ostream& os, const MZIntensityPair& mzi);
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MZINTENSITYPAIR_H_ */

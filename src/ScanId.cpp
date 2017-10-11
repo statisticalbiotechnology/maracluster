@@ -13,8 +13,10 @@
   limitations under the License.
   
  ******************************************************************************/
- 
+
 #include "ScanId.h"
+
+namespace maracluster {
 
 void ScanId::readFromString(const char* f, char** next) {
   fileIdx = strtoul(f, next, 0); f = *next;
@@ -30,3 +32,5 @@ std::size_t hash_value(ScanId const& si) {
   boost::hash<int> hasher;
   return hasher((si.fileIdx+1) * 1000000 + si.scannr);
 }
+
+} /* namespace maracluster */

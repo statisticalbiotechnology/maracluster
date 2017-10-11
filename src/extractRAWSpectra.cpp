@@ -40,7 +40,7 @@ std::string clusterFile_ = "";
 
 bool parseOptions(int argc, char **argv) {
   std::ostringstream intro;
-  intro << "Usage:" << endl;
+  intro << "Usage:" << std::endl;
   intro << "  Option 1: extractspec -l spec_list -o spec_out" << std::endl;
   intro << "    spec_list is a tab delimited file of the form:" << std::endl;
   intro << "      filepath <tab> scannr <tab> ..." << std::endl;
@@ -57,7 +57,7 @@ bool parseOptions(int argc, char **argv) {
   intro << std::endl;
   
   // init
-  CommandLineParser cmd(intro.str());
+  maracluster::CommandLineParser cmd(intro.str());
   cmd.defineOption("l",
       "clusterFile",
       "File with filepaths and scannrs, separated by tabs",
@@ -116,9 +116,9 @@ int main(int argc, char* argv[]) {
       for (unsigned int j = 0; j < sl->size(); ++j) {
         pwiz::msdata::SpectrumPtr s = sl->spectrum(j, true);
         if (s->cvParam(pwiz::cv::MS_ms_level).valueAs<int>() == 2) {
-          std::vector<MassChargeCandidate> mccs;
-          SpectrumHandler::getMassChargeCandidates(s, mccs);
-          unsigned int scannr = SpectrumHandler::getScannr(s);
+          std::vector<maracluster::MassChargeCandidate> mccs;
+          maracluster::SpectrumHandler::getMassChargeCandidates(s, mccs);
+          unsigned int scannr = maracluster::SpectrumHandler::getScannr(s);
           std::cerr << "scannr: " << scannr << ", prec m/z: " << mccs.at(0).precMz << ", charge: " << mccs.at(0).charge << std::endl;
         }
       }
@@ -132,4 +132,3 @@ int main(int argc, char* argv[]) {
 
   return EXIT_FAILURE;
 }
-

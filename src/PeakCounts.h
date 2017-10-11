@@ -14,9 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef PEAK_COUNTS_H
-#define PEAK_COUNTS_H
-
+#ifndef MARACLUSTER_PEAKCOUNTS_H_
+#define MARACLUSTER_PEAKCOUNTS_H_
 
 #include <vector>
 #include <map>
@@ -42,6 +41,8 @@
 #include "BinSpectra.h"
 #include "PvalueCalculator.h"
 #include "PeakDistribution.h"
+
+namespace maracluster {
 
 /**
  * Creates a histogram of spectrum peaks split out by precursor
@@ -274,4 +275,6 @@ class PeakCounts {
     
 };
 
-#endif // PEAK_COUNTS_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_PEAKCOUNTS_H_ */

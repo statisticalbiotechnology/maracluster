@@ -16,6 +16,8 @@
  
 #include "BinAndRank.h"
 
+namespace maracluster {
+
 const unsigned int BinAndRank::kNumRegions = 10u;
 
 void BinAndRank::binAndXCorrNormalize(std::vector<MZIntensityPair>& mziPairsIn, 
@@ -147,3 +149,5 @@ std::ostream &operator<<(std::ostream &out, BinRankScores &rankScores) {
   }
   return out;
 }
+
+} /* namespace maracluster */

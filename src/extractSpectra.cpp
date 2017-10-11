@@ -31,7 +31,7 @@ std::string clusterFile_ = "";
 
 bool parseOptions(int argc, char **argv) {
   std::ostringstream intro;
-  intro << "Usage:" << endl;
+  intro << "Usage:" << std::endl;
   intro << "  Option 1: extractspec -l spec_list -o spec_out" << std::endl;
   intro << "    spec_list is a tab delimited file of the form:" << std::endl;
   intro << "      filepath <tab> scannr <tab> ..." << std::endl;
@@ -48,7 +48,7 @@ bool parseOptions(int argc, char **argv) {
   intro << std::endl;
   
   // init
-  CommandLineParser cmd(intro.str());
+  maracluster::CommandLineParser cmd(intro.str());
   cmd.defineOption("l",
       "clusterFile",
       "File with filepaths and scannrs, separated by tabs",
@@ -94,7 +94,7 @@ bool parseOptions(int argc, char **argv) {
       std::cerr << "Error: no output file given." << std::endl;
       std::cerr << "Invoke with -h option for help." << std::endl;
       return 0;
-    } else if (cmd.optionSet("o") && !MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
+    } else if (cmd.optionSet("o") && !maracluster::MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
       std::cerr << "\nInvoke with -h option for help\n";
       return 0; // ...error
     }
@@ -108,7 +108,7 @@ bool parseOptions(int argc, char **argv) {
 int main(int argc, char* argv[]) {
   try {
     if (parseOptions(argc, argv)) {
-      MSFileExtractor msFileExtractor(spectrumOutFN_);
+      maracluster::MSFileExtractor msFileExtractor(spectrumOutFN_);
       
       if (clusterFile_.size() > 0) {
         msFileExtractor.parseClusterFileForExtract(clusterFile_);
@@ -128,3 +128,5 @@ int main(int argc, char* argv[]) {
   return EXIT_FAILURE;
 }
 
+
+} /* namespace maracluster */

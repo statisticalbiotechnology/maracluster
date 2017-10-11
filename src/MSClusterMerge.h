@@ -14,8 +14,9 @@
   
  ******************************************************************************/
  
-#ifndef MS_CLUSTER_MERGE_H
-#define MS_CLUSTER_MERGE_H
+#ifndef MARACLUSTER_MSCLUSTERMERGE_H_
+#define MARACLUSTER_MSCLUSTERMERGE_H_
+
 #include <vector>
 #include <cmath>
 
@@ -23,6 +24,8 @@
 
 #include "SpectrumHandler.h"
 #include "BinSpectra.h"
+
+namespace maracluster {
 
 /* Adapted from software/tools/ms-cluster/src/MsCluster/PeakWeightTable.h */
 class PeakWeightTable {
@@ -123,4 +126,6 @@ class MSClusterMerge {
   static inline bool isEqual(double a, double b) { return (std::abs(a - b) < 1e-5); }
 };
 
-#endif // MS_CLUSTER_MERGE_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MSCLUSTERMERGE_H_ */

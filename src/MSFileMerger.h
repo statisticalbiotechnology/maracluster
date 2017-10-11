@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef MS_FILE_MERGER_H
-#define MS_FILE_MERGER_H
+#ifndef MARACLUSTER_MSFILEMERGER_H_
+#define MARACLUSTER_MSFILEMERGER_H_
 
 #include <iostream>
 #include <string>
@@ -35,6 +35,8 @@
 #include "InterpolationMerge.h"
 #include "RankMerge.h"
 #include "ScanId.h"
+
+namespace maracluster {
 
 struct MergeScanIndex {
   MergeScanIndex(unsigned int _spectrumIndex, unsigned int _posInCluster, unsigned int _mergeIdx) : 
@@ -105,4 +107,6 @@ class MSFileMerger : public MSFileHandler {
     std::vector<pwiz::msdata::SpectrumListSimplePtr>& spectrumListPtrMap);
 };
 
-#endif // MS_FILE_MERGER_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MSFILEMERGER_H_ */

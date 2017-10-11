@@ -16,6 +16,8 @@
  
 #include "MSClusterMerge.h"
 
+namespace maracluster {
+
 const float MSClusterMerge::MASS_TO_INT_RATIO = 10000.0f;
 float MSClusterMerge::fragmentTolerance_ = 0.34f; /* has to be > 0.1 */
 float MSClusterMerge::isoTolerance_ = 
@@ -264,3 +266,5 @@ bool MSClusterMerge::mergeUnitTest() {
   
   return true;
 }
+
+} /* namespace maracluster */

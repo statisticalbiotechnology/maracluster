@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef PVALUECALCULATOR_H
-#define PVALUECALCULATOR_H
+#ifndef MARACLUSTER_PVALUECALCULATOR_H_
+#define MARACLUSTER_PVALUECALCULATOR_H_
 
 /**
 This file provides functions for calculating pvalues using dynamic programming
@@ -41,6 +41,8 @@ Adapted from https://code.google.com/p/in-silico-mass-fingerprinting/
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
+
+namespace maracluster {
 
 class PvalueCalculator {
  public:
@@ -126,4 +128,6 @@ class PvalueCalculator {
   static unsigned long seed_;
 };
 
-#endif // PVALUECALCULATOR_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_PVALUECALCULATOR_H_ */

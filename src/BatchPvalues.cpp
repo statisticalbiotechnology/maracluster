@@ -16,6 +16,8 @@
  
 #include "BatchPvalues.h"
 
+namespace maracluster {
+
 void BatchPvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer) {
   if (Globals::VERB > 4) {
     std::cerr << "Writing " << pvalBuffer.size() << " pvalues." << std::endl;
@@ -28,3 +30,5 @@ void BatchPvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer) {
     BinaryInterface::write<PvalueTriplet>(pvalBuffer, pvaluesFN_, append);
   }
 }
+
+} /* namespace maracluster */

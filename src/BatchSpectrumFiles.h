@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef CASS_SPECTRUM_FILES_H
-#define CASS_SPECTRUM_FILES_H
+#ifndef MARACLUSTER_BATCHSPECTRUMFILES_H_
+#define MARACLUSTER_BATCHSPECTRUMFILES_H_
 
 #include <iostream>
 #include <map>
@@ -31,12 +31,15 @@
 #include "BatchPvalueVectors.h"
 #include "BatchSpectrum.h"
 
+#include "ScanId.h"
 #include "PeakCounts.h"
 #include "SpectrumFileList.h"
 #include "SpectrumHandler.h"
 #include "MSFileHandler.h"
 #include "BinSpectra.h"
 #include "BinaryInterface.h"
+
+namespace maracluster {
 
 struct ScanInfo {
   ScanInfo() : scanId(), minPrecMz(0.0), maxPrecMz(0.0) {}
@@ -87,6 +90,9 @@ class BatchSpectrumFiles {
   std::string precMzFileFolder_;
   int chargeUncertainty_;
   
+  virtual void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
+    std::vector<MassChargeCandidate>& mccs, ScanId scanId);
+  
   void writePrecMzs(const std::vector<double>& PrecMzs);
   void readPrecMzs(const std::string& precMzFN,
                              std::vector<double>& PrecMzs);
@@ -110,4 +116,6 @@ class BatchSpectrumFiles {
   
 };
 
-#endif // CASS_SPECTRUM_FILES_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHSPECTRUMFILES_H_ */

@@ -14,11 +14,13 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_PVALUE_VECTOR_H
-#define BATCH_PVALUE_VECTOR_H
+#ifndef MARACLUSTER_BATCHPVALUEVECTOR_H_
+#define MARACLUSTER_BATCHPVALUEVECTOR_H_
 
 #include "PvalueCalculator.h"
 #include "ScanId.h"
+
+namespace maracluster {
 
 struct BatchPvalueVector {
   double precMass, precMz, retentionTime;
@@ -29,4 +31,6 @@ struct BatchPvalueVector {
   ScanId scannr;
 };
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHPVALUEVECTOR_H_ */

@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef MS_FILE_EXTRACTER_H
-#define MS_FILE_EXTRACTER_H
+#ifndef MARACLUSTER_MSFILEEXTRACTOR_H_
+#define MARACLUSTER_MSFILEEXTRACTOR_H_
 
 #include <iostream>
 #include <string>
@@ -29,6 +29,8 @@
 #include <boost/foreach.hpp>
 
 #include "MSFileHandler.h"
+
+namespace maracluster {
 
 class MSFileExtractor : public MSFileHandler {
  public:  
@@ -47,4 +49,6 @@ class MSFileExtractor : public MSFileHandler {
   void getScanIdsByFile(std::vector< std::vector<ScanId> >& scanIdsByFile);
 };
 
-#endif // MS_FILE_EXTRACTER_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MSFILEEXTRACTOR_H_ */

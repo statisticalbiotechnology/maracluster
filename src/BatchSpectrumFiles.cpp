@@ -16,6 +16,8 @@
  
 #include "BatchSpectrumFiles.h"
 
+namespace maracluster {
+
 using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumPtr;
@@ -88,8 +90,11 @@ void BatchSpectrumFiles::getPeakCountsAndPrecursorMzs(
       std::vector<MZIntensityPair> mziPairs;
       SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
       
+      unsigned int scannr = SpectrumHandler::getScannr(s);
+      ScanId scanId(fileList.getScanId(spectrumFN, scannr));
+      
       std::vector<MassChargeCandidate> mccs;
-      SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_); // returns mccs sorted by charge
+      getMassChargeCandidates(s, mccs, scanId); // returns mccs sorted by charge
       unsigned int lastCharge = 0;
       BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
         precMzs.push_back(mcc.precMz);
@@ -184,7 +189,7 @@ void BatchSpectrumFiles::getBatchSpectra(
     scanInfo.scanId = fileList.getScanId(spectrumFN, scannr);
     
     std::vector<MassChargeCandidate> mccs;
-    SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_);
+    getMassChargeCandidates(s, mccs, scanInfo.scanId);
     
     BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
       for (int isotopeTolerance = 0; isotopeTolerance <= 0; ++isotopeTolerance) {
@@ -369,6 +374,12 @@ std::string BatchSpectrumFiles::getFilename(const std::string& filepath) {
   return filepath.substr(found+1);
 }
 
+/* MT: scanId parameter is only used in subclassed version of this class which uses feature lists */
+void BatchSpectrumFiles::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
+    std::vector<MassChargeCandidate>& mccs, ScanId scanId) {
+  SpectrumHandler::getMassChargeCandidates(s, mccs, chargeUncertainty_);
+}
+
 bool BatchSpectrumFiles::limitsUnitTest() {
   std::string precMzFN = "/home/matthew/mergespec/data/unit_testing/Linfeng.prec_Mzs.txt";
   
@@ -411,3 +422,5 @@ bool BatchSpectrumFiles::limitsUnitTest() {
   }
   return true;
 }
+
+} /* namespace maracluster */

@@ -16,6 +16,8 @@
  
 #include "PeakCounts.h"
 
+namespace maracluster {
+
 const std::map<unsigned int, unsigned int> PeakCountMatrix::emptyRow_ = std::map<unsigned int, unsigned int>();
 
 unsigned int PeakCountMatrix::get(unsigned int row, unsigned int col) const { 
@@ -578,3 +580,5 @@ bool SpectrumCountVector::specVectorUnitTest() {
     return false;
   }
 }
+
+} /* namespace maracluster */

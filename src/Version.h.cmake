@@ -14,8 +14,8 @@
   
  ******************************************************************************/
 
-#ifndef VERSION_H_
-#define VERSION_H_
+#ifndef MARACLUSTER_VERSION_H_
+#define MARACLUSTER_VERSION_H_
 
 #ifndef VERSION_MAJOR
   #define VERSION_MAJOR "@CPACK_PACKAGE_VERSION_MAJOR@"
@@ -41,5 +41,5 @@
   #define LVERSION_NAME L"v@CPACK_PACKAGE_VERSION_MAJOR@-@CPACK_PACKAGE_VERSION_MINOR@"
 #endif
 
-#endif /*VERSION_H_*/
+#endif /* MARACLUSTER_VERSION_H_ */
 

@@ -16,6 +16,8 @@
  
 #include "PvalueFilterAndSort.h"
 
+namespace maracluster {
+
 int PvalueFilterAndSort::maxPvalsPerFile_ = 50000000; // 20 bytes per p-value
 
 void PvalueFilterAndSort::filter(std::vector<PvalueTriplet>& buffer) {
@@ -383,3 +385,5 @@ bool PvalueFilterAndSort::singleFileUnitTest() {
   
   return true;
 }
+
+} /* namespace maracluster */

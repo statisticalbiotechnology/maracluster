@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_SPECTRA_H
-#define BATCH_SPECTRA_H
+#ifndef MARACLUSTER_BATCHSPECTRA_H_
+#define MARACLUSTER_BATCHSPECTRA_H_
 
 #include <iostream>
 #include <vector>
@@ -29,6 +29,8 @@
 #include "SpectrumFileList.h"
 #include "PvalueCalculator.h"
 #include "PeakCounts.h"
+
+namespace maracluster {
 
 class BatchSpectra {
  public:
@@ -64,4 +66,6 @@ class BatchSpectra {
   std::vector<BatchSpectrum> spectra_;
 };
 
-#endif // BATCH_SPECTRA_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHSPECTRA_H_ */

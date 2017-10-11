@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_PVALUE_VECTORS_H
-#define BATCH_PVALUE_VECTORS_H
+#ifndef MARACLUSTER_BATCHPVALUEVECTORS_H_
+#define MARACLUSTER_BATCHPVALUEVECTORS_H_
 
 #include <iostream>
 #include <fstream>
@@ -47,6 +47,8 @@
 #ifdef FINGERPRINT_FILTER
   #include "BinaryFingerprintMethods.h"
 #endif
+
+namespace maracluster {
 
 struct PvalueVectorsDbRow {
   void deepCopy(const PvalueVectorsDbRow& tmp) {
@@ -218,4 +220,6 @@ class BatchPvalueVectors {
   }
 };
 
-#endif // BATCH_PVALUE_VECTORS_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHPVALUEVECTORS_H_ */

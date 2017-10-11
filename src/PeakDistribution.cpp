@@ -20,6 +20,8 @@ Adapted from https://code.google.com/p/in-silico-mass-fingerprinting/
 */
 #include "PeakDistribution.h"
 
+namespace maracluster {
+
 unsigned long PeakDistribution::seed = 1;
 
 void PeakDistribution::init(unsigned int numBins) {
@@ -191,3 +193,5 @@ bool PeakDistribution::peakProbUnitTest(std::string peakProbFN) {
   
   return (specPeakProbs.size() == 3 && isEqual(specPeakProbs[0], 0.0156541) && isEqual(specPeakProbs[1], 0.0862822) && isEqual(specPeakProbs[2], 0.13269) );
 }
+
+} /* namespace maracluster */

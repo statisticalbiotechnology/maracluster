@@ -17,26 +17,20 @@ limitations under the License.
 
 #include "MyException.h"
 
-MyException::MyException(const string& ss)  : msg(ss) 
-{
-  
+namespace maracluster {
+
+MyException::MyException(const std::string& ss) : msg(ss) {}
+
+MyException::MyException(const std::ostream& ss) {
+  std::ostringstream x;
+  x << ss.rdbuf();
+  msg = std::string(x.str());
 }
 
-MyException::MyException(const ostream& ss)
-{
-   ostringstream x;
-   x << ss.rdbuf();
-   msg = std::string(x.str());
-}
+MyException::~MyException() throw() {}
 
-
-MyException::~MyException() throw()
-{
-
-}
-
-const char* MyException::what() const throw()
-{
+const char* MyException::what() const throw() {
   return msg.c_str(); 
 }
 
+} /* namespace maracluster */

@@ -14,15 +14,19 @@
   
  ******************************************************************************/
  
-#ifndef BIN_SPECTRA_H
-#define BIN_SPECTRA_H
+#ifndef MARACLUSTER_BINSPECTRA_H_
+#define MARACLUSTER_BINSPECTRA_H_
 
 #include <vector>
 #include <iostream>
 #include <cstring>
+
 #include <boost/foreach.hpp>
+
 #include "MZIntensityPair.h"
 #include "SpectrumHandler.h"
+
+namespace maracluster {
 
 struct BinnedMZIntensityPair; // forward declaration
 
@@ -82,4 +86,6 @@ struct BinnedMZIntensityPair : public MZIntensityPair {
 };
 
 
-#endif // BIN_SPECTRA_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BINSPECTRA_H_ */

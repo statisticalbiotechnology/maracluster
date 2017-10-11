@@ -16,6 +16,8 @@
  
 #include "SparsePoisonedClustering.h"
 
+namespace maracluster {
+
 void SparsePoisonedClustering::loadNextEdges() {
   edgesLeft_ = false;
   std::cerr << "  Loading new edges." << std::endl;
@@ -112,3 +114,5 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
                "or " << timeElapsedMin << " min " << timeElapsedSecMod << 
                " sec wall time." << std::endl;
 }
+
+} /* namespace maracluster */

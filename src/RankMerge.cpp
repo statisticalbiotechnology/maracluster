@@ -16,6 +16,8 @@
  
 #include "RankMerge.h"
 
+namespace maracluster {
+
 double RankMerge::dpThresh = 12.0;
 int RankMerge::maxRankDiff = 10;
 
@@ -75,3 +77,5 @@ void RankMerge::mergeMinMax(std::vector<MZIntensityPair>& mziPairsIn, std::vecto
     }
   }
 }
+
+} /* namespace maracluster */

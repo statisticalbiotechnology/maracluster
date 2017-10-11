@@ -14,10 +14,12 @@
   
  ******************************************************************************/
  
-#ifndef SCAN_ID_H
-#define SCAN_ID_H
+#ifndef MARACLUSTER_SCANID_H_
+#define MARACLUSTER_SCANID_H_
 
 #include <boost/functional/hash.hpp>
+
+namespace maracluster {
 
 struct ScanId {
   unsigned int fileIdx, scannr;
@@ -43,4 +45,6 @@ struct ScanId {
 std::ostream& operator<<(std::ostream& stream, const ScanId& si);
 std::size_t hash_value(ScanId const& si);
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SCANID_H_ */

@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef PVALUE_FILTER_AND_SORT_H
-#define PVALUE_FILTER_AND_SORT_H
+#ifndef MARACLUSTER_PVALUEFILTERANDSORT_H_
+#define MARACLUSTER_PVALUEFILTERANDSORT_H_
 
 #include <vector>
 #include <map>
@@ -37,6 +37,8 @@
 
 #include "PvalueTriplet.h"
 #include "BinaryInterface.h"
+
+namespace maracluster {
 
 class PvalueFilterAndSort {
  public:
@@ -105,4 +107,6 @@ class PvalueFilterAndSort {
                                      int numFiles, const std::string& resultFN);
 };
 
-#endif // PVALUE_FILTER_AND_SORT_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_PVALUEFILTERANDSORT_H_ */

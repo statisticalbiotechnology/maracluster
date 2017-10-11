@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef CLUSTER_MERGE_H
-#define CLUSTER_MERGE_H
+#ifndef MARACLUSTER_CLUSTERMERGE_H_
+#define MARACLUSTER_CLUSTERMERGE_H_
 
 #include <vector>
 #include <iterator>
@@ -28,6 +28,8 @@
 #include "SpectrumHandler.h"
 #include "MZIntensityPair.h"
 
+namespace maracluster {
+
 class ClusterMerge {
   public:
     static void merge(std::vector<MZIntensityPair>& mziPairsIn, std::vector<MZIntensityPair>& mziPairsFrom, double weight = 1.0);
@@ -38,4 +40,6 @@ class ClusterMerge {
     static MZIntensityPair findNN(MZIntensityPair mzi1, const std::vector<MZIntensityPair>& mziPairsFrom);
 };
 
-#endif // CLUSTER_MERGE_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_CLUSTERMERGE_H_ */

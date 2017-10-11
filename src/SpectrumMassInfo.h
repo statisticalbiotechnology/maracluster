@@ -14,10 +14,12 @@
   
  ******************************************************************************/
  
-#ifndef SPECTRUM_MASS_INFO_H
-#define SPECTRUM_MASS_INFO_H
+#ifndef MARACLUSTER_SPECTRUMMASSINFO_H_
+#define MARACLUSTER_SPECTRUMMASSINFO_H_
 
 #include <iostream>
+
+namespace maracluster {
 
 struct SpectrumMassInfo {
   SpectrumMassInfo(double _mass, unsigned int _spectrumIdx, unsigned int _charge, unsigned int _fileIdx = 0) : mass(_mass), spectrumIdx(_spectrumIdx), charge(_charge), fileIdx(_fileIdx) {}
@@ -37,4 +39,6 @@ std::ostream& operator<<(std::ostream& os, const SpectrumMassInfo& mm) {
   return os;
 }
 
-#endif // SPECTRUM_MASS_INFO_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPECTRUMMASSINFO_H_ */

@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef MATRIX_LOADER_H
-#define MATRIX_LOADER_H
+#ifndef MARACLUSTER_MATRIXLOADER_H_
+#define MARACLUSTER_MATRIXLOADER_H_
 
 #include <iostream>
 #include <fstream>
@@ -29,6 +29,8 @@
 
 #include <cerrno>
 #include <boost/iostreams/device/mapped_file.hpp>
+
+namespace maracluster {
 
 class MatrixLoader {
  public:
@@ -54,4 +56,6 @@ class MatrixLoader {
   bool edgesAvailable_;
 };
 
-#endif // MATRIX_LOADER_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_MATRIXLOADER_H_ */

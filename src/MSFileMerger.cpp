@@ -17,6 +17,8 @@
 #include "MSFileMerger.h"
 #include "Version.h"
 
+namespace maracluster {
+
 using pwiz::msdata::MSDataPtr;
 using pwiz::msdata::MSData;
 using pwiz::msdata::MSDataFile;
@@ -496,7 +498,7 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin,
           boost::lexical_cast<std::string>(i));
     if (remove(partSpecOutFN.c_str()) != 0) {
       std::cerr << "Warning: Can't remove " << partSpecOutFN << ": "
-                << strerror(errno) << endl;
+                << strerror(errno) << std::endl;
     }
   }
 }
@@ -639,3 +641,5 @@ void MSFileMerger::mergeTwoSpectra(std::vector<MZIntensityPair>& mziPairsIn,
     }
   }
 }
+
+} /* namespace maracluster */

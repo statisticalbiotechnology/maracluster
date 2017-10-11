@@ -17,6 +17,8 @@
 #include "SpectrumFileList.h"
 #include <climits>
 
+namespace maracluster {
+
 ScanId SpectrumFileList::getScanId(const std::string& filePath, 
     const unsigned int scannr) {
   addFile(filePath);
@@ -53,3 +55,5 @@ void SpectrumFileList::addFile(const std::string& filePath) {
     fileIndexVector_.push_back(filePath);
   }
 }
+
+} /* namespace maracluster */

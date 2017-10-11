@@ -26,7 +26,7 @@ std::string spectrumOutFN_ = "";
 
 bool parseOptions(int argc, char **argv) {
   std::ostringstream intro;
-  intro << "Usage:" << endl;
+  intro << "Usage:" << std::endl;
   intro << "  Option 1: extractspec -l spec_list -o spec_out" << std::endl;
   intro << "    spec_list is a tab delimited file of the form:" << std::endl;
   intro << "      filepath <tab> scannr <tab> ..." << std::endl;
@@ -43,7 +43,7 @@ bool parseOptions(int argc, char **argv) {
   intro << std::endl;
   
   // init
-  CommandLineParser cmd(intro.str());
+  maracluster::CommandLineParser cmd(intro.str());
   cmd.defineOption("i",
       "specIn",
       "File readable by ProteoWizard (e.g. ms2,mzML) with the original spectra",
@@ -79,9 +79,9 @@ bool parseOptions(int argc, char **argv) {
 int main(int argc, char* argv[]) {
   try {
     if (parseOptions(argc, argv)) {
-      MSFileHandler msFileHandler(spectrumOutFN_);
-      MSFileHandler::splitMassChargeStates_ = true;
-      msFileHandler.msgfFixMzML(spectrumInFN_);
+      maracluster::MSFileHandler msFileHandler(spectrumOutFN_);
+      maracluster::MSFileHandler::splitMassChargeStates_ = true;
+      maracluster::msFileHandler.msgfFixMzML(spectrumInFN_);
       return 0;
     }
   } catch (std::exception& e) {
@@ -92,4 +92,3 @@ int main(int argc, char* argv[]) {
 
   return 1;
 }
-

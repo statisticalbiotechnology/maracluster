@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef BATCH_SPECTRUM_CLUSTERS_H
-#define BATCH_SPECTRUM_CLUSTERS_H
+#ifndef MARACLUSTER_BATCHSPECTRUMCLUSTERS_H_
+#define MARACLUSTER_BATCHSPECTRUMCLUSTERS_H_
 
 #include <string>
 #include <iostream>
@@ -36,6 +36,8 @@
 #include "PvalueTriplet.h"
 #include "ScanMergeInfo.h"
 #include "BinaryInterface.h"
+
+namespace maracluster {
 
 class BatchSpectrumClusters {
  public:
@@ -65,4 +67,6 @@ class BatchSpectrumClusters {
     SpectrumFileList& fileList, std::ofstream& resultStream);
 };
 
-#endif // BATCH_SPECTRUM_CLUSTERS_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_BATCHSPECTRUMCLUSTERS_H_ */

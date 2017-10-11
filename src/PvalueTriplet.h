@@ -14,10 +14,12 @@
   
  ******************************************************************************/
  
-#ifndef PVALUE_TRIPLET_H
-#define PVALUE_TRIPLET_H
+#ifndef MARACLUSTER_PVALUETRIPLET_H_
+#define MARACLUSTER_PVALUETRIPLET_H_
 
 #include "ScanId.h"
+
+namespace maracluster {
 
 struct PvalueTriplet {
   ScanId scannr1, scannr2;
@@ -37,4 +39,6 @@ struct PvalueTriplet {
 
 std::ostream& operator<<(std::ostream& stream, const PvalueTriplet& t);
 
-#endif // PVALUE_TRIPLET_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_PVALUETRIPLET_H_ */

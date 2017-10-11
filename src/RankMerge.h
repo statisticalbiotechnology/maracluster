@@ -14,37 +14,42 @@
   
  ******************************************************************************/
  
-#ifndef RANK_MERGE_H
-#define RANK_MERGE_H
+#ifndef MARACLUSTER_RANKMERGE_H_
+#define MARACLUSTER_RANKMERGE_H_
 
-#include <boost/foreach.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <boost/foreach.hpp>
 
 #include "MZIntensityPair.h"
 #include "SpectrumHandler.h"
 #include "BinAndRank.h"
 
+namespace maracluster {
+
 class RankMerge {
-  public:
-    inline static void setDpThresh(double _dpThresh) { dpThresh = _dpThresh; }
-    static void merge(std::vector<MZIntensityPair>& mziPairsIn,
-                      std::vector<MZIntensityPair>& mziPairsFrom, 
-                      BinRanks& rankIn, BinRanks& rankFrom, double weight,
-                      double shift = 0.0, double scaling = 1.0);
-    static void mergeMinMax(std::vector<MZIntensityPair>& mziPairsIn,
-                            std::vector<MZIntensityPair>& mziPairsFrom, 
-                            double weight, bool regionRanks, 
-                            double shift = 0.0, double scaling = 1.0);
-  protected:
-    static double dpThresh;
-    static int maxRankDiff;
-    static inline bool ranksInRange(unsigned int binRankIn, 
-                                    unsigned int binRankFrom) {
-      return (binRankIn > 0 && binRankFrom > 0 && 
-              std::abs((int)binRankIn - (int)binRankFrom) <= maxRankDiff);
-    }
+ public:
+  inline static void setDpThresh(double _dpThresh) { dpThresh = _dpThresh; }
+  static void merge(std::vector<MZIntensityPair>& mziPairsIn,
+                    std::vector<MZIntensityPair>& mziPairsFrom, 
+                    BinRanks& rankIn, BinRanks& rankFrom, double weight,
+                    double shift = 0.0, double scaling = 1.0);
+  static void mergeMinMax(std::vector<MZIntensityPair>& mziPairsIn,
+                          std::vector<MZIntensityPair>& mziPairsFrom, 
+                          double weight, bool regionRanks, 
+                          double shift = 0.0, double scaling = 1.0);
+ protected:
+  static double dpThresh;
+  static int maxRankDiff;
+  static inline bool ranksInRange(unsigned int binRankIn, 
+                                  unsigned int binRankFrom) {
+    return (binRankIn > 0 && binRankFrom > 0 && 
+            std::abs((int)binRankIn - (int)binRankFrom) <= maxRankDiff);
+  }
 };
 
-#endif // RANK_MERGE_H
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_RANKMERGE_H_ */

@@ -16,6 +16,8 @@
  
 #include "BatchSpectra.h"
 
+namespace maracluster {
+
 void BatchSpectra::convertToBatchSpectra(SpectrumFileList& fileList) {
   std::vector<std::string> spectrumFNs = fileList.getFilePaths();
 #pragma omp parallel for schedule(dynamic, 1)                
@@ -109,7 +111,9 @@ bool BatchSpectra::readFingerprints(
       ++mol_count;
     }
   }
-  std::cerr << "Molecules read: " << mol_count << endl;
+  std::cerr << "Molecules read: " << mol_count << std::endl;
   return 1;
 }
 #endif
+
+} /* namespace maracluster */

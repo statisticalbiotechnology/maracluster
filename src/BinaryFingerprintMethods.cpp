@@ -26,6 +26,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/unordered_map.hpp>
 
+namespace maracluster {
+
 using namespace std;
 using namespace boost;
 using namespace BALL;
@@ -1189,7 +1191,7 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesConnectedComponents(const uns
         // Calculate Tanimoto similarity as coeff = c / (a + b -c )
         coeff = c / ( (tmp_n_features + ii2_n_features[v]) - c );
         
-//         cerr << tmp_molecule_id << " " << ii2_molecules_base + v << " - " << coeff << endl;
+//         cerr << tmp_molecule_id << " " << ii2_molecules_base + v << " - " << coeff << std::endl;
         
         if (coeff >= cutoff_)
         {
@@ -1234,7 +1236,7 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesConnectedComponents(const uns
         // Calculate Tanimoto similarity as coeff = c / (a + b -c )
         coeff = c / ( (tmp_n_features + ii2_n_features[v]) - c );
         
-//         cerr << tmp_molecule_id << " " << ii2_molecules_base + v << " - " << coeff << endl;
+//         cerr << tmp_molecule_id << " " << ii2_molecules_base + v << " - " << coeff << std::endl;
         
         if (coeff >= cutoff_)
         {
@@ -1380,7 +1382,7 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesThread(const unsigned int thr
   
   if (thread_id == 0 && verbosity_ > 0)
   {
-    cerr << endl;
+    cerr << std::endl;
   }
 }
 
@@ -1417,7 +1419,7 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
 {
   if (verbosity_ > 5)
   {
-    std::cout << "++ Setting up data structures" << endl;
+    std::cout << "++ Setting up data structures" << std::endl;
   }
   
   LongSize n_molecules = selection.size();
@@ -1437,8 +1439,8 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
   }
   else
   {
-    std::cerr << "-- FAILED: no library molecules defined." << endl;
-    std::cerr << "--" << endl;
+    std::cerr << "-- FAILED: no library molecules defined." << std::endl;
+    std::cerr << "--" << std::endl;
     
     return false;
   }
@@ -1477,7 +1479,7 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Start similarity calculations" << endl;
+    std::cout << "++ Start similarity calculations" << std::endl;
   }
   
   //Timer* timer = new Timer();
@@ -1490,7 +1492,7 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Calculations running" << endl;
+    std::cout << "++ Calculations running" << std::endl;
   }
   
   for (unsigned int i=0; i!=n_threads; ++i)
@@ -1505,12 +1507,12 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
     LongSize total_comp = ((n_molecules * n_molecules) - n_molecules) / 2;
     //LongSize comp_per_sec = (total_comp / timer->getClockTime());
     
-    std::cout << "++ Calculations done ++" << endl;
-    std::cout << "++" << endl;
-    std::cout << "++ Comparisons :  " << total_comp << endl;
-    //std::cout << "++ Elapsed time:  " << timer->getClockTime() / 3600 << " hours" << endl;
-    //std::cout << "++ Comps / sec:   " << comp_per_sec << endl;
-    std::cout << "++" << endl;
+    std::cout << "++ Calculations done ++" << std::endl;
+    std::cout << "++" << std::endl;
+    std::cout << "++ Comparisons :  " << total_comp << std::endl;
+    //std::cout << "++ Elapsed time:  " << timer->getClockTime() / 3600 << " hours" << std::endl;
+    //std::cout << "++ Comps / sec:   " << comp_per_sec << std::endl;
+    std::cout << "++" << std::endl;
   }
   
   
@@ -1559,16 +1561,16 @@ bool BinaryFingerprintMethods::checkInputData(const vector<unsigned int>& select
 {
   if (lib_features_ == NULL)
   {
-    std::cerr << "-- FAILED: No library features specified for calculation." << endl;
-    std::cerr << "--" << endl;
+    std::cerr << "-- FAILED: No library features specified for calculation." << std::endl;
+    std::cerr << "--" << std::endl;
     
     return false;
   }
   
   if (selection.size() == 0)
   {
-    std::cerr << "-- FAILED: No molecule indices specified for calculation." << endl;
-    std::cerr << "--" << endl;
+    std::cerr << "-- FAILED: No molecule indices specified for calculation." << std::endl;
+    std::cerr << "--" << std::endl;
     
     return false;
   }
@@ -1576,8 +1578,8 @@ bool BinaryFingerprintMethods::checkInputData(const vector<unsigned int>& select
   {
     if (selection.size() > lib_features_->size())
     {
-      std::cerr << "-- FAILED: More molecules specified as contained in the input library." << endl;
-      std::cerr << "--" << endl;
+      std::cerr << "-- FAILED: More molecules specified as contained in the input library." << std::endl;
+      std::cerr << "--" << std::endl;
       
       return false;
     }
@@ -1594,8 +1596,8 @@ bool BinaryFingerprintMethods::checkInputData(const vector<unsigned int>& select
       
       if (max_index > lib_features_->size() - 1)
       {
-        std::cerr << "-- FAILED: Highest index in specified molcule indices exeeds input library size." << endl;
-        std::cerr << "--" << endl;
+        std::cerr << "-- FAILED: Highest index in specified molcule indices exeeds input library size." << std::endl;
+        std::cerr << "--" << std::endl;
         
         return false;
       }
@@ -1739,12 +1741,12 @@ void BinaryFingerprintMethods::cutoffSearchSimilarities(const unsigned int query
       // Calculate Tanimoto similarity as coeff = c / (a + b -c )
       coeff = c / ( (tmp_n_features + ii2_n_features[v]) - c );
       
-//       cout << c << " " << tmp_n_features << " " << ii2_n_features[v] << " " << coeff << endl;
+//       cout << c << " " << tmp_n_features << " " << ii2_n_features[v] << " " << coeff << std::endl;
       
       if (coeff >= cutoff_)
       {
-        outfile << tmp_molecule_id << " " << ii2_molecules_base + v << " " << coeff << endl;
-//         cout << tmp_molecule_id << " " << ii2_molecules_base + v << " " << coeff << endl;
+        outfile << tmp_molecule_id << " " << ii2_molecules_base + v << " " << coeff << std::endl;
+//         cout << tmp_molecule_id << " " << ii2_molecules_base + v << " " << coeff << std::endl;
       }
     }
   }
@@ -1787,8 +1789,8 @@ bool BinaryFingerprintMethods::initInvertedIndicesWithPrecMasses(const std::vect
     createInvertedIndicesWithPrecMasses(tmp, prec_masses, lib_iindices_);
     return true;
   } else {
-    std::cerr << "-- FAILED: No library molecules defined." << endl;
-    std::cerr << "--" << endl;
+    std::cerr << "-- FAILED: No library molecules defined." << std::endl;
+    std::cerr << "--" << std::endl;
     
     return false;
   }
@@ -1799,7 +1801,7 @@ bool BinaryFingerprintMethods::cutoffSearchLibrary(const float cutoff, const std
   cutoff_ = cutoff;
   
   if (verbosity_ > 5) {
-    std::cout << "++ Setting up data structures for input libraries" << endl;
+    std::cout << "++ Setting up data structures for input libraries" << std::endl;
   }
   
   // Create inverted indices for library molecules
@@ -1833,7 +1835,7 @@ bool BinaryFingerprintMethods::cutoffSearchLibrary(const float cutoff, const std
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Start similarity calculations" << endl;
+    std::cout << "++ Start similarity calculations" << std::endl;
   }
   
   pairwiseSimilaritiesBase = &BinaryFingerprintMethods::pairwiseSimilaritiesCutoff;
@@ -1849,7 +1851,7 @@ bool BinaryFingerprintMethods::cutoffSearchLibrary(const float cutoff, const std
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Calculations running" << endl;
+    std::cout << "++ Calculations running" << std::endl;
   }
   
   for (unsigned int i=0; i!=n_threads; ++i)
@@ -1864,12 +1866,12 @@ bool BinaryFingerprintMethods::cutoffSearchLibrary(const float cutoff, const std
     LongSize total_comp = lib_features_->size() * (lib_features_->size() + 1)/2;
     //LongSize comp_per_sec = (total_comp / timer->getClockTime());
     
-    std::cout << "++ Calculations done" << endl;
-    std::cout << "++" << endl;
-    std::cout << "++ Comparisons :  " << total_comp << endl;
-    //std::cout << "++ Elapsed time:  " << timer->getClockTime() << " seconds" << endl;
-    //std::cout << "++ Comps / sec:   " << comp_per_sec << endl;
-    std::cout << "++" << endl;
+    std::cout << "++ Calculations done" << std::endl;
+    std::cout << "++" << std::endl;
+    std::cout << "++ Comparisons :  " << total_comp << std::endl;
+    //std::cout << "++ Elapsed time:  " << timer->getClockTime() << " seconds" << std::endl;
+    //std::cout << "++ Comps / sec:   " << comp_per_sec << std::endl;
+    std::cout << "++" << std::endl;
   }
   
   //delete timer;
@@ -1888,7 +1890,7 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Setting up data structures for input libraries" << endl;
+    std::cout << "++ Setting up data structures for input libraries" << std::endl;
   }
   
   // Create inverted indices for library and query molecules
@@ -1904,8 +1906,8 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
   }
   else
   {
-    std::cerr << "-- FAILED: No library molecules defined." << endl;
-    std::cerr << "--" << endl;
+    std::cerr << "-- FAILED: No library molecules defined." << std::endl;
+    std::cerr << "--" << std::endl;
     
     return false;
   }
@@ -1923,8 +1925,8 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
   }
   else
   {
-    std::cerr << "-- FAILED: No query molecules defined." << endl;
-    std::cerr << "--" << endl;
+    std::cerr << "-- FAILED: No query molecules defined." << std::endl;
+    std::cerr << "--" << std::endl;
     
     return false;
   }
@@ -1955,7 +1957,7 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Start similarity calculations" << endl;
+    std::cout << "++ Start similarity calculations" << std::endl;
   }
   
   LongSize n_comps = lib_iindices_.size();
@@ -1992,7 +1994,7 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
   
   if (verbosity_ > 5)
   {
-    std::cout << "++ Calculations running" << endl;
+    std::cout << "++ Calculations running" << std::endl;
   }
   
   for (unsigned int i=0; i!=n_threads_; ++i)
@@ -2007,12 +2009,12 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
     LongSize total_comp = query_features_->size() * lib_features_->size();
     //LongSize comp_per_sec = (total_comp / timer->getClockTime());
     
-    std::cout << "++ Calculations done" << endl;
-    std::cout << "++" << endl;
-    std::cout << "++ Comparisons :  " << total_comp << endl;
-    //std::cout << "++ Elapsed time:  " << timer->getClockTime() << " seconds" << endl;
-    //std::cout << "++ Comps / sec:   " << comp_per_sec << endl;
-    std::cout << "++" << endl;
+    std::cout << "++ Calculations done" << std::endl;
+    std::cout << "++" << std::endl;
+    std::cout << "++ Comparisons :  " << total_comp << std::endl;
+    //std::cout << "++ Elapsed time:  " << timer->getClockTime() << " seconds" << std::endl;
+    //std::cout << "++ Comps / sec:   " << comp_per_sec << std::endl;
+    std::cout << "++" << std::endl;
   }
   
   // Combine results into a single output file
@@ -2026,7 +2028,7 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const std::strin
       std::ifstream tmp_result(tmp_file_names[i].c_str());
       while (getline(tmp_result, line))
       {
-        result_file << line << endl;
+        result_file << line << std::endl;
       }
       tmp_result.close();
       remove(tmp_file_names[i].c_str());
@@ -2149,7 +2151,7 @@ bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned in
     // ----------------------------------------------------------------------
     if (verbosity_ >= 10)
     {
-      std::cout << "++ RNN parallel method (stored data)" << endl;
+      std::cout << "++ RNN parallel method (stored data)" << std::endl;
     }
     
     for (unsigned int i=0; i!=n_molecules; ++i)
@@ -2183,7 +2185,7 @@ bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned in
     
     for (unsigned int i=0; i!=n_molecules; ++i)
     {
-//       cerr << i << " " << nn_data[i].first << " " << nn_data[i].second << endl;
+//       cerr << i << " " << nn_data[i].first << " " << nn_data[i].second << std::endl;
       vec_actives_[i]->nn = vec_actives_[nn_data[i].first];
       vec_actives_[i]->predecessor_sim = nn_data[i].second;
     }
@@ -2200,7 +2202,7 @@ bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned in
     // ----------------------------------------------------------------------
     if (verbosity_ >= 10)
     {
-      std::cout << "++ NNChain method (stored matrix)" << endl;
+      std::cout << "++ NNChain method (stored matrix)" << std::endl;
     }
     
     // NN Chain from scratch. First calculate pairwise similarity matrix.
@@ -2418,12 +2420,12 @@ void BinaryFingerprintMethods::similarityMatrixFromClustersThread(const unsigned
     // This is valid because every array field is accessed only once and no reading occurs during matrix calculation
     if (c1->c_index < c2->c_index)
     {
-//       cerr << strictUpperTriangularMatrixToArray(c1->c_index, c2->c_index) << " " << scale * tmp_sum << endl;
+//       cerr << strictUpperTriangularMatrixToArray(c1->c_index, c2->c_index) << " " << scale * tmp_sum << std::endl;
       sim_matrix_[strictUpperTriangularMatrixToArray(c1->c_index, c2->c_index)] = scale * tmp_sum;
     }
     else
     {
-//       cerr << strictUpperTriangularMatrixToArray(c2->c_index, c1->c_index) << " " << scale * tmp_sum << endl;
+//       cerr << strictUpperTriangularMatrixToArray(c2->c_index, c1->c_index) << " " << scale * tmp_sum << std::endl;
       sim_matrix_[strictUpperTriangularMatrixToArray(c2->c_index, c1->c_index)] = scale * tmp_sum;
     }
   }
@@ -2830,7 +2832,7 @@ void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root)
     if (verbosity_ >= 10)
     {
       std::cout << "++ " << rnn_pairs << " / " << vec_actives_.size() << " / " << vec_inactives_.size() << " / " << n_clusters_
-      << "   (RNNPairs / Actives / Inactives / Clusters)" << endl; 
+      << "   (RNNPairs / Actives / Inactives / Clusters)" << std::endl; 
     }
     
     // Finished ...
@@ -2927,7 +2929,7 @@ void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root)
     
     if (verbosity_ >= 10)
     {
-      std::cout << "done" << endl;
+      std::cout << "done" << std::endl;
     }
     
     // ----------------------------------------------------------------------
@@ -2959,7 +2961,7 @@ void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root)
     
     if (verbosity_ >= 10)
     {
-      std::cout << "done" << endl;
+      std::cout << "done" << std::endl;
     }
     
     // Clean up
@@ -3050,7 +3052,7 @@ void BinaryFingerprintMethods::NNChainCore(Cluster*& root)
 {
   if (verbosity_ >= 10)
   {
-    std::cout << "++ Starting NNChain calculations" << endl;
+    std::cout << "++ Starting NNChain calculations" << std::endl;
   }
   
   if (threads_ == NULL)
@@ -3161,7 +3163,7 @@ void BinaryFingerprintMethods::clusterSelectionKGS(map<unsigned int, vector<unsi
       
       clusters.push_back(*r_iter);
       
-//       cerr << it->first << endl;
+//       cerr << it->first << std::endl;
     }
   }
   
@@ -3172,7 +3174,7 @@ void BinaryFingerprintMethods::clusterSelectionKGS(map<unsigned int, vector<unsi
   {
     cluster_counts.push_back(make_pair(n_clust, n_singl));
     
-//     cerr << n_clust << " " << n_singl << endl;
+//     cerr << n_clust << " " << n_singl << std::endl;
     
     if (clusters[i]->l_child->is_rnn || clusters[i]->r_child->is_rnn)
     {
@@ -3232,8 +3234,8 @@ void BinaryFingerprintMethods::clusterSelectionKGS(map<unsigned int, vector<unsi
     avg_spread = spread_sum / (double)(cluster_counts[i].first);
     
     avg_spreads[i] = avg_spread;
-//     cerr << cluster_counts[i].first << " " << cluster_counts[i].second << endl;
-//     cerr << spread_sum << " " << avg_spread << endl;
+//     cerr << cluster_counts[i].first << " " << cluster_counts[i].second << std::endl;
+//     cerr << spread_sum << " " << avg_spread << std::endl;
     
     if (avg_spread > max_avg_spread)
     {
@@ -3245,7 +3247,7 @@ void BinaryFingerprintMethods::clusterSelectionKGS(map<unsigned int, vector<unsi
     }
   }
   cl_spreads.clear();
-//   cerr << max_avg_spread << " " << min_avg_spread << endl;
+//   cerr << max_avg_spread << " " << min_avg_spread << std::endl;
   
   // ------------------------------------------------------------------------
   // STEP 3: Normalize average spreads and calculate KGS penalty values
@@ -3264,7 +3266,7 @@ void BinaryFingerprintMethods::clusterSelectionKGS(map<unsigned int, vector<unsi
     
     kgs_penalties[i] = avg_spread_norm + cluster_counts[i].first + cluster_counts[i].second;
     
-//     cerr << avg_spread_norm << " " << kgs_penalties[i] << endl;
+//     cerr << avg_spread_norm << " " << kgs_penalties[i] << std::endl;
     
     if (kgs_penalties[i] < kgs_min)
     {
@@ -3277,8 +3279,8 @@ void BinaryFingerprintMethods::clusterSelectionKGS(map<unsigned int, vector<unsi
     }
   }
   avg_spreads.clear();
-//   cerr << kgs_min << " " << kgs_max << endl;
-//   cerr << kgs_min_index << endl;
+//   cerr << kgs_min << " " << kgs_max << std::endl;
+//   cerr << kgs_min_index << std::endl;
   
   
   // ------------------------------------------------------------------------
@@ -3345,13 +3347,13 @@ void BinaryFingerprintMethods::nextNearestNeighbour()
     if ((*cl_iter)->c_index < tip_index)
     {
 //       cerr << strictUpperTriangularMatrixToArray((*cl_iter)->c_index, tip_index) << " " << 
-//       sim_matrix_[strictUpperTriangularMatrixToArray((*cl_iter)->c_index, tip_index)] << endl;
+//       sim_matrix_[strictUpperTriangularMatrixToArray((*cl_iter)->c_index, tip_index)] << std::endl;
       current_sim = sim_matrix_[strictUpperTriangularMatrixToArray((*cl_iter)->c_index, tip_index)];
     }
     else
     {
 //       cerr << strictUpperTriangularMatrixToArray(tip_index, (*cl_iter)->c_index) << 
-//       sim_matrix_[strictUpperTriangularMatrixToArray(tip_index, (*cl_iter)->c_index)] << endl;
+//       sim_matrix_[strictUpperTriangularMatrixToArray(tip_index, (*cl_iter)->c_index)] << std::endl;
       current_sim = sim_matrix_[strictUpperTriangularMatrixToArray(tip_index, (*cl_iter)->c_index)];
     }
     
@@ -3398,7 +3400,7 @@ void BinaryFingerprintMethods::switchStorageMethod()
 {
   if (verbosity_ >= 10)
   {
-    std::cout << "++ Switch to stored matrix method" << endl;
+    std::cout << "++ Switch to stored matrix method" << std::endl;
   }
   
   // Create cluster indices to address the similarity matrix
@@ -3530,7 +3532,7 @@ BinaryFingerprintMethods::Cluster* BinaryFingerprintMethods::mergeClusters(Clust
   
   merged_cluster->sim_sum = c1->sim_sum + c2->sim_sum + sim_sum;
   
-//   cerr << merged_cluster->c_id << " " << c1->c_id << " " << c2->c_id << " " << (sim_sum / (c1->c_size * c2->c_size)) << endl;
+//   cerr << merged_cluster->c_id << " " << c1->c_id << " " << c2->c_id << " " << (sim_sum / (c1->c_size * c2->c_size)) << std::endl;
   
   double tmp_sim = sim_sum / (merged_cluster->l_child->c_size * merged_cluster->r_child->c_size);
   pair<map<float, vector<Cluster*> >::iterator, bool> ins;
@@ -3613,3 +3615,5 @@ BinaryFingerprintMethods::Cluster* BinaryFingerprintMethods::mergeClusters(Clust
   
   return 0;
 }
+
+} /* namespace maracluster */

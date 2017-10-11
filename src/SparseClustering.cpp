@@ -16,6 +16,8 @@
  
 #include "SparseClustering.h"
 
+namespace maracluster {
+
 void SparseClustering::initMatrix(const std::string& matrixFN) {
   matrixLoader_.initStream(matrixFN);
 }
@@ -410,3 +412,5 @@ bool SparseClustering::clusteringUnitTest() {
 }
 
 
+
+} /* namespace maracluster */

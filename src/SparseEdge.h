@@ -14,10 +14,12 @@
   
  ******************************************************************************/
 
-#ifndef SPARSE_EDGE_H
-#define SPARSE_EDGE_H
+#ifndef MARACLUSTER_SPARSEEDGE_H_
+#define MARACLUSTER_SPARSEEDGE_H_
 
 #include "ScanId.h"
+
+namespace maracluster {
 
 struct SparseEdge {
   SparseEdge(double _value, ScanId _row, ScanId _col) : 
@@ -47,4 +49,6 @@ struct SparseMissingEdge : public SparseEdge {
   unsigned int numEdges;
 };
 
-#endif
+} /* namespace maracluster */
+
+#endif /* MARACLUSTER_SPARSEEDGE_H_ */

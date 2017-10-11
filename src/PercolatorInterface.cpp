@@ -13,24 +13,12 @@
   limitations under the License.
   
  ******************************************************************************/
- 
-#include <cstdlib>
-#include <stdexcept>
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <set>
-#include <vector>
 
-#include <boost/foreach.hpp>
+#include "PercolatorInterface.h"
 
-#include "ScanMergeInfo.h"
-#include "SpectrumFileList.h"
+namespace maracluster {
 
-unsigned int extractScannr(std::string id) {
+unsigned int PercolatorInterface::extractScannr(std::string id) {
   std::vector< std::string > elems;
   std::stringstream ss(id);
   std::string item;
@@ -40,7 +28,7 @@ unsigned int extractScannr(std::string id) {
   return static_cast<unsigned int>(std::strtoul(elems[elems.size() - 3].c_str(), NULL, 0));
 }
 
-std::string extractCharge(std::string id) {
+std::string PercolatorInterface::extractCharge(std::string id) {
   std::vector< std::string > elems;
   std::stringstream ss(id);
   std::string item;
@@ -50,7 +38,7 @@ std::string extractCharge(std::string id) {
   return elems[elems.size() - 2];
 }
 
-int extractIntCharge(std::string id) {
+int PercolatorInterface::extractIntCharge(std::string id) {
   std::vector< std::string > elems;
   std::stringstream ss(id);
   std::string item;
@@ -62,7 +50,7 @@ int extractIntCharge(std::string id) {
 
 /* Creates a map: ("peptide" + "_" + "charge") => ScanMergeInfo(scanNr, PEP, 
      isDecoy, charge, peptide) of all PSMs under qvalue_thresh */
-void parsePercOutfile(std::string percOutFN, SpectraMergeMap& peptideScanMap,
+void PercolatorInterface::parsePercOutfile(std::string percOutFN, SpectraMergeMap& peptideScanMap,
                       bool isDecoy, double qvalue_thresh = 0.01) {
   std::ifstream percOut(percOutFN.c_str());
   std::string line, tmp, id, peptide;
@@ -87,7 +75,7 @@ void parsePercOutfile(std::string percOutFN, SpectraMergeMap& peptideScanMap,
 
 /* Creates a map: scannr => ScanMergeInfo(scanNr, qvalue, isDecoy, charge, 
      peptide) of all PSMs under qvalue_thresh */
-void parsePercOutfile(std::string percOutFN, ScanPeptideMap& scanPeptideMap,
+void PercolatorInterface::parsePercOutfile(std::string percOutFN, ScanPeptideMap& scanPeptideMap,
                       bool isDecoy = false) {
   std::ifstream percOut(percOutFN.c_str());
   std::string line, tmp, id, peptide;
@@ -114,7 +102,7 @@ void parsePercOutfile(std::string percOutFN, ScanPeptideMap& scanPeptideMap,
 
 /* Filters out the duplicates from the map produced by parsePercOutfile and 
    creates a vector of ScanMergeInfoSets */
-void reducePercOutfile(SpectraMergeMap& peptideScanMap, 
+void PercolatorInterface::reducePercOutfile(SpectraMergeMap& peptideScanMap, 
     const std::string spectrumFileIn,
     SpectrumFileList& fileList, std::vector<ScanMergeInfoSet>& combineSets, 
     const std::string scanWeightsFN) {
@@ -178,7 +166,7 @@ void reducePercOutfile(SpectraMergeMap& peptideScanMap,
      decoyCount << " decoy merges" << std::endl; */
 }
 
-void reducePercInfile(std::string percInFN, std::string percInReducedFN, 
+void PercolatorInterface::reducePercInfile(std::string percInFN, std::string percInReducedFN, 
                       SpectraMergeMap& peptideScanMap) {
   std::ifstream percIn(percInFN.c_str());
   std::ofstream percInReduced(percInReducedFN.c_str());
@@ -233,3 +221,5 @@ void reducePercInfile(std::string percInFN, std::string percInReducedFN,
   percIn.close();
   percInReduced.close();
 }
+
+} /* namespace maracluster */
