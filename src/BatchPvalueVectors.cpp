@@ -16,6 +16,10 @@
  
 #include "BatchPvalueVectors.h"
 
+#ifdef CUDA_SUPPORT
+  #include "BatchPvalueVectors.cuh"
+#endif
+
 namespace maracluster {
 
 void BatchPvalueVectors::calculatePvalueVectors(
@@ -368,7 +372,7 @@ void BatchPvalueVectors::parsePvalueVectorFile(const std::string& pvalVecInFileF
 
 /* This function presumes that the pvalue vectors are sorted by precursor
    mass by writePvalueVectors() */
-void BatchPvalueVectors::batchCalculatePvalues() {    
+void BatchPvalueVectors::batchCalculatePvalues() {
   if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues" << std::endl;
   }
@@ -378,7 +382,70 @@ void BatchPvalueVectors::batchCalculatePvalues() {
   time_t startTime;
   time(&startTime);
   clock_t startClock = clock();
+
+#ifdef CUDA_SUPPORT
   
+  size_t numBlocks = (n + PVEC_MAX_BATCH_SIZE - 1) / PVEC_MAX_BATCH_SIZE;
+  for (int targetBlockIdx = 0; targetBlockIdx < numBlocks; ++targetBlockIdx) {
+    size_t N = std::min(n - targetBlockIdx * PVEC_MAX_BATCH_SIZE, static_cast<size_t>(PVEC_MAX_BATCH_SIZE));
+    size_t targetOffset = PVEC_MAX_BATCH_SIZE * targetBlockIdx;
+    
+    if (Globals::VERB > 2 && targetOffset / 10000 != (targetOffset + N) / 10000) {
+      std::cerr << "Processing pvalue vector " << targetOffset+1 << "/" << n << " (" <<
+                   targetOffset*100/n << "%)." << std::endl;
+      Globals::reportProgress(startTime, startClock, targetOffset, n);
+    }
+    
+    std::vector<short> peakBins(N * SCORING_PEAKS);
+    std::vector<short> peakScores(N * SCORING_PEAKS);
+    std::vector<double> polyfits(N * POLYFIT_SIZE);
+    std::vector<double> pvals(N * PVEC_MAX_BATCH_SIZE);
+    std::vector<int> maxScores(N);
+    
+    double precLowerLimit = getLowerBound(pvalVecCollection_.at(targetOffset + N - 1).precMz);
+    double precUpperLimit = getUpperBound(pvalVecCollection_.at(targetOffset + N - 1).precMz);
+    
+    for (size_t i = 0; i < N; ++i) {
+      std::vector<unsigned int>& peakBinsLocal = pvalVecCollection_.at(targetOffset + i).pvalCalc.getPeakBinsRef();
+      std::vector<unsigned int> peakScoresLocal = pvalVecCollection_.at(targetOffset + i).pvalCalc.getPeakScores();
+      std::vector<double> polyfitLocal = pvalVecCollection_.at(targetOffset + i).pvalCalc.getPolyfit();
+      maxScores[i] = 0;
+      for (size_t j = 0; j < SCORING_PEAKS; ++j) {
+        peakBins[i*SCORING_PEAKS+j] = static_cast<short>(peakBinsLocal[j]);
+        peakScores[i*SCORING_PEAKS+j] = static_cast<short>(peakScoresLocal[j]);
+        maxScores[i] += peakScores[i*SCORING_PEAKS+j];
+      }
+      std::copy(polyfitLocal.begin(), polyfitLocal.end(), &polyfits[i*POLYFIT_SIZE]);
+    }
+    
+    for (int queryBlockIdx = 0; queryBlockIdx < numBlocks; ++queryBlockIdx) {
+      size_t M = std::min(n - queryBlockIdx * PVEC_MAX_BATCH_SIZE, static_cast<size_t>(PVEC_MAX_BATCH_SIZE));
+      size_t queryOffset = PVEC_MAX_BATCH_SIZE * queryBlockIdx;
+      
+      if (pvalVecCollection_.at(queryOffset + M - 1).precMz < precLowerLimit) {
+        continue;
+      } else if (pvalVecCollection_.at(queryOffset).precMz > precUpperLimit) {
+        break;
+      } 
+      
+      std::vector<short> queryPeakBins(M * SCORING_PEAKS);
+      for (size_t qi = 0; qi < M; ++qi) {
+        std::vector<unsigned int>& queryPeakBinsLocal = pvalVecCollection_.at(queryOffset + qi).pvalCalc.getPeakBinsRef();
+        for (size_t qj = 0; qj < SCORING_PEAKS; ++qj) {
+          queryPeakBins[qi*SCORING_PEAKS+qj] = static_cast<short>(queryPeakBinsLocal[qj]);
+        }
+      }
+      
+      if (Globals::VERB > 4) {
+        std::cerr << "Calculating p-values: targetBlock=" << targetBlockIdx 
+                  << ", queryBlock=" << queryBlockIdx << std::endl;
+      }
+      runKernel(&peakBins[0], &peakScores[0], &polyfits[0], &maxScores[0], N, &queryPeakBins[0], M, &pvals[0]);
+    }
+  }
+  
+#else /* CUDA_SUPPORT */
+
 #pragma omp parallel for schedule(dynamic, 1000)
   for (int i = 0; i < n; ++i) {
     if (i % 10000 == 0 && Globals::VERB > 2) {
@@ -395,12 +462,16 @@ void BatchPvalueVectors::batchCalculatePvalues() {
         break;
       }
     }
-    pvalues_.batchWrite(pvalBuffer);
+    //pvalues_.batchWrite(pvalBuffer);
   }
+  
+#endif /* CUDA_SUPPORT */
+  
   clearPvalueVectors();
   
   if (Globals::VERB > 1) {
     std::cerr << "Finished calculating pvalues." << std::endl;
+    Globals::reportProgress(startTime, startClock, n, n);
   }
 }
 

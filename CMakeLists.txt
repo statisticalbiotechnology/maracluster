@@ -28,6 +28,11 @@ if(SINGLE_LINKAGE)
   add_definitions(-DSINGLE_LINKAGE) # triggers ifdef statements in the C++ code
 endif(SINGLE_LINKAGE)
 
+option(CUDA_SUPPORT "Add support for using CUDA in calculating p-values." OFF)
+if(CUDA_SUPPORT)
+  add_definitions(-DCUDA_SUPPORT) # triggers ifdef statements in the C++ code
+endif(CUDA_SUPPORT)
+
 option(VENDOR_SUPPORT "Add support for reading vendor RAW files using Proteowizard." OFF)
 if(VENDOR_SUPPORT)
   add_definitions(-DVENDOR_SUPPORT) # triggers ifdef statements in the C++ code

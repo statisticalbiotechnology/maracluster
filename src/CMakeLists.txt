@@ -19,6 +19,12 @@ else(MSVC)
   set(BOOST_NOWIDE "")
 endif(MSVC)
 
+if(CUDA_SUPPORT)
+  find_package(CUDA QUIET REQUIRED)
+  # Pass options to NVCC
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3")
+endif(CUDA_SUPPORT)
+
 find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS filesystem iostreams regex thread serialization system chrono ${BOOST_NOWIDE} REQUIRED)
 if(Boost_FOUND)
   message(STATUS "Package Boost found at: ${Boost_INCLUDE_DIRS}")
@@ -71,34 +77,41 @@ add_library(batchlibrary STATIC MaRaCluster.cpp BatchPvalues.cpp BatchPvalueVect
 #add_executable(extractspec extractSpectra.cpp)
 #add_executable(msgffixmzml msgfFixMzML.cpp)
 
-add_executable(maracluster main.cpp)
 #if(MSVC)
 #  add_executable(extractraw extractRAWSpectra.cpp)
 #endif(MSVC)
 
-if(APPLE)
-  set_property(TARGET maracluster PROPERTY LINK_SEARCH_START_STATIC FALSE)
-  set_property(TARGET maracluster PROPERTY LINK_SEARCH_END_STATIC TRUE)
-#  set_property(TARGET mergespec PROPERTY MACOSX_BUNDLE ON)
-elseif(MINGW)
-#  set_target_properties(maracluster PROPERTIES LINK_FLAGS "-Wl,-Bstatic -static-libgcc -lcurl -liconv")
-  set_target_properties(maracluster PROPERTIES LINK_FLAGS "-static-libgcc")
-endif()
+if(CUDA_SUPPORT)
+  cuda_add_executable(maracluster-cuda main.cpp BatchPvalueVectors.cu)
+else(CUDA_SUPPORT)
+  add_executable(maracluster main.cpp)
+  if(APPLE)
+    set_property(TARGET maracluster PROPERTY LINK_SEARCH_START_STATIC FALSE)
+    set_property(TARGET maracluster PROPERTY LINK_SEARCH_END_STATIC TRUE)
+  #  set_property(TARGET mergespec PROPERTY MACOSX_BUNDLE ON)
+  elseif(MINGW)
+  #  set_target_properties(maracluster PROPERTIES LINK_FLAGS "-Wl,-Bstatic -static-libgcc -lcurl -liconv")
+    set_target_properties(maracluster PROPERTIES LINK_FLAGS "-static-libgcc")
+  endif()
 
-if(PROFILING AND UNIX)
-  set_target_properties(maracluster PROPERTIES COMPILE_FLAGS -pg LINK_FLAGS -pg)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
-  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -DNDEBUG -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -DNDEBUG -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
-endif() 
+  if(PROFILING AND UNIX)
+    set_target_properties(maracluster PROPERTIES COMPILE_FLAGS -pg LINK_FLAGS -pg)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -DNDEBUG -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -DNDEBUG -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
+  endif() 
+endif(CUDA_SUPPORT)
+
+
 
 set(COMMON_LIBRARIES ${PWIZ_LIBRARIES} ${Boost_LIBRARIES} ${ZLIB_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
 # SET LIBRARIES FOR MARACLUSTER
-target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
+
+
 #target_link_libraries(extractspec maraclusterlibrary ${COMMON_LIBRARIES})
 #target_link_libraries(msgffixmzml maraclusterlibrary ${COMMON_LIBRARIES})
 #if(MSVC)
@@ -106,8 +119,16 @@ target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRA
 #endif(MSVC)
 
 # INSTALL MARACLUSTER
-install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+
 #install(TARGETS extractspec msgffixmzml EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #if(MSVC)
 #  install(TARGETS extractraw EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #endif(MSVC)
+
+if(CUDA_SUPPORT)
+  target_link_libraries(maracluster-cuda batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
+  install(TARGETS maracluster-cuda EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+else(CUDA_SUPPORT)
+  target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRARIES})
+  install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+endif(CUDA_SUPPORT)

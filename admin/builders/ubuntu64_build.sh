@@ -89,7 +89,7 @@ mkdir -p $build_dir/maracluster
 #-----cmake-----
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH=$build_dir/tools $src_dir/maracluster;
+cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCUDA_SUPPORT=ON -DCMAKE_PREFIX_PATH=$build_dir/tools $src_dir/maracluster;
 #-----make------
 echo -n "make maracluster (this will take few minutes).....";
 make -j 4;

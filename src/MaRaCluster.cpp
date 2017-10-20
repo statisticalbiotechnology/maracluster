@@ -25,7 +25,7 @@ MaRaCluster::MaRaCluster() :
     pvalVecInFileFN_(""), pvalueVectorsBaseFN_(""), overlapBatchFileFN_(""), 
     spectrumBatchFileFN_(""), spectrumInFN_(""), spectrumOutFN_(""),
     spectrumLibraryFN_(""), matrixFN_(""), resultTreeFN_(""),
-    skipFilterAndSort_(false), writeAll_(false), precursorTolerance_(20),
+    skipFilterAndSort_(false), writeAll_(true), precursorTolerance_(20),
     precursorToleranceDa_(false), dbPvalThreshold_(-5.0), 
     chargeUncertainty_(0), minConsensusClusterSize_(1u)
 {
@@ -508,7 +508,7 @@ int MaRaCluster::run() {
         } else {
           pvecs.batchCalculatePvalues();
         }
-        PvalueFilterAndSort::convertBinaryPvalToTsv(pvaluesFN_, pvaluesFN_);
+        //PvalueFilterAndSort::convertBinaryPvalToTsv(pvaluesFN_, pvaluesFN_);
       } else if (overlapBatchFileFN_.size() > 0) { 
         // calculate p-values in overlap between two windows
         // maracluster pvalue -w data/batchcluster/overlap_files.txt

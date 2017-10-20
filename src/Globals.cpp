@@ -52,12 +52,14 @@ void Globals::reportProgress(time_t& startTime, clock_t& startClock,
                "or " << timeElapsedMin << " min " << timeElapsedSecMod << 
                " sec wall time." << std::endl;
   
-  double timeLeftSec = (diff / (currentIt+1)) * (totalIt - (currentIt+1));
-  unsigned int timeLeftMin = static_cast<unsigned int>(timeLeftSec/60);
-  unsigned int timeLeftSecMod = 
-      static_cast<unsigned int>(timeLeftSec - timeLeftMin * 60);
-  std::cerr << "  Estimated time remaining: " << timeLeftMin << " min " <<
-               timeLeftSecMod << " sec wall time." << std::endl;
+  if (currentIt < totalIt) {
+    double timeLeftSec = (diff / (currentIt+1)) * (totalIt - (currentIt+1));
+    unsigned int timeLeftMin = static_cast<unsigned int>(timeLeftSec/60);
+    unsigned int timeLeftSecMod = 
+        static_cast<unsigned int>(timeLeftSec - timeLeftMin * 60);
+    std::cerr << "  Estimated time remaining: " << timeLeftMin << " min " <<
+                 timeLeftSecMod << " sec wall time." << std::endl;
+  }
 }
 
 
