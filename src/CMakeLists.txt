@@ -22,7 +22,7 @@ endif(MSVC)
 if(CUDA_SUPPORT)
   find_package(CUDA QUIET REQUIRED)
   # Pass options to NVCC
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3")
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_35,code=sm_35 --default-stream per-thread")
 endif(CUDA_SUPPORT)
 
 find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS filesystem iostreams regex thread serialization system chrono ${BOOST_NOWIDE} REQUIRED)

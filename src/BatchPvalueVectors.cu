@@ -78,36 +78,76 @@ void calculatePvals(short *peakBins, short *peakScores, double *polyfits, int *m
   }
 }
 
+float totaltime = 0.0f;
+cudaStream_t streams[NUM_STREAMS];
+short *peakBinsDevice[NUM_STREAMS];
+short *peakScoresDevice[NUM_STREAMS];
+short *queryPeakBinsDevice[NUM_STREAMS];
+double *polyfitsDevice[NUM_STREAMS];
+double *pvalsDevice[NUM_STREAMS];
+int *maxScoresDevice[NUM_STREAMS];
+  
+void initStreams(double **pvalsHost) {
+  for (int i = 0; i < NUM_STREAMS; ++i) { 
+    gpuErrchk( cudaStreamCreate(&streams[i]) );
+    gpuErrchk( cudaMalloc(&peakBinsDevice[i], PVEC_MAX_BATCH_SIZE * SCORING_PEAKS * sizeof(short)) );
+    gpuErrchk( cudaMalloc(&peakScoresDevice[i], PVEC_MAX_BATCH_SIZE * SCORING_PEAKS * sizeof(short)) );
+    gpuErrchk( cudaMalloc(&polyfitsDevice[i], PVEC_MAX_BATCH_SIZE * POLYFIT_SIZE * sizeof(double)) );
+    gpuErrchk( cudaMalloc(&maxScoresDevice[i], PVEC_MAX_BATCH_SIZE * sizeof(int)) );
+    gpuErrchk( cudaMalloc(&pvalsDevice[i], PVEC_MAX_BATCH_SIZE * PVEC_MAX_BATCH_SIZE * sizeof(double)) );
+    gpuErrchk( cudaMallocHost(&pvalsHost[i], PVEC_MAX_BATCH_SIZE * PVEC_MAX_BATCH_SIZE * sizeof(double)) );
+    gpuErrchk( cudaMalloc(&queryPeakBinsDevice[i], PVEC_MAX_BATCH_SIZE * SCORING_PEAKS * sizeof(short)) );
+  }
+}
+
+void destroyStreams(double **pvalsHost) {
+  for (int i = 0; i < NUM_STREAMS; ++i) { 
+    gpuErrchk( cudaStreamDestroy(streams[i]) );
+    // Free memory
+    gpuErrchk( cudaFree(peakBinsDevice[i]) );
+    gpuErrchk( cudaFree(peakScoresDevice[i]) );
+    gpuErrchk( cudaFree(polyfitsDevice[i]) );
+    gpuErrchk( cudaFree(maxScoresDevice[i]) );
+    gpuErrchk( cudaFree(pvalsDevice[i]) );
+    gpuErrchk( cudaFreeHost(pvalsHost[i]) );
+    gpuErrchk( cudaFree(queryPeakBinsDevice[i]) );
+  }
+}
+
+void synchronizeStream(int streamIdx) {
+  cudaStreamSynchronize(streams[streamIdx]);
+}
+
 __host__
-void runKernel(short *peakBins, short *peakScores, double *polyfits, int *maxScores, size_t N, short *queryPeakBins, size_t M, double *pvals) {
-  short *peakBinsDevice, *peakScoresDevice, *queryPeakBinsDevice;
-  double *polyfitsDevice, *pvalsDevice;
-  int *maxScoresDevice;
+void runKernel(short *peakBins, short *peakScores, double *polyfits, int *maxScores, size_t N, short *queryPeakBins, size_t M, double** pvalsHost, int streamIdx) {
+  cudaSetDevice(0);
   
-  gpuErrchk( cudaMalloc(&peakBinsDevice, N * SCORING_PEAKS * sizeof(short)) );
-  gpuErrchk( cudaMalloc(&peakScoresDevice, N * SCORING_PEAKS * sizeof(short)) );
-  gpuErrchk( cudaMalloc(&polyfitsDevice, N * POLYFIT_SIZE * sizeof(double)) );
-  gpuErrchk( cudaMalloc(&maxScoresDevice, N * sizeof(int)) );
-  gpuErrchk( cudaMalloc(&pvalsDevice, N * PVEC_MAX_BATCH_SIZE * sizeof(double)) );
-  gpuErrchk( cudaMalloc(&queryPeakBinsDevice, M * SCORING_PEAKS * sizeof(short)) );
+  cudaStream_t *stream = &streams[streamIdx];
+  /*
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
   
-  gpuErrchk( cudaMemcpy(peakBinsDevice, peakBins, N * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice) );
-  gpuErrchk( cudaMemcpy(peakScoresDevice, peakScores, N * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice) );
-  gpuErrchk( cudaMemcpy(polyfitsDevice, polyfits, N * POLYFIT_SIZE * sizeof(double), cudaMemcpyHostToDevice) );
-  gpuErrchk( cudaMemcpy(maxScoresDevice, maxScores, N * sizeof(int), cudaMemcpyHostToDevice) );
-  gpuErrchk( cudaMemcpy(queryPeakBinsDevice, queryPeakBins, M * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice) );
+  cudaEventRecord(start);
+  */
+  gpuErrchk( cudaMemcpy(peakBinsDevice[streamIdx], peakBins, N * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice) );
+  gpuErrchk( cudaMemcpy(peakScoresDevice[streamIdx], peakScores, N * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice) );
+  gpuErrchk( cudaMemcpy(polyfitsDevice[streamIdx], polyfits, N * POLYFIT_SIZE * sizeof(double), cudaMemcpyHostToDevice) );
+  gpuErrchk( cudaMemcpy(maxScoresDevice[streamIdx], maxScores, N * sizeof(int), cudaMemcpyHostToDevice) );
+  gpuErrchk( cudaMemcpy(queryPeakBinsDevice[streamIdx], queryPeakBins, M * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice) );
+  
   
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
   dim3 dimGrid;
   dimGrid.x = (N + dimBlock.x - 1) / dimBlock.x;
-  dimGrid.y = (M + dimBlock.y - 1) / dimBlock.y;
+  dimGrid.y = (M + dimBlock.y - 1) / dimBlock.y;  
   
-  calculatePvals<<<dimGrid, dimBlock>>>(peakBinsDevice, peakScoresDevice, polyfitsDevice, maxScoresDevice, N, queryPeakBinsDevice, M, pvalsDevice);
+  calculatePvals<<<dimGrid, dimBlock, 0, *stream>>>(peakBinsDevice[streamIdx], peakScoresDevice[streamIdx], polyfitsDevice[streamIdx], maxScoresDevice[streamIdx], N, queryPeakBinsDevice[streamIdx], M, pvalsDevice[streamIdx]);
+  
   
   //gpuErrchk( cudaDeviceSynchronize() );
   
-  gpuErrchk( cudaMemcpy(pvals, pvalsDevice, N * PVEC_MAX_BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost) );
-  
+  gpuErrchk( cudaMemcpyAsync(pvalsHost[streamIdx], pvalsDevice[streamIdx], N * PVEC_MAX_BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost, *stream) );
   /*
   double sumPvals = 0;
   for (size_t i = 0; i < N; i++) {
@@ -116,13 +156,16 @@ void runKernel(short *peakBins, short *peakScores, double *polyfits, int *maxSco
   std::cout << "Sum: " << sumPvals << std::endl;
   */
   
-  // Free memory
-  gpuErrchk( cudaFree(peakBinsDevice) );
-  gpuErrchk( cudaFree(peakScoresDevice) );
-  gpuErrchk( cudaFree(polyfitsDevice) );
-  gpuErrchk( cudaFree(maxScoresDevice) );
-  gpuErrchk( cudaFree(pvalsDevice) );
-  gpuErrchk( cudaFree(queryPeakBinsDevice) );
+  /*
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  float milliseconds = 0;
+  cudaEventElapsedTime(&milliseconds, start, stop);
+  
+  totaltime += milliseconds;
+  
+  std::cout << "Elapsed time (ms): " << totaltime << std::endl;
+  */
 }
 
 } /* namespace maracluster */

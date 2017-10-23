@@ -171,6 +171,9 @@ class BatchPvalueVectors {
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
+  void copyPvals(double *pvals, std::pair<size_t, size_t> offsets, 
+                 std::vector<PvalueTriplet>& pvalBuffer);
+  
   double calculateCosineDistance(std::vector<unsigned int>& peakBins,
     std::vector<unsigned int>& queryPeakBins);
     

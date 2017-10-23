@@ -22,6 +22,7 @@
 #define BLOCK_SIZE 16
 #define SCORING_PEAKS 40
 #define POLYFIT_SIZE 6
+#define NUM_STREAMS 4
 
 #include <iostream>
 #include <vector>
@@ -31,8 +32,11 @@
 
 namespace maracluster {
 
-// Kernel function to add the elements of two arrays
-void runKernel(short *peakBins, short *peakScores, double *polyfits, int *maxScores, size_t N, short *queryPeakBins, size_t M, double* pvals);
+void initStreams(double **pvalsHost);
+void destroyStreams(double **pvalsHost);
+void synchronizeStream(int streamIdx);
+
+void runKernel(short *peakBins, short *peakScores, double *polyfits, int *maxScores, size_t N, short *queryPeakBins, size_t M, double **pvalsHost, int streamIdx);
 
 } /* namespace maracluster */
 

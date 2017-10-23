@@ -370,6 +370,28 @@ void BatchPvalueVectors::parsePvalueVectorFile(const std::string& pvalVecInFileF
   }
 }
 
+void BatchPvalueVectors::copyPvals(double *pvals, 
+    std::pair<size_t, size_t> offsets, std::vector<PvalueTriplet>& pvalBuffer) {
+  size_t targetOffset = (offsets.first / PVEC_MAX_BATCH_SIZE) * PVEC_MAX_BATCH_SIZE;
+  size_t queryOffset = (offsets.second / PVEC_MAX_BATCH_SIZE) * PVEC_MAX_BATCH_SIZE;
+  size_t N = offsets.first - targetOffset;
+  size_t M = offsets.second - queryOffset;
+  for (size_t pi = 0; pi < N; ++pi) {
+    for (size_t pj = 0; pj < M; ++pj) {
+      if (pvals[pi*PVEC_MAX_BATCH_SIZE+pj] <= dbPvalThreshold_) {
+        PvalueVectorsDbRow& pvecRow = pvalVecCollection_.at(targetOffset + pi);
+        PvalueVectorsDbRow& queryPvecRow = pvalVecCollection_.at(queryOffset + pj);
+        if (pvecRow.queryCharge == queryPvecRow.charge && queryPvecRow.scannr != pvecRow.scannr && 
+            isPvecMatch(pvecRow, queryPvecRow)) {
+          pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
+                                       std::max(pvecRow.scannr, queryPvecRow.scannr),
+                                       pvals[pi*PVEC_MAX_BATCH_SIZE+pj]));
+        }
+      }
+    }
+  }
+}
+
 /* This function presumes that the pvalue vectors are sorted by precursor
    mass by writePvalueVectors() */
 void BatchPvalueVectors::batchCalculatePvalues() {
@@ -385,7 +407,14 @@ void BatchPvalueVectors::batchCalculatePvalues() {
 
 #ifdef CUDA_SUPPORT
   
+  std::vector<PvalueTriplet> pvalBuffer;
+  double *pvalsHost[NUM_STREAMS];
+  std::vector<std::pair<size_t, size_t> > offsets(NUM_STREAMS);
+  
+  initStreams(pvalsHost);
+  
   size_t numBlocks = (n + PVEC_MAX_BATCH_SIZE - 1) / PVEC_MAX_BATCH_SIZE;
+  //size_t numBlocks = 100;
   for (int targetBlockIdx = 0; targetBlockIdx < numBlocks; ++targetBlockIdx) {
     size_t N = std::min(n - targetBlockIdx * PVEC_MAX_BATCH_SIZE, static_cast<size_t>(PVEC_MAX_BATCH_SIZE));
     size_t targetOffset = PVEC_MAX_BATCH_SIZE * targetBlockIdx;
@@ -399,16 +428,16 @@ void BatchPvalueVectors::batchCalculatePvalues() {
     std::vector<short> peakBins(N * SCORING_PEAKS);
     std::vector<short> peakScores(N * SCORING_PEAKS);
     std::vector<double> polyfits(N * POLYFIT_SIZE);
-    std::vector<double> pvals(N * PVEC_MAX_BATCH_SIZE);
     std::vector<int> maxScores(N);
     
     double precLowerLimit = getLowerBound(pvalVecCollection_.at(targetOffset + N - 1).precMz);
     double precUpperLimit = getUpperBound(pvalVecCollection_.at(targetOffset + N - 1).precMz);
     
     for (size_t i = 0; i < N; ++i) {
-      std::vector<unsigned int>& peakBinsLocal = pvalVecCollection_.at(targetOffset + i).pvalCalc.getPeakBinsRef();
-      std::vector<unsigned int> peakScoresLocal = pvalVecCollection_.at(targetOffset + i).pvalCalc.getPeakScores();
-      std::vector<double> polyfitLocal = pvalVecCollection_.at(targetOffset + i).pvalCalc.getPolyfit();
+      size_t targetIdx = targetOffset + i;
+      std::vector<unsigned int>& peakBinsLocal = pvalVecCollection_.at(targetIdx).pvalCalc.getPeakBinsRef();
+      std::vector<unsigned int> peakScoresLocal = pvalVecCollection_.at(targetIdx).pvalCalc.getPeakScores();
+      std::vector<double> polyfitLocal = pvalVecCollection_.at(targetIdx).pvalCalc.getPolyfit();
       maxScores[i] = 0;
       for (size_t j = 0; j < SCORING_PEAKS; ++j) {
         peakBins[i*SCORING_PEAKS+j] = static_cast<short>(peakBinsLocal[j]);
@@ -430,7 +459,8 @@ void BatchPvalueVectors::batchCalculatePvalues() {
       
       std::vector<short> queryPeakBins(M * SCORING_PEAKS);
       for (size_t qi = 0; qi < M; ++qi) {
-        std::vector<unsigned int>& queryPeakBinsLocal = pvalVecCollection_.at(queryOffset + qi).pvalCalc.getPeakBinsRef();
+        size_t queryIdx = queryOffset + qi;
+        std::vector<unsigned int>& queryPeakBinsLocal = pvalVecCollection_.at(queryIdx).pvalCalc.getPeakBinsRef();
         for (size_t qj = 0; qj < SCORING_PEAKS; ++qj) {
           queryPeakBins[qi*SCORING_PEAKS+qj] = static_cast<short>(queryPeakBinsLocal[qj]);
         }
@@ -440,12 +470,21 @@ void BatchPvalueVectors::batchCalculatePvalues() {
         std::cerr << "Calculating p-values: targetBlock=" << targetBlockIdx 
                   << ", queryBlock=" << queryBlockIdx << std::endl;
       }
-      runKernel(&peakBins[0], &peakScores[0], &polyfits[0], &maxScores[0], N, &queryPeakBins[0], M, &pvals[0]);
+      int streamIdx = queryBlockIdx % NUM_STREAMS;
+      synchronizeStream(streamIdx);
+      copyPvals(pvalsHost[streamIdx], offsets[streamIdx], pvalBuffer);
+      
+      runKernel(&peakBins[0], &peakScores[0], &polyfits[0], &maxScores[0], N, &queryPeakBins[0], M, pvalsHost, streamIdx);
+      offsets[streamIdx] = std::make_pair(targetOffset + N - 1, queryOffset + M - 1);
     }
+    pvalues_.batchWrite(pvalBuffer);
+    pvalBuffer.clear();
   }
   
+  destroyStreams(pvalsHost);
+  
 #else /* CUDA_SUPPORT */
-
+  
 #pragma omp parallel for schedule(dynamic, 1000)
   for (int i = 0; i < n; ++i) {
     if (i % 10000 == 0 && Globals::VERB > 2) {
@@ -454,7 +493,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
       Globals::reportProgress(startTime, startClock, i, n);
     }
     double precLimit = getUpperBound(pvalVecCollection_[i].precMz);
-    std::vector<PvalueTriplet> pvalBuffer;                       
+    std::vector<PvalueTriplet> pvalBuffer;
     for (size_t j = i+1; j < n; ++j) {
       if (pvalVecCollection_[j].precMz < precLimit) { 
         calculatePvalues(pvalVecCollection_[i], pvalVecCollection_[j], pvalBuffer);
@@ -462,7 +501,9 @@ void BatchPvalueVectors::batchCalculatePvalues() {
         break;
       }
     }
-    //pvalues_.batchWrite(pvalBuffer);
+    /*
+    pvalues_.batchWrite(pvalBuffer);
+    */
   }
   
 #endif /* CUDA_SUPPORT */
@@ -1031,9 +1072,9 @@ void BatchPvalueVectors::calculatePvalues(PvalueVectorsDbRow& pvecRow,
   if (queryPval <= dbPvalThreshold_) {
     double targetPval = pvecRow.pvalCalc.computePvalPolyfit(queryPvecRow.pvalCalc.getPeakBinsRef());
     if (targetPval <= dbPvalThreshold_) {
-      pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
+      /* pvalBuffer.push_back(PvalueTriplet(std::min(pvecRow.scannr, queryPvecRow.scannr),
                                          std::max(pvecRow.scannr, queryPvecRow.scannr),
-                                         std::max(targetPval, queryPval)));
+                                         std::max(targetPval, queryPval)));*/
     }
   }
 #endif
