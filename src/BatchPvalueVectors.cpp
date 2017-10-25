@@ -411,6 +411,8 @@ void BatchPvalueVectors::batchCalculatePvalues() {
   double *pvalsHost[NUM_STREAMS];
   std::vector<std::pair<size_t, size_t> > offsets(NUM_STREAMS);
   
+  size_t kernelCount = 0;
+  
   initStreams(pvalsHost);
   
   size_t numBlocks = (n + PVEC_MAX_BATCH_SIZE - 1) / PVEC_MAX_BATCH_SIZE;
@@ -419,7 +421,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
     size_t N = std::min(n - targetBlockIdx * PVEC_MAX_BATCH_SIZE, static_cast<size_t>(PVEC_MAX_BATCH_SIZE));
     size_t targetOffset = PVEC_MAX_BATCH_SIZE * targetBlockIdx;
     
-    if (Globals::VERB > 2 && targetOffset / 10000 != (targetOffset + N) / 10000) {
+    if (Globals::VERB > 2 && targetOffset / 20000 != (targetOffset + N) / 20000) {
       std::cerr << "Processing pvalue vector " << targetOffset+1 << "/" << n << " (" <<
                    targetOffset*100/n << "%)." << std::endl;
       Globals::reportProgress(startTime, startClock, targetOffset, n);
@@ -439,7 +441,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
       std::vector<unsigned int> peakScoresLocal = pvalVecCollection_.at(targetIdx).pvalCalc.getPeakScores();
       std::vector<double> polyfitLocal = pvalVecCollection_.at(targetIdx).pvalCalc.getPolyfit();
       maxScores[i] = 0;
-      for (size_t j = 0; j < SCORING_PEAKS; ++j) {
+      for (size_t j = 0; j < std::min(static_cast<int>(peakBinsLocal.size()), SCORING_PEAKS); ++j) {
         peakBins[i*SCORING_PEAKS+j] = static_cast<short>(peakBinsLocal[j]);
         peakScores[i*SCORING_PEAKS+j] = static_cast<short>(peakScoresLocal[j]);
         maxScores[i] += peakScores[i*SCORING_PEAKS+j];
@@ -461,7 +463,7 @@ void BatchPvalueVectors::batchCalculatePvalues() {
       for (size_t qi = 0; qi < M; ++qi) {
         size_t queryIdx = queryOffset + qi;
         std::vector<unsigned int>& queryPeakBinsLocal = pvalVecCollection_.at(queryIdx).pvalCalc.getPeakBinsRef();
-        for (size_t qj = 0; qj < SCORING_PEAKS; ++qj) {
+        for (size_t qj = 0; qj < std::min(static_cast<int>(queryPeakBinsLocal.size()), SCORING_PEAKS); ++qj) {
           queryPeakBins[qi*SCORING_PEAKS+qj] = static_cast<short>(queryPeakBinsLocal[qj]);
         }
       }
@@ -470,15 +472,25 @@ void BatchPvalueVectors::batchCalculatePvalues() {
         std::cerr << "Calculating p-values: targetBlock=" << targetBlockIdx 
                   << ", queryBlock=" << queryBlockIdx << std::endl;
       }
-      int streamIdx = queryBlockIdx % NUM_STREAMS;
+      int streamIdx = kernelCount % NUM_STREAMS;
       synchronizeStream(streamIdx);
-      copyPvals(pvalsHost[streamIdx], offsets[streamIdx], pvalBuffer);
+      //copyPvals(pvalsHost[streamIdx], offsets[streamIdx], pvalBuffer);
+      std::cout << pvalBuffer.size() << " " << N << " " << M << " " << targetBlockIdx << " " << queryBlockIdx << std::endl;
+      offsets[streamIdx] = std::make_pair(0, 0);
       
       runKernel(&peakBins[0], &peakScores[0], &polyfits[0], &maxScores[0], N, &queryPeakBins[0], M, pvalsHost, streamIdx);
       offsets[streamIdx] = std::make_pair(targetOffset + N - 1, queryOffset + M - 1);
+      ++kernelCount;
     }
-    pvalues_.batchWrite(pvalBuffer);
-    pvalBuffer.clear();
+    
+    if (targetBlockIdx + 1 == numBlocks) {
+      for (size_t streamIdx = 0; streamIdx < NUM_STREAMS; ++streamIdx) {
+        synchronizeStream(streamIdx);
+        //copyPvals(pvalsHost[streamIdx], offsets[streamIdx], pvalBuffer);
+      }
+    }
+    //pvalues_.batchWrite(pvalBuffer);
+    //pvalBuffer.clear();
   }
   
   destroyStreams(pvalsHost);
