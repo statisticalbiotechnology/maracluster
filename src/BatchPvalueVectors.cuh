@@ -17,20 +17,22 @@
 #ifndef MARACLUSTER_BATCHPVALUEVECTORS_CUH_
 #define MARACLUSTER_BATCHPVALUEVECTORS_CUH_
 
-#define SCORING_PEAKS 40
-#define POLYFIT_SIZE 6
-
 /* doubling this batch size from 16384 to 32768 runs out of memory */
-#define PVEC_MAX_BATCH_SIZE 1024
+#define PVEC_MAX_BATCH_SIZE 512
 #define BLOCK_SIZE 16
 #define NUM_STREAMS 8
-#define NUM_DEVICES 1
+#define NUM_DEVICES 2
 
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <ctime>
 #include <cstdio>
+
+#include "PvalueCalculator.h"
+
+#define SCORING_PEAKS PvalueCalculator::kMaxScoringPeaks
+#define POLYFIT_SIZE (PvalueCalculator::kPolyfitDegree + 1)
 
 namespace maracluster {
 

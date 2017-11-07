@@ -113,7 +113,7 @@ set(Boost_USE_STATIC_RUNTIME ON)
 set(BOOST_MIN_VERSION "1.43.0")
 set(Boost_ADDITIONAL_VERSIONS "1.43.0")
 
-add_definitions(-DBOOST_NO_CXX11_VARIADIC_TEMPLATES)
+#add_definitions(-DBOOST_NO_CXX11_VARIADIC_TEMPLATES)
 
 ###############################################################################
 # SET SHARED DYNAMIC LINKING LIBRARIES

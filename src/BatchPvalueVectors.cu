@@ -88,7 +88,7 @@ void calculatePvals(short *peakBins, short *peakScores, double *polyfits, int *m
   size_t queryIdx = blockIdx.y * BLOCK_SIZE + threadIdx.y;
   
   size_t flattenedTargetIdx = targetIdx * SCORING_PEAKS;
-  size_t flattenedQueryIdx = queryIdx * SCORING_PEAKS;
+  /* size_t flattenedQueryIdx = queryIdx * SCORING_PEAKS; */
   
   size_t placeHolderQueryIdx = blockIdx.y * BLOCK_SIZE + threadIdx.x;
   size_t placeholderFlattenedQueryIdx = placeHolderQueryIdx * SCORING_PEAKS;
@@ -118,15 +118,9 @@ void calculatePvals(short *peakBins, short *peakScores, double *polyfits, int *m
   if (targetIdx < n && queryIdx < m) {  
     int score = 0;
     binaryMatchPeakBins(&peakBinsShared[threadIdx.x][0], &peakScoresShared[threadIdx.x][0], &queryPeakBinsShared[threadIdx.y][0], &score);
-    //binaryMatchPeakBins(&peakBinsShared[threadIdx.x][0], &peakScores[flattenedTargetIdx], &queryPeakBinsShared[threadIdx.y][0], &score);
-    //binaryMatchPeakBins(&peakBinsShared[threadIdx.x][0], &peakScores[flattenedTargetIdx], &queryPeakBins[flattenedQueryIdx], &score);
-    //binaryMatchPeakBins(&peakBins[flattenedTargetIdx], &peakScores[flattenedTargetIdx], &queryPeakBins[flattenedQueryIdx], &score);
     
     double relScore = static_cast<double>(maxScoresShared[threadIdx.x] - score) / maxScoresShared[threadIdx.x];
-    //double relScore = static_cast<double>(maxScores[targetIdx] - score) / maxScores[targetIdx];
-    //double relScore = static_cast<double>(score) / maxScores[targetIdx];
     polyval(&polyfitsShared[threadIdx.x][0], &relScore);
-    //polyval(&polyfits[targetIdx * POLYFIT_SIZE], &relScore);
     size_t pvalIdx = targetIdx * PVEC_MAX_BATCH_SIZE + queryIdx;
     pvals[pvalIdx] = static_cast<double>(relScore);
   }
@@ -183,62 +177,23 @@ void runKernel(short *peakBins, short *peakScores, double *polyfits, int *maxSco
   gpuErrchk( cudaSetDevice(streamIdx % NUM_DEVICES) );
   
   cudaStream_t *stream = &streams[streamIdx];
-  /*
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
-  */
-  
   /* These cudaMemcpyAsync probably do not work exactly as expected, as the host memory is not pinned. 
-     However, it needs to be on the same stream as the kernel to ensure the copies are finished before the kernel executes, which occurs when using cudaMemcpy with data transfers below 64KB */
+     However, it needs to be on the same stream as the kernel to ensure the copies are finished before the kernel executes, 
+     which occurs when using cudaMemcpy with data transfers below 64KB */
   gpuErrchk( cudaMemcpyAsync(peakBinsDevice[streamIdx], peakBins, N * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice, *stream) );
   gpuErrchk( cudaMemcpyAsync(peakScoresDevice[streamIdx], peakScores, N * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice, *stream) );
   gpuErrchk( cudaMemcpyAsync(polyfitsDevice[streamIdx], polyfits, N * POLYFIT_SIZE * sizeof(double), cudaMemcpyHostToDevice, *stream) );
   gpuErrchk( cudaMemcpyAsync(maxScoresDevice[streamIdx], maxScores, N * sizeof(int), cudaMemcpyHostToDevice, *stream) );
   gpuErrchk( cudaMemcpyAsync(queryPeakBinsDevice[streamIdx], queryPeakBins, M * SCORING_PEAKS * sizeof(short), cudaMemcpyHostToDevice, *stream) );
   
-  //gpuErrchk( cudaDeviceSynchronize() );
-  
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
   dim3 dimGrid;
   dimGrid.x = (N + dimBlock.x - 1) / dimBlock.x;
-  dimGrid.y = (M + dimBlock.y - 1) / dimBlock.y;  
+  dimGrid.y = (M + dimBlock.y - 1) / dimBlock.y;
   
+  calculatePvals<<<dimGrid, dimBlock, 0, *stream>>>(peakBinsDevice[streamIdx], peakScoresDevice[streamIdx], polyfitsDevice[streamIdx], maxScoresDevice[streamIdx], N, queryPeakBinsDevice[streamIdx], M, pvalsDevice[streamIdx]);
   
-  calculatePvals<<<dimGrid, dimBlock, 0, *stream>>>(peakBinsDevice[streamIdx], peakScoresDevice[streamIdx], polyfitsDevice[streamIdx], maxScoresDevice[streamIdx], N, queryPeakBinsDevice[streamIdx], M, pvalsDevice[streamIdx]); 
-  
-  
-  //gpuErrchk( cudaDeviceSynchronize() );
-  //cudaEventRecord(start);
   gpuErrchk( cudaMemcpyAsync(pvalsHost[streamIdx], pvalsDevice[streamIdx], N * PVEC_MAX_BATCH_SIZE * sizeof(double), cudaMemcpyDeviceToHost, *stream) );
-  /*
-  cudaEventRecord(stop);
-  cudaEventSynchronize(stop);
-  float milliseconds = 0;
-  cudaEventElapsedTime(&milliseconds, start, stop);
-  
-  totaltime += milliseconds;
-  
-  std::cout << "Elapsed time (ms): " << totaltime << std::endl;
-  */
-  /*
-  double sumPvals = 0;
-  for (size_t i = 0; i < N; i++) {
-    sumPvals += pvals[i*M];
-  }
-  std::cout << "Sum: " << sumPvals << std::endl;
-  */
-  
-  /*
-  cudaEventRecord(stop);
-  cudaEventSynchronize(stop);
-  float milliseconds = 0;
-  cudaEventElapsedTime(&milliseconds, start, stop);
-  
-  totaltime += milliseconds;
-  
-  std::cout << "Elapsed time (ms): " << totaltime << std::endl;
-  */
 }
 
 } /* namespace maracluster */

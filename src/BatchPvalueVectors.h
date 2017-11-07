@@ -111,6 +111,7 @@ class BatchPvalueVectors {
   void processOverlapFiles(std::vector< std::pair<std::string, std::string> >& overlapFNs);
   
   void batchCalculatePvalues();
+  void batchCalculatePvalues(bool standalone, size_t startIdx, size_t endIdx, std::vector<PvalueTriplet>& pvalBuffer);
   void batchCalculateAndClusterPvalues(const std::string& resultTreeFN, 
                                        const std::string& scanInfoFN);
   void readFingerprints(
@@ -170,10 +171,19 @@ class BatchPvalueVectors {
   void calculatePvalue(PvalueVectorsDbRow& pvecRow, 
                        BatchSpectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
-  
-  void copyPvals(double *pvals, std::pair<size_t, size_t> offsets, 
-                 std::vector<PvalueTriplet>& pvalBuffer);
-  
+#ifdef CUDA_SUPPORT  
+  void fillPvalueVectorArrays(size_t N, size_t targetOffset,
+    std::vector<short>& peakBins, 
+    std::vector<short>& peakScores,
+    std::vector<double>& polyfits,
+    std::vector<int>& maxScores);
+  void copyPvals(double **pvals, 
+    std::vector<std::pair<size_t, size_t> >& offsets, 
+    size_t streamIdx, std::vector<PvalueTriplet>& pvalBuffer);
+  void copyPvals(double *pvals, double *pvals2, 
+    std::pair<size_t, size_t> offsets, std::vector<PvalueTriplet>& pvalBuffer);
+#endif /* CUDA_SUPPORT */
+
   double calculateCosineDistance(std::vector<unsigned int>& peakBins,
     std::vector<unsigned int>& queryPeakBins);
     
@@ -219,7 +229,9 @@ class BatchPvalueVectors {
   
   inline static bool isPvecMatch(const PvalueVectorsDbRow & pvecRow, 
                                  const PvalueVectorsDbRow & queryPvecRow) {
-    return (queryPvecRow.charge == pvecRow.queryCharge) && (queryPvecRow.queryCharge == pvecRow.charge);
+    return (queryPvecRow.charge == pvecRow.queryCharge) 
+      && (queryPvecRow.queryCharge == pvecRow.charge) 
+      && (queryPvecRow.scannr != pvecRow.scannr);
   }
 };
 
