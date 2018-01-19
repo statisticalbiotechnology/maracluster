@@ -34,7 +34,16 @@ void SpectrumFileList::initFromFile(const std::string& fileListFN) {
       
       std::istringstream iss(line);
       iss >> filePath;
-      addFile(filePath);
+      if (filePath.size() > 0) {
+        if (!Globals::fileExists(filePath)) {
+          if (Globals::VERB > 0) {
+            std::cerr << "WARNING: could not open input file " << filePath 
+              << ", skipping this file. Check if the path is set correctly." << std::endl;
+          }
+        } else {
+          addFile(filePath);
+        }
+      }
     }
     
     if (fileIndexVector_.size() == 0) {

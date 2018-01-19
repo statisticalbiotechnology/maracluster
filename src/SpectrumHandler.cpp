@@ -1,4 +1,4 @@
-/******************************************************************************  
+/******************************************************************************
   Copyright 2015 Matthew The <matthew.the@scilifelab.se>
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -11,9 +11,9 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-  
+
  ******************************************************************************/
- 
+
 #include "SpectrumHandler.h"
 
 namespace maracluster {
@@ -33,12 +33,15 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
 
     if (tmp.substr(0,6) == "index=")
       return atoi(tmp.substr(6).c_str());
+
+    if (tmp.substr(0,9) == "spectrum=")
+      return atoi(tmp.substr(9).c_str());
   }
   std::cerr << "Warning: could not extract scannr. Returning index " << s->index << " (" << s->id << ")" << std::endl;
-  
+
   // using the spectrum index should be more robust and
-  // independent of the input format's indexing system, 
-  // but makes it harder to search for the original spectra 
+  // independent of the input format's indexing system,
+  // but makes it harder to search for the original spectra
   // in the original files, e.g. for the mgf and ms2 format
   return s->index;
 }
@@ -74,7 +77,7 @@ double SpectrumHandler::getSNR(std::vector<MZIntensityPair>& mziPairs) {
   return accTop/accBottom;
 }
 
-void SpectrumHandler::scaleIntensities(std::vector<MZIntensityPair>& mziPairs, double scaling) { 
+void SpectrumHandler::scaleIntensities(std::vector<MZIntensityPair>& mziPairs, double scaling) {
 	BOOST_FOREACH (MZIntensityPair& mziPair, mziPairs) {
 		mziPair.intensity *= scaling;
 	}
@@ -99,9 +102,9 @@ void SpectrumHandler::normalizeIntensitiesMSCluster(std::vector<MZIntensityPair>
   BOOST_FOREACH (const MZIntensityPair& mziPair, mziPairs) {
 		totalPeakIntensity += mziPair.intensity;
 	}
-	
+
 	const float normalizationValue = 1000.0 / totalPeakIntensity;
-	
+
 	BOOST_FOREACH (MZIntensityPair& mziPair, mziPairs) {
 		mziPair.intensity *= normalizationValue;
 	}
@@ -139,12 +142,12 @@ void SpectrumHandler::setMZIntensityPairs(pwiz::msdata::SpectrumPtr s, std::vect
   s->setMZIntensityPairs(MSDataMziPairs, pwiz::cv::MS_number_of_detector_counts);
 }
 
-void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
+void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
     std::vector<MassChargeCandidate>& mcc, int chargeUncertainty) {
   mcc.clear();
   if (s->precursors.size() > 0) {
     std::vector<pwiz::msdata::SelectedIon>& ions = s->precursors.at(0).selectedIons;
-    
+
     for (std::vector<pwiz::msdata::SelectedIon>::iterator it = ions.begin(); it != ions.end(); ++it) {
       int charge = it->cvParam(pwiz::cv::MS_charge_state).valueAs<int>();
       double precMz = it->cvParam(pwiz::cv::MS_selected_ion_m_z).valueAs<double>();
@@ -152,7 +155,7 @@ void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
         charge = it->cvParam(pwiz::cv::MS_possible_charge_state).valueAs<int>();
         if (charge == 0) charge = 2;
       }
-      for (int chargeState = std::max(charge - chargeUncertainty, 1); 
+      for (int chargeState = std::max(charge - chargeUncertainty, 1);
             chargeState <= charge + chargeUncertainty; ++chargeState) {
         double mass = calcMass(precMz, chargeState);
         /*
@@ -163,25 +166,27 @@ void SpectrumHandler::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
         mcc.push_back(MassChargeCandidate(chargeState, precMz, mass));
       }
     }
-    
+
     std::sort(mcc.begin(), mcc.end(), MassChargeCandidate::lessChargeMass);
   }
 }
 
 void SpectrumHandler::setMassChargeCandidates(pwiz::msdata::SpectrumPtr s,
     std::vector<MassChargeCandidate>& mccs) {
-  if (s->precursors.at(0).activation.empty()) {
-    s->precursors.at(0).activation.set(pwiz::cv::MS_dissociation_method);
-  }
-  s->precursors.at(0).selectedIons.clear();
-  BOOST_FOREACH (const MassChargeCandidate& mcc, mccs) {
-    s->precursors.at(0).selectedIons.push_back(
-        pwiz::msdata::SelectedIon(mcc.precMz, mcc.charge));
-    // used by ms2 output format for EZ lines
-    s->precursors.at(0).selectedIons.back().cvParams.push_back(
-        pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass, pwiz::cv::UO_mass_unit));
-    s->precursors.at(0).isolationWindow.set(
-        pwiz::cv::MS_isolation_window_target_m_z, mcc.precMz, pwiz::cv::MS_m_z);
+  if (s->precursors.size() > 0) {
+    if (s->precursors.at(0).activation.empty()) {
+      s->precursors.at(0).activation.set(pwiz::cv::MS_dissociation_method);
+    }
+    s->precursors.at(0).selectedIons.clear();
+    BOOST_FOREACH (const MassChargeCandidate& mcc, mccs) {
+      s->precursors.at(0).selectedIons.push_back(
+          pwiz::msdata::SelectedIon(mcc.precMz, mcc.charge));
+      // used by ms2 output format for EZ lines
+      s->precursors.at(0).selectedIons.back().cvParams.push_back(
+          pwiz::data::CVParam(pwiz::cv::MS_accurate_mass_OBSOLETE, mcc.mass, pwiz::cv::UO_mass_unit));
+      s->precursors.at(0).isolationWindow.set(
+          pwiz::cv::MS_isolation_window_target_m_z, mcc.precMz, pwiz::cv::MS_m_z);
+    }
   }
 }
 
@@ -222,16 +227,16 @@ bool SpectrumHandler::isMs2Scan(pwiz::msdata::SpectrumPtr s) {
   return (s->cvParam(pwiz::cv::MS_ms_level).valueAs<int>() == 2);
 }
 
-/* 
+/*
  *
  * The following two functions are copies (with small modifications) of
  * proteowizard/pwiz/analysis/spectrum_processing/SpectrumList_MetadataFixer.cpp
  *
  */
-void SpectrumHandler::replaceCvParam(pwiz::msdata::ParamContainer& pc, 
+void SpectrumHandler::replaceCvParam(pwiz::msdata::ParamContainer& pc,
     pwiz::cv::CVID cvid, double value, pwiz::cv::CVID unit = pwiz::cv::CVID_Unknown) {
   std::vector<pwiz::data::CVParam>::iterator itr;
-  
+
   itr = std::find(pc.cvParams.begin(), pc.cvParams.end(), cvid);
   if (itr == pc.cvParams.end()) {
     pc.set(cvid, value, unit);

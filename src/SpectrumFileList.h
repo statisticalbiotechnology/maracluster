@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 
+#include "Globals.h"
 #include "MyException.h"
 #include "ScanId.h"
 

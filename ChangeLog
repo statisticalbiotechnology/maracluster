@@ -1,3 +1,7 @@
+v0.04
+* Fixed mzML issues with consensus spectra not retaining experiment configurations (#12)
+* Added 'spectrum=123' as third option to detect scan numbers (#12)
+
 v0.03.1
 * Added macOS build.
 * Added SCANS field to mgf consensus spectra output.

@@ -400,6 +400,11 @@ int MaRaCluster::run() {
         spectrumFiles.readDatFNsFromFile(datFNFile_, datFNs);
       }
       
+      if (datFNs.empty()) {
+        std::cerr << "Error: could not find any ms2 spectra in the input files." << std::endl;
+        return EXIT_FAILURE;
+      }
+      
       std::vector<std::string> pvalFNs;
       std::vector<std::string> pvalTreeFNs;
       std::vector< std::pair<std::string, std::string> > overlapFNs(datFNs.size() - 1);
