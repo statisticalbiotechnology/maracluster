@@ -428,8 +428,8 @@ void MSFileMerger::mergeSplitSpecFiles() {
       writeMSData(msdMerged, partSpecOutFN);
 
       mergedSpectra->spectra.erase(mergedSpectra->spectra.begin(), mergedSpectra->spectra.begin() + idx);
-      msdVector.clear();
     }
+    msdVector.clear();
   }
 }
 
