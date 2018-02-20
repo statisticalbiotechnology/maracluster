@@ -96,7 +96,7 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   echo "Download source code for ProteoWizard from their SVN repository"
   $package_manager install subversion
   rev=9393
-  svn co -r ${rev} --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
+  svn co -r ${rev} --depth immediates svn://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
   svn update -r ${rev} --set-depth infinity ./proteowizard/pwiz
   svn update -r ${rev} --set-depth infinity ./proteowizard/libraries
 
@@ -146,7 +146,7 @@ mkdir -p $build_dir/maracluster
 # we need to install to /usr/local instead of /usr: https://github.com/Benjamin-Dobell/Heimdall/issues/291
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
+cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_56_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
 #-----make------
 echo -n "make maracluster (this will take few minutes).....";
 make -j 4;

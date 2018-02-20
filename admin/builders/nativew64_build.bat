@@ -65,7 +65,7 @@ set SVN_URL=https://sourceforge.net/projects/win32svn/files/latest/download
 WHERE svn >nul 2>&1
 IF ERRORLEVEL 1 (
   echo Downloading and installing SVN
-  PowerShell "(new-object System.Net.WebClient).DownloadFile('%SVN_URL%','%INSTALL_DIR%\svn.msi')"
+  PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%SVN_URL%','%INSTALL_DIR%\svn.msi')"
   cd /D "%INSTALL_DIR%"
   msiexec /i svn.msi /quiet /Li svn_install.log
 )
@@ -80,7 +80,7 @@ set HDF5_FILE=%PWIZ_DIR%\libraries\hdf5-1.8.7\src\windows\H5pubconf.h
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
   if not exist "%PWIZ_DIR%" (
-    svn co -r %REV% --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz %PWIZ_DIR%
+    svn co -r %REV% --depth immediates svn://svn.code.sf.net/p/proteowizard/code/trunk/pwiz %PWIZ_DIR%
     svn update -r %REV% --set-depth infinity %PWIZ_DIR%\pwiz
     svn update -r %REV% --set-depth infinity %PWIZ_DIR%\pwiz_aux
     svn update -r %REV% --set-depth infinity %PWIZ_DIR%\libraries
@@ -169,7 +169,7 @@ set NSIS_DIR=%INSTALL_DIR%\nsis
 set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS 3 Pre-release/3.0rc1/nsis-3.0rc1-setup.exe/download
 if not exist "%NSIS_DIR%" (
   echo Downloading and installing NSIS installer
-  PowerShell "(new-object System.Net.WebClient).DownloadFile('%NSIS_URL%','%INSTALL_DIR%\nsis.exe')"
+  PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%NSIS_URL%','%INSTALL_DIR%\nsis.exe')"
   "%INSTALL_DIR%\nsis.exe" /S /D=%INSTALL_DIR%\nsis
 )
 setlocal

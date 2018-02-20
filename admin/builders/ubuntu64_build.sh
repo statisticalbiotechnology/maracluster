@@ -37,7 +37,7 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   echo "Download source code for ProteoWizard from their SVN repository"
   sudo apt-get -y install subversion
   rev=9393
-  svn co -r ${rev} --depth immediates https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
+  svn co -r ${rev} --depth immediates svn://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
   svn update -r ${rev} --set-depth infinity ./proteowizard/pwiz
   svn update -r ${rev} --set-depth infinity ./proteowizard/libraries
 
