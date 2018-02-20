@@ -281,6 +281,36 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   return true;
 }
 
+int MaRaCluster::mergeSpectra() {
+  if (spectrumOutFN_.empty())
+    spectrumOutFN_ = outputFolder_ + "/" + fnPrefix_ + ".consensus.ms2";
+  
+  if (!MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
+    return EXIT_FAILURE;
+  }
+  
+  if (MSFileHandler::getOutputFormat(spectrumOutFN_) == "mgf") {
+    MSFileHandler::splitMassChargeStates_ = true;
+  }
+  
+  if (clusterFileFN_.empty() || !Globals::fileExists(clusterFileFN_)) {
+    std::cerr << "Error: Could not find cluster input file (-l flag) " << clusterFileFN_ << std::endl;
+    return EXIT_FAILURE;
+  }
+  
+  MSFileMerger msFileMerger(spectrumOutFN_);
+  
+  std::cerr << "Parsing cluster file" << std::endl;
+  msFileMerger.parseClusterFileForMerge(clusterFileFN_, minConsensusClusterSize_);
+  std::cerr << "Finished parsing cluster file" << std::endl;
+  
+  std::cerr << "Merging clusters" << std::endl;
+  msFileMerger.mergeSpectra();
+  std::cerr << "Finished merging clusters" << std::endl;
+  
+  return EXIT_SUCCESS;
+}
+
 int MaRaCluster::createIndex() {
   if (spectrumBatchFileFN_.empty()) {
     std::cerr << "Error: no batch file specified with -b flag" << std::endl;
@@ -614,33 +644,7 @@ int MaRaCluster::run() {
     }
     case CONSENSUS:
     {
-      if (spectrumOutFN_.empty())
-        spectrumOutFN_ = outputFolder_ + "/" + fnPrefix_ + ".consensus.ms2";
-      
-      if (!MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
-        return EXIT_FAILURE;
-      }
-      
-      if (MSFileHandler::getOutputFormat(spectrumOutFN_) == "mgf") {
-        MSFileHandler::splitMassChargeStates_ = true;
-      }
-      
-      if (clusterFileFN_.empty() || !Globals::fileExists(clusterFileFN_)) {
-        std::cerr << "Error: Could not find cluster input file (-l flag) " << clusterFileFN_ << std::endl;
-        return EXIT_FAILURE;
-      }
-      
-      MSFileMerger msFileMerger(spectrumOutFN_);
-      
-      std::cerr << "Parsing cluster file" << std::endl;
-      msFileMerger.parseClusterFileForMerge(clusterFileFN_, minConsensusClusterSize_);
-      std::cerr << "Finished parsing cluster file" << std::endl;
-      
-      std::cerr << "Merging clusters" << std::endl;
-      msFileMerger.mergeSpectra();
-      std::cerr << "Finished merging clusters" << std::endl;
-      
-      return EXIT_SUCCESS;
+      return mergeSpectra();
     }
     case SEARCH:
     {

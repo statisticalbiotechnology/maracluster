@@ -98,7 +98,10 @@ class MSFileMerger : public MSFileHandler {
     pwiz::msdata::SpectrumListSimplePtr mergedSpectra);
 
   void mergeSplitSpecFiles();
-
+  
+  virtual void mergeMccs(std::vector<MassChargeCandidate>& allMccs,
+      std::vector<MassChargeCandidate>& consensusMccs, int clusterIdx);
+  
   void splitSpecFilesByConsensusSpec(
     std::map<ScanId, ScanId>& scannrToMergedScannr);
   void createScannrToMergedScannrMap(

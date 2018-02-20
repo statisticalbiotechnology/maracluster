@@ -201,10 +201,15 @@ void MSFileMerger::mergeSpectraSetMSCluster(
   consensusSpec->scanList.set(pwiz::cv::MS_mean_of_spectra);
 
   std::vector<MassChargeCandidate> consensusMccs;
-  MSClusterMerge::mergeMccs(allMccs, consensusMccs);
+  mergeMccs(allMccs, consensusMccs, scanId.scannr);
   /*consensusMccs = allMccs;*/
 
   addSpectrumWithMccs(consensusSpec, consensusMccs, scanId.scannr, mergedSpectra);
+}
+
+void MSFileMerger::mergeMccs(std::vector<MassChargeCandidate>& allMccs,
+      std::vector<MassChargeCandidate>& consensusMccs, int clusterIdx) {
+  MSClusterMerge::mergeMccs(allMccs, consensusMccs);
 }
 
 void MSFileMerger::mergeSpectra() {

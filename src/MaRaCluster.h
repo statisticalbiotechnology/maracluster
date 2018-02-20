@@ -62,6 +62,8 @@ class MaRaCluster {
   
   int run();
   
+  virtual int mergeSpectra();
+  
  protected:
   std::string greeter();
   std::string extendedGreeter(time_t& startTime);
