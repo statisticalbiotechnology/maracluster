@@ -236,7 +236,7 @@ void PeakCounts::generatePeakDistribution(double precMz, unsigned int charge,
   unsigned int minPrecBin = precMzBin - precWindow;
   unsigned int maxPrecBin = precMzBin + precWindow;
   int precMzInt = static_cast<int>(std::ceil(getPrecMz(precMzBin + 1)));
-  unsigned int maxPeakBin = getPeakBin(precMzInt*charge) + 1;
+  unsigned int maxPeakBin = getPeakBin(precMzInt*(chargeBin + 1)) + 1;
 
   unsigned int totalSpecCount = priorCount*maxPeakBin / numQueryPeaks;
   std::vector<double> peakCountSum(maxPeakBin, static_cast<double>(totalSpecCount*numQueryPeaks)/maxPeakBin);  
