@@ -107,7 +107,8 @@ target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRA
 
 # INSTALL MARACLUSTER
 install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
-#install(TARGETS extractspec msgffixmzml EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+#install(TARGETS extractspec EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+#install(TARGETS msgffixmzml EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #if(MSVC)
 #  install(TARGETS extractraw EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #endif(MSVC)

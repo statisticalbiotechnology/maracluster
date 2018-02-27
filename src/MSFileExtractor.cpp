@@ -99,13 +99,16 @@ void MSFileExtractor::extractSpectra() {
     MSDataFile msd(filepath, &readerList);
     SpectrumListPtr sl = msd.run.spectrumListPtr;
     
-    BOOST_FOREACH (const ScanId scanId, scanIdsByFile[fileIdx]) {
-      size_t result = getSpectrumIdxFromScannr(sl, scanId.scannr);
-      SpectrumPtr s = sl->spectrum(result, true);
-      
-      SpectrumHandler::setScannr(s, scanId);
-      s->index = idx++;
-      extractedSpectra->spectra.push_back(s);
+    for (size_t j = 0; j < sl->size(); ++j) {
+      SpectrumPtr s = sl->spectrum(j, false);
+      unsigned int scannr = SpectrumHandler::getScannr(s);
+      ScanId scanId(fileIdx, scannr);
+      if (std::find(scanIdsByFile[fileIdx].begin(), scanIdsByFile[fileIdx].end(), scanId) != scanIdsByFile[fileIdx].end()) {
+        s = sl->spectrum(j, true);
+        SpectrumHandler::setScannr(s, scanId);
+        s->index = idx++;
+        extractedSpectra->spectra.push_back(s);
+      }
     }
   }
   

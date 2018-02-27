@@ -695,6 +695,10 @@ int MaRaCluster::run() {
         
         BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         pvecs.calculatePvalueVectors(librarySpectra.getSpectra(), peakCounts);
+        if (pvalueVectorsBaseFN_.size() > 0) {
+          writeAll_ = true;
+          pvecs.writePvalueVectors(pvalueVectorsBaseFN_, writeAll_);
+        }
         pvecs.batchCalculatePvaluesLibrarySearch(querySpectra.getSpectra());
       } else {
         std::cerr << "Using p-values from " << pvaluesFN_ << 
