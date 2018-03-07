@@ -173,15 +173,34 @@ class BatchPvalueVectors {
   
   double calculateCosineDistance(std::vector<unsigned int>& peakBins,
     std::vector<unsigned int>& queryPeakBins);
+  
+  void attemptClustering(size_t& newStartBatch, size_t& newPoisonedStartBatch,
+    size_t pvecBatchSize, size_t numPvecBatches, size_t minPvalsForClustering,
+    const std::vector<bool>& finishedPvalCalc,
+    std::vector< std::vector<PvalueTriplet> >& pvalBuffers, 
+    std::deque<ClusterJob>& clusterJobs, ClusterJob& poisonedClusterJob,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits,
+    const std::string& resultTreeFN, time_t& startTime, clock_t& startClock);
+    
+  bool createClusterJob(size_t& newStartBatch, 
+    size_t pvecBatchSize, size_t numPvecBatches, size_t minPvalsForClustering,
+    const std::vector<bool>& finishedPvalCalc,
+    const std::vector< std::vector<PvalueTriplet> >& pvalBuffers, 
+    std::deque<ClusterJob>& clusterJobs, size_t& clusterJobIdx);
+  bool createPoisonedClusterJob(size_t& newPoisonedStartBatch, 
+    const size_t numPvecBatches, const size_t minPvalsForClustering, 
+    std::deque<ClusterJob>& clusterJobs, ClusterJob& poisonedClusterJob);
     
   void runClusterJob(ClusterJob& clusterJob,
     std::vector< std::vector<PvalueTriplet> >& pvalBuffers,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
-    const std::string& resultTreeFN);
+    const std::string& resultTreeFN,
+    time_t& startTime, clock_t& startClock);
   void runPoisonedClusterJob(ClusterJob& clusterJob,
     std::deque<ClusterJob>& clusterJobs,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
-    const std::string& resultTreeFN);
+    const std::string& resultTreeFN,
+    const size_t numPvecBatches);
     
   void clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
     std::vector<PvalueTriplet>& pvalPoisonedBuffer,
