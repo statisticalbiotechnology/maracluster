@@ -49,13 +49,15 @@ const double PROTON_MASS = 1.00727646677;
 class SpectrumHandler {  
  public:
   SpectrumHandler() {}
-	
-	inline static bool lessMZ(const MZIntensityPair& a, const MZIntensityPair& b) { return (a.mz < b.mz); }
+  
+  inline static bool lessMZ(const MZIntensityPair& a, const MZIntensityPair& b) { return (a.mz < b.mz) || (a.mz == b.mz && a.intensity < b.intensity); }
   inline static bool greaterIntensity(const MZIntensityPair& a, const MZIntensityPair& b) { return (a.intensity > b.intensity); }
   inline static bool greaterMultiplicity(const MZIntensityPair& a, const MZIntensityPair& b) { 
     return ( (a.multiplicity > b.multiplicity) || ( (a.multiplicity == b.multiplicity) && (a.intensity > b.intensity) ) ); 
   }
   inline static bool lessIntensity(const MZIntensityPair& a, const MZIntensityPair& b) { return (a.intensity < b.intensity); }
+  
+  inline static bool lessScannr(pwiz::msdata::SpectrumPtr s1, pwiz::msdata::SpectrumPtr s2) { return getScannr(s1) < getScannr(s2); }
   
   inline static double calcMass(double precMz, unsigned int charge) {
     return precMz * charge - PROTON_MASS * (charge - 1);

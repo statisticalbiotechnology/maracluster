@@ -331,23 +331,25 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
     }
     int startFileIdx = batchNr*numMSFilePtrsPerBatch_;
     int endFileIdx = (std::min)((batchNr+1)*numMSFilePtrsPerBatch_, fileList_.size());
-    std::vector<MSDataPtr> msDataPtrs;
+    std::vector<MSDataPtr> msDataPtrs(endFileIdx - startFileIdx);
+    int removeIdx = -1;
   #pragma omp parallel for schedule(dynamic, 1)
     for (int i = startFileIdx; i < endFileIdx; ++i) {
       std::string filePath = fileList_.getFilePath(i);
-      if (filePath == spectrumOutFN_) continue;
+      if (filePath == spectrumOutFN_) {
+        removeIdx = i - startFileIdx;
+        continue;
+      }
       std::cerr << "Splitting " << filePath
                 << " (" << i*100 / (fileList_.size()-1) << "%)" << std::endl;
       
-      SpectrumListPtr sl;
       MSReaderList readerList;
-      MSDataFile msd(filePath, &readerList);
-    #pragma omp critical (merge_meta_vector)
-      {
-        msDataPtrs.push_back(MSDataPtr(new MSDataFile(filePath, &readerList)));
-        sl = msDataPtrs.back()->run.spectrumListPtr;
-        msDataPtrs.back()->run.spectrumListPtr = SpectrumListSimplePtr(new SpectrumListSimple);
-      }
+      msDataPtrs.at(i - startFileIdx) = MSDataPtr(new MSDataFile(filePath, &readerList));
+      SpectrumListPtr sl = msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr;
+      
+      /* use a skeleton (i.e. without spectra data) in the msDatPtrs vector */
+      msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr = SpectrumListSimplePtr(new SpectrumListSimple);
+      
       std::vector<SpectrumListSimplePtr> spectrumLists(numClusterBins_);
       for (size_t k = 0; k < numClusterBins_; ++k) {
         spectrumLists[k] = SpectrumListSimplePtr(new SpectrumListSimple);
@@ -378,7 +380,11 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
         }
       } 
     }
-
+     
+    if (removeIdx >= 0) {
+      msDataPtrs.erase(msDataPtrs.begin() + removeIdx);
+    }
+    
     writeClusterBins(batchNr, msDataPtrs, spectrumListsAcc);
   }
   std::cerr << "Finished splitting ms2 files" << std::endl;
@@ -418,7 +424,9 @@ void MSFileMerger::mergeSplitSpecFiles() {
 
       SpectrumListSimplePtr writeSpectra(new SpectrumListSimple);
       writeSpectra->dp = dpPtr;
-
+      
+      std::sort(mergedSpectra->spectra.begin(), mergedSpectra->spectra.end(), SpectrumHandler::lessScannr);
+      
       size_t idx = 0;
       BOOST_FOREACH (SpectrumPtr& s, mergedSpectra->spectra) {
         s->index = idx;
@@ -511,7 +519,7 @@ void MSFileMerger::writeClusterBins(unsigned int batchIdx,
     if (spectrumLists[i]->spectra.size() == 0) {
       continue; // in case there are so few spectra that not all bins are filled
     }
-
+    
     size_t idx = 0;
     BOOST_FOREACH (SpectrumPtr& s, spectrumLists[i]->spectra) {
       s->index = idx++;

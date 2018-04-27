@@ -1,3 +1,10 @@
+v0.05
+* Fixed several minor issues with race conditions resulting in differing consensus outputs
+* Fixed problem with high memory usage in poisoned p-value clustering
+
+v0.04.1
+* Fixes consensus spectra merger with multiple bins
+
 v0.04
 * Fixed mzML issues with consensus spectra not retaining experiment configurations (#12)
 * Added 'spectrum=123' as third option to detect scan numbers (#12)
