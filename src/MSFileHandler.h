@@ -49,7 +49,7 @@ class MSFileHandler {
   MSFileHandler(std::string& spectrumOutFN) : spectrumOutFN_(spectrumOutFN) {}
   
   /* Splits mass charge states for MSGF+ input */
-  void msgfFixMzML(const std::string& spectrumInFN);
+  void msgfFixMzML(const std::string& spectrumInFN, const int maxSpectraPerFile);
   
   void calcRankDotProducts(const std::string& spectrumInFN);
   
@@ -74,7 +74,10 @@ class MSFileHandler {
   static size_t getSpectrumIdxFromScannr(pwiz::msdata::SpectrumListPtr sl, 
                                          unsigned int scannr);
   static void writeMSData(pwiz::msdata::MSData& msd, const std::string& outputFN);
-    
+  
+  static std::string getPartFN(const std::string& outputFN,
+                               const std::string& partString);
+                               
   void addSpectrumWithMccs(pwiz::msdata::SpectrumPtr consensusSpec, 
      std::vector<MassChargeCandidate>& consensusMccs,
      unsigned int scannr, pwiz::msdata::SpectrumListSimplePtr mergedSpectra);

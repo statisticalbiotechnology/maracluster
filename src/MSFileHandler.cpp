@@ -77,12 +77,15 @@ void MSFileHandler::writeMSData(MSData& msd, const std::string& outputFN) {
   std::cerr << "Finished writing file " << outputFN << std::endl;
 }
 
-void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN) {
+void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN, const int maxSpectraPerFile) {
   MSReaderList readerList;
   MSDataFile msd(spectrumInFN, &readerList);
   SpectrumListPtr sl = msd.run.spectrumListPtr;
   
   SpectrumListSimplePtr slNew(new SpectrumListSimple);
+  slNew->dp = DataProcessingPtr(new DataProcessing("deconvolute_charge_states"));
+  
+  int partIdx = 0;
   
   for (unsigned int j = 0; j < sl->size(); ++j) {
     if ((j+1) % 5000 == 0) {
@@ -94,18 +97,30 @@ void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN) {
     SpectrumHandler::getMassChargeCandidates(s, mccs);
     unsigned int scannr = SpectrumHandler::getScannr(s);
     addSpectrumWithMccs(s, mccs, scannr, slNew);
+    if ((maxSpectraPerFile > 0 && slNew->size() >= maxSpectraPerFile) || j+1 == sl->size()) {
+      size_t idx = 0;
+      BOOST_FOREACH (SpectrumPtr& s2, slNew->spectra) {
+        s2->index = idx++;
+      }
+      
+      MSDataFile msdNew(spectrumInFN);
+      msdNew.run.spectrumListPtr = slNew;
+      
+      ++partIdx;
+      std::string partSpecOutFN = getPartFN(
+          spectrumOutFN_, "part" + boost::lexical_cast<std::string>(partIdx));
+      writeMSData(msdNew, partSpecOutFN);
+      slNew->spectra.clear();
+    }
   }
-  
-  size_t idx = 0;
-  BOOST_FOREACH (SpectrumPtr& s, slNew->spectra) {
-    s->index = idx++;
-  }
-  
-  slNew->dp = DataProcessingPtr(new DataProcessing("deconvolute_charge_states"));
-  
-  MSDataFile msdNew(spectrumInFN);
-  msdNew.run.spectrumListPtr = slNew;
-  writeMSData(msdNew, spectrumOutFN_); 
+}
+
+std::string MSFileHandler::getPartFN(const std::string& outputFN,
+                                    const std::string& partString) {
+  size_t found = outputFN.find_last_of(".");
+  std::string baseFN = outputFN.substr(0, found + 1);
+  std::string outputFormat = outputFN.substr(found);
+  return baseFN + partString + outputFormat;
 }
 
 void MSFileHandler::addSpectrumWithMccs(SpectrumPtr consensusSpec, 

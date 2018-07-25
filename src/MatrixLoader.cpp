@@ -80,7 +80,7 @@ bool MatrixLoader::nextEdge(ScanId& row, ScanId& col, double& value) {
   }
 }
 
-bool MatrixLoader::nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec) {  
+void MatrixLoader::nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec) {  
   PvalueTriplet tmp;
   char buffer[sizeof(PvalueTriplet)];
   unsigned int i = 0;
@@ -89,11 +89,8 @@ bool MatrixLoader::nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec) 
     pvec.push_back(tmp);
   }
   
-  if (i > n) {
-    return true;
-  } else {
+  if (i < n) {
     edgesAvailable_ = false;
-    return false;
   }
 }
 

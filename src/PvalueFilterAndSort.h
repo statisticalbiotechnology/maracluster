@@ -48,10 +48,9 @@ class PvalueFilterAndSort {
   static void filterAndSort(std::vector<PvalueTriplet>& buffer);
   static void filterAndSort(const std::string& pvalFN);
   static void filterAndSort(const std::vector<std::string>& pvalFNs, 
-      const std::string& resultFN, bool tsvInput, bool removeUnidirected);
+      const std::string& resultFN, bool tsvInput);
   
-  static void filterAndSortSingleFile(const std::string& pvalFN, 
-                                      bool removeUnidirected);
+  static void filterAndSortSingleFile(const std::string& pvalFN);
   
   static void externalMergeSort(const std::string& resultFN, int numFiles);
   
@@ -95,8 +94,6 @@ class PvalueFilterAndSort {
   
   static void removeDirectedDuplicates(std::vector<PvalueTriplet>& pvecIn, 
                                        std::vector<PvalueTriplet>& pvecOut);
-  static void removeUndirectedDuplicates(std::vector<PvalueTriplet>& pvecIn, 
-                                         std::vector<PvalueTriplet>& pvecOut);
   
   static long long estimateNumPvals(const std::vector<std::string>& pvalFNs, 
                                     bool tsvInput);

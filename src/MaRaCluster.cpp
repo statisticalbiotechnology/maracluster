@@ -30,7 +30,7 @@ MaRaCluster::MaRaCluster() :
     chargeUncertainty_(0), minConsensusClusterSize_(1u)
 {
   boost::filesystem::path outputPath = boost::filesystem::current_path() / boost::filesystem::path("maracluster_output");
-  std::string outputFolder_ = outputPath.string();
+  outputFolder_ = outputPath.string();
 }
 
 MaRaCluster::~MaRaCluster() {}
@@ -363,12 +363,11 @@ int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs,
     std::cerr << "Starting p-value clustering." << std::endl;
     
     if (!Globals::fileExists(matrixFN_)) {
-      bool removeUnidirection = true;
       bool tsvInput = false;
-      PvalueFilterAndSort::filterAndSort(pvalFNs, matrixFN_, tsvInput, removeUnidirection);
+      PvalueFilterAndSort::filterAndSort(pvalFNs, matrixFN_, tsvInput);
     } else {
       std::cerr << "Using p-values from " << matrixFN_ << 
-          ". Remove this file to re-sort and filter the p-values." << std::endl;
+          " . Remove this file to re-sort and filter the p-values." << std::endl;
     }
     
     SparseClustering matrix;
@@ -379,7 +378,7 @@ int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs,
     remove(matrixFN_.c_str());
   } else {
     std::cerr << "Previous clustering results are available in " << 
-        resultTreeFN_ << ". Remove this file to redo the clustering." << std::endl;
+        resultTreeFN_ << " . Remove this file to redo the clustering." << std::endl;
   }
   pvalTreeFNs.push_back(resultTreeFN_);
   
@@ -400,13 +399,15 @@ int MaRaCluster::run() {
     std::cerr << extendedGreeter(startTime);
   }
   
-  boost::filesystem::path rootPath (outputFolder_);
-  boost::system::error_code returnedError;
-  boost::filesystem::create_directories( rootPath, returnedError );
-  
-  if (!boost::filesystem::exists(rootPath)) {
-    std::cerr << "Error: could not create output directory at " << outputFolder_ << std::endl;
-    return EXIT_FAILURE;
+  if (spectrumOutFN_.empty()) {
+    boost::filesystem::path rootPath (outputFolder_);
+    boost::system::error_code returnedError;
+    boost::filesystem::create_directories( rootPath, returnedError );
+    
+    if (!boost::filesystem::exists(rootPath)) {
+      std::cerr << "Error: could not create output directory at " << outputFolder_ << std::endl;
+      return EXIT_FAILURE;
+    }
   }
   
   switch (mode_) {
@@ -639,6 +640,11 @@ int MaRaCluster::run() {
       }
       SpectrumFileList fileList;
       fileList.initFromFile(spectrumBatchFileFN_);
+      
+      if (!skipFilterAndSort_) {
+        bool tsvInput = false;
+        PvalueFilterAndSort::filterAndSort(pvalFNs, matrixFN_, tsvInput);
+      }
       
       return doClustering(pvalFNs, pvalTreeFNs, fileList);
     }

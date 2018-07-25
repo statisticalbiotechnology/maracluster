@@ -79,9 +79,6 @@ class MSFileMerger : public MSFileHandler {
  protected:
   unsigned int numClusterBins_, numBatches_, numMSFilePtrsPerBatch_;
 
-  static std::string getPartFN(const std::string& outputFN,
-                               const std::string& partString);
-
   void mergeTwoSpectra(
       std::vector<MZIntensityPair>& mziPairsIn,
       std::vector<MZIntensityPair>& mziPairsFrom,

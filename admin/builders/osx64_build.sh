@@ -82,6 +82,7 @@ if [[ -z ${release_dir} ]]; then
   release_dir=${HOME}/release
 fi
 
+rm $build_dir/maracluster/mar*.dmg
 
 echo "The Builder $0 is building the MaRaCluster packages with src=${src_dir} an\
 d build=${build_dir} for user" `whoami`

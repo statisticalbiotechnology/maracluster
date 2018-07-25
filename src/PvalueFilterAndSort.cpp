@@ -34,14 +34,13 @@ void PvalueFilterAndSort::filterAndSort(std::vector<PvalueTriplet>& buffer) {
 
 void PvalueFilterAndSort::filterAndSort(const std::string& pvalFN) {
   bool tsvInput = false;
-  bool removeUnidirected = false;
   std::vector<std::string> pvalFNs;
   pvalFNs.push_back(pvalFN);
-  filterAndSort(pvalFNs, pvalFN, tsvInput, removeUnidirected);
+  filterAndSort(pvalFNs, pvalFN, tsvInput);
 }
 
 void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs, 
-    const std::string& resultFN, bool tsvInput, bool removeUnidirected) {
+    const std::string& resultFN, bool tsvInput) {
   time_t startTime;
   time(&startTime);
   clock_t startClock = clock();
@@ -57,7 +56,7 @@ void PvalueFilterAndSort::filterAndSort(const std::vector<std::string>& pvalFNs,
     }
     std::string partFileFN = resultFN + "." + boost::lexical_cast<std::string>(bin);
     
-    filterAndSortSingleFile(partFileFN, removeUnidirected);
+    filterAndSortSingleFile(partFileFN);
   }
   
   reportProgress(startTime, startClock);
@@ -135,8 +134,7 @@ int PvalueFilterAndSort::splitByHash(const std::vector<std::string>& pvalFNs,
   return numFiles;
 }
 
-void PvalueFilterAndSort::filterAndSortSingleFile(const std::string& partFileFN,
-    bool removeUnidirected) {
+void PvalueFilterAndSort::filterAndSortSingleFile(const std::string& partFileFN) {
   std::vector<PvalueTriplet> buffer, filteredBuffer;
   buffer.reserve(maxPvalsPerFile_);
   
@@ -292,7 +290,7 @@ long long PvalueFilterAndSort::getFileSize(const std::string& pvalFN) {
     return static_cast<long long>(in.tellg());
   } else {
     std::cerr << "WARNING: could not read any p-values from "
-        << pvalFN << "." << std::endl;
+        << pvalFN << std::endl;
     return 0LL;
   }
 }
@@ -309,25 +307,6 @@ void PvalueFilterAndSort::removeDirectedDuplicates(
   ScanId lastScannr1, lastScannr2;
   for (std::vector<PvalueTriplet>::iterator it = pvecIn.begin(); it != pvecIn.end(); ++it) {
     if (!(it->scannr1 == lastScannr1 && it->scannr2 == lastScannr2)) {
-      pvecOut.push_back(*it);
-      lastScannr1 = it->scannr1;
-      lastScannr2 = it->scannr2;
-    }
-  }
-}
-
-// keep only the highest p-value per undirected pair
-void PvalueFilterAndSort::removeUndirectedDuplicates(
-    std::vector<PvalueTriplet>& pvecIn, 
-    std::vector<PvalueTriplet>& pvecOut) {
-  std::sort(pvecIn.begin(), pvecIn.end(), uniDirectionPval);
-  
-  pvecOut.clear();
-  pvecOut.reserve(pvecIn.size());
-  
-  ScanId lastScannr1, lastScannr2;
-  for (std::vector<PvalueTriplet>::iterator it = pvecIn.begin(); it != pvecIn.end(); ++it) {
-    if (!(it->scannr1 == lastScannr2 && it->scannr2 == lastScannr1)) {
       pvecOut.push_back(*it);
       lastScannr1 = it->scannr1;
       lastScannr2 = it->scannr2;
@@ -364,11 +343,10 @@ bool PvalueFilterAndSort::unitTest() {
   //std::string pvalFN = "/media/storage/mergespec/data/batchcluster/Linfeng/Linfeng.pval_matrix_triplets.tsv";
   std::string resultFN = pvalFN + ".sorted.tsv";
  
-  bool removeUnidirected = true;
   bool tsvInput = true;
   std::vector<std::string> pvalFNs;
   pvalFNs.push_back(pvalFN);
-  filterAndSort(pvalFNs, resultFN, tsvInput, removeUnidirected);
+  filterAndSort(pvalFNs, resultFN, tsvInput);
   //externalMergeSort(pvalFN, 4);
   /*
   std::string binaryPvalFN = pvalFN + ".2";
@@ -380,8 +358,7 @@ bool PvalueFilterAndSort::unitTest() {
 
 bool PvalueFilterAndSort::singleFileUnitTest() {
   std::string pvalPartFN = "/media/storage/mergespec/data/batchtest/1300.ms2.pvalues_subset.tsv.3";
-  bool removeUnidirected = true;
-  filterAndSortSingleFile(pvalPartFN, removeUnidirected);
+  filterAndSortSingleFile(pvalPartFN);
   
   return true;
 }

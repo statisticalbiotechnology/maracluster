@@ -23,6 +23,7 @@
 
 std::string spectrumInFN_ = "";
 std::string spectrumOutFN_ = "";
+int maxSpectraPerFile_ = -1;
 
 bool parseOptions(int argc, char **argv) {
   std::ostringstream intro;
@@ -52,12 +53,17 @@ bool parseOptions(int argc, char **argv) {
       "specOut",
       "File where you want the merged spectra to be written (ms2 format)",
       "filename");
+  cmd.defineOption("n",
+      "maxSpectra",
+      "Set maximum number of spectra per file to deal with search engine limitations. Set to -1 to inidicate no limitation (default: -1)",
+      "int");
   // finally parse and handle return codes (display help etc...)
   cmd.parseArgs(argc, argv);
   
   // now query the parsing results
   if (cmd.optionSet("o")) spectrumOutFN_ = cmd.options["o"];
   if (cmd.optionSet("i")) spectrumInFN_ = cmd.options["i"];
+  if (cmd.optionSet("n")) maxSpectraPerFile_ = cmd.getInt("n", -1, 1000000);
   
   // if there are arguments left...
   if (cmd.arguments.size() > 0) {
@@ -68,7 +74,7 @@ bool parseOptions(int argc, char **argv) {
     std::cerr << "Error: one of the inputs is missing." << std::endl;
     std::cerr << "Invoke with -h option for help." << std::endl;
     return 0;
-  } else if (cmd.optionSet("o") && !MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
+  } else if (cmd.optionSet("o") && !maracluster::MSFileHandler::validMs2OutputFN(spectrumOutFN_)) {
     std::cerr << "Invoke with -h option for help." << std::endl;
     return 0; // ...error
   }
@@ -81,7 +87,7 @@ int main(int argc, char* argv[]) {
     if (parseOptions(argc, argv)) {
       maracluster::MSFileHandler msFileHandler(spectrumOutFN_);
       maracluster::MSFileHandler::splitMassChargeStates_ = true;
-      maracluster::msFileHandler.msgfFixMzML(spectrumInFN_);
+      msFileHandler.msgfFixMzML(spectrumInFN_, maxSpectraPerFile_);
       return 0;
     }
   } catch (std::exception& e) {

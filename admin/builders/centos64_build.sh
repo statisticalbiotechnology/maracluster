@@ -26,6 +26,8 @@ if [[ -z ${release_dir} ]]; then
   release_dir=${HOME}/release
 fi
 
+rm $build_dir/maracluster/mar*.rpm
+
 sudo yum install -y gcc gcc-c++ rpm-build cmake
 
 mkdir -p ${build_dir}/tools

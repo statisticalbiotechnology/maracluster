@@ -58,6 +58,7 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
   std::vector<PvalueTriplet> tree;
   while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
+    popEdge();
     if (matrix_.isAlive(minEdge.row) && matrix_.isAlive(minEdge.col)) {
       if (isPoisoned_[minEdge.row] || isPoisoned_[minEdge.col]) {
         isPoisoned_[minEdge.row] = true;
@@ -86,7 +87,6 @@ void SparsePoisonedClustering::doClustering(double cutoff) {
         updateMatrix(minEdge.row, minEdge.col, mergeScanId);
       }
     }
-    popEdge();
   }
   
 #pragma omp critical (write_tree)

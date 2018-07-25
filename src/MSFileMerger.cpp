@@ -540,14 +540,6 @@ void MSFileMerger::writeClusterBins(unsigned int batchIdx,
   }
 }
 
-std::string MSFileMerger::getPartFN(const std::string& outputFN,
-                                    const std::string& partString) {
-  size_t found = outputFN.find_last_of(".");
-  std::string baseFN = outputFN.substr(0, found + 1);
-  std::string outputFormat = outputFN.substr(found);
-  return baseFN + partString + outputFormat;
-}
-
 /**************************************
  ** These functions are obsolete now **
  **************************************/

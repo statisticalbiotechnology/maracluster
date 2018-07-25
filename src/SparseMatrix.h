@@ -47,8 +47,8 @@ class SparseMatrix {
   
   void insert(const ScanId& s1, const ScanId& s2, const double value) {
     //std::cerr << "Inserting " << s1 << " " << s2 << " " << value << std::endl;
-    size_t i1 = getScanIdx(s1);
-    size_t i2 = getScanIdx(s2);
+    size_t i1 = getIdx(s1);
+    size_t i2 = getIdx(s2);
     insert(i1, i2, value);
   }
   
@@ -58,25 +58,35 @@ class SparseMatrix {
     }
   }
   
+  // for each element in the SparseRow of s1, check if s2 also has a link to 
+  // this element and merge these links if this is the case
   void merge(const ScanId& s1, const ScanId& s2, const ScanId& m, 
              std::priority_queue<SparseEdge>& edgeList) {
-    size_t i1 = getScanIdx(s1);
-    size_t i2 = getScanIdx(s2);
-    size_t row = getScanIdx(m);
-    size_t idx2 = 0u;
+    size_t i1 = getIdx(s1);
+    size_t i2 = getIdx(s2);
+    size_t row = getIdx(m);
     for (size_t idx1 = 0u; idx1 < sparseMatrix_[i1].size(); ++idx1) {
       size_t col = sparseMatrix_[i1][idx1].first;
-      while (idx2 < sparseMatrix_[i2].size() 
-              && sparseMatrix_[i2][idx2].first <= col) {
-        if (sparseMatrix_[i2][idx2].first == col && isAlive(col)) {
+      
+      if (!isAlive(col)) continue;
+      
+      for (size_t idx2 = 0u; idx2 < sparseMatrix_[i2].size(); ++idx2) {
+        if (sparseMatrix_[i2][idx2].first == col) {
+#ifdef SINGLE_LINKAGE // TODO: test if this indeed performs single linkage
+          double val = std::min(sparseMatrix_[i1][idx1].second, 
+                                sparseMatrix_[i2][idx2].second);
+#else
+          //double value = (sparseMatrix_[i1][idx1].second * n + sparseMatrix_[i2][idx2].second * m)/(n+m); // UPGMA
           double val = std::max(sparseMatrix_[i1][idx1].second, 
                                 sparseMatrix_[i2][idx2].second);
+#endif
           insert(row, col, val);
           edgeList.push(SparseEdge(val, m, idxToScanId_[col]));
         }
-        ++idx2;
+        if (sparseMatrix_[i2][idx2].first >= col) break;
       }
     }
+    
     SparseRow empty1, empty2;
     sparseMatrix_[i1].swap(empty1);
     sparseMatrix_[i2].swap(empty2);
@@ -98,7 +108,7 @@ class SparseMatrix {
     return sparseMatrix_[idx].size() > 0;
   }
   
-  size_t getScanIdx(const ScanId& s1) {
+  size_t getIdx(const ScanId& s1) {
     //std::cerr << "Getting idx for " << s1 << std::endl;
     if (scanIdToIdx_[s1] == 0) {
       scanIdToIdx_[s1] = idxToScanId_.size();

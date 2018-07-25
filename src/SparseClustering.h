@@ -79,7 +79,6 @@ class SparseClustering {
   std::map<ScanId, std::vector<ScanId> > clusters_;
   
   boost::unordered_map<ScanId, ScanId> mergeRoots_;
-  boost::unordered_map<ScanId, bool> isAlive_;
   std::vector<SparseMissingEdge> missingEdges_;
   
   virtual void loadNextEdges();

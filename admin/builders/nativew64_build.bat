@@ -30,6 +30,9 @@ SHIFT
 GOTO parse
 :endparse
 
+del "%BUILD_DIR%\maracluster\mar*.exe"
+del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" "%RELEASE_DIR%"
+
 :: use the VS command prompt settings to set-up paths for compiler and builder
 call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VER%.0\Common7\Tools\VsDevCmd.bat"
 call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VER%.0\VC\vcvarsall.bat" amd64

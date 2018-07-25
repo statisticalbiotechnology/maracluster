@@ -40,7 +40,7 @@ class MatrixLoader {
   
   bool initStream(const std::string& matrixFN);
   bool nextEdge(ScanId& row, ScanId& col, double& value);
-  bool nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec);
+  void nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec);
   
   bool hasEdgesAvailable() { return edgesAvailable_; }
  protected:

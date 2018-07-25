@@ -442,8 +442,9 @@ void BatchPvalueVectors::batchCalculateAndClusterPvalues(
     getPrecMzLimits(precMzLimits);
   }
   
-  size_t pvecBatchSize = 10000;
-  size_t minPvalsForClustering = 20000000; /* = 20M */
+  const size_t pvecBatchSize = 10000;
+  const size_t minPvalsForClustering = 20000000; /* = 20M */
+  
   size_t newStartBatch = 0u, newPoisonedStartBatch = 0u;
   size_t numPvecBatches = (numTotalPvecs - 1) / pvecBatchSize + 1;
   
@@ -624,46 +625,46 @@ void BatchPvalueVectors::runClusterJob(ClusterJob& clusterJob,
   }
 }
 
-void BatchPvalueVectors::runPoisonedClusterJob(ClusterJob& clusterJob,
+void BatchPvalueVectors::runPoisonedClusterJob(ClusterJob& poisonedClusterJob,
     std::deque<ClusterJob>& clusterJobs,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
     const std::string& resultTreeFN, const size_t numPvecBatches) {
   std::vector<PvalueTriplet> pvalBuffer;
-  for (size_t i = clusterJob.startBatch; i <= clusterJob.endBatch; ++i) {
+  for (size_t i = poisonedClusterJob.startBatch; i <= poisonedClusterJob.endBatch; ++i) {
     pvalBuffer.insert(pvalBuffer.end(), clusterJobs[i].poisonedPvals.begin(), clusterJobs[i].poisonedPvals.end());
     std::vector<PvalueTriplet> empty;
     clusterJobs[i].poisonedPvals.swap(empty);
   }
   
   if (Globals::VERB > 2) {
-    std::cerr << "Starting poisoned clustering job: batches " << clusterJob.startBatch << "-" << clusterJob.endBatch << std::endl;
+    std::cerr << "Starting poisoned clustering job: batches " << poisonedClusterJob.startBatch << "-" << poisonedClusterJob.endBatch << std::endl;
   }
   
-  clusterPvals(pvalBuffer, clusterJobs[clusterJob.endBatch].poisonedPvals, precMzLimits, 
-      clusterJob.lowerPrecMz, clusterJob.upperPrecMz, resultTreeFN);
+  clusterPvals(pvalBuffer, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals, precMzLimits, 
+      poisonedClusterJob.lowerPrecMz, poisonedClusterJob.upperPrecMz, resultTreeFN);
   
-  if (clusterJob.startBatch == 0) {
+  if (poisonedClusterJob.startBatch == 0) {
     std::vector<PvalueTriplet> pvalBufferWrite, pvalBufferKeep;
-    BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[clusterJob.endBatch].poisonedPvals) {
-      if (isSafeToWrite(pt.scannr1, precMzLimits, clusterJob.upperPrecMz)
-           && isSafeToWrite(pt.scannr2, precMzLimits, clusterJob.upperPrecMz)) {
+    BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals) {
+      if (isSafeToWrite(pt.scannr1, precMzLimits, poisonedClusterJob.upperPrecMz)
+           && isSafeToWrite(pt.scannr2, precMzLimits, poisonedClusterJob.upperPrecMz)) {
         pvalBufferWrite.push_back(pt);
       } else {
         pvalBufferKeep.push_back(pt);
       }
     }
-    clusterJobs[clusterJob.endBatch].poisonedPvals.swap(pvalBufferKeep);
+    clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.swap(pvalBufferKeep);
     pvalues_.batchWrite(pvalBufferWrite);
   }
   
-  if (clusterJob.endBatch + 1 == numPvecBatches) {
-    pvalues_.batchWrite(clusterJobs[clusterJob.endBatch].poisonedPvals);
+  if (poisonedClusterJob.endBatch + 1 == clusterJobs.size()) {
+    pvalues_.batchWrite(clusterJobs[poisonedClusterJob.endBatch].poisonedPvals);
   }
   
-  clusterJob.finished = true;
+  poisonedClusterJob.finished = true;
   
   if (Globals::VERB > 2) {
-    std::cerr << "Retained " << clusterJobs[clusterJob.endBatch].poisonedPvals.size() << " pvalues" << std::endl;
+    std::cerr << "Retained " << clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.size() << " pvalues" << std::endl;
   }
 }
 

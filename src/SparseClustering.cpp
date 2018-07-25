@@ -25,7 +25,6 @@ void SparseClustering::initMatrix(const std::string& matrixFN) {
 void SparseClustering::clusterInit(const ScanId& row) {
 #pragma omp critical (new_cluster)
   {
-    isAlive_[row] = true;
     if (clusters_[row].size() == 0) {
       clusters_[row].push_back(row);
     }
@@ -227,25 +226,6 @@ void SparseClustering::joinClusters(const ScanId& minRow, const ScanId& minCol,
 void SparseClustering::updateMatrix(const ScanId& minRow, const ScanId& minCol,
     const ScanId& mergeScanId) {
   matrix_.merge(minRow, minCol, mergeScanId, edgeList_);
-  /*
-  typedef std::pair<ScanId, double> ColValPair;
-  BOOST_FOREACH (const ColValPair& colValPair, matrix_.getRow(minRow)) {
-    ScanId col = colValPair.first;
-    if (col == minCol || col == minRow || !isAlive_[col]) continue;
-    if (matrix_[minCol].find(col) != matrix_[minCol].end()) {
-      //double value = (colValPair.second * n + matrix_[minCol][col] * m)/(n+m); // UPGMA
-#ifdef SINGLE_LINKAGE
-      double value = (std::min)(colValPair.second, matrix_[minCol][col]); // single linkage
-#else
-      double value = (std::max)(colValPair.second, matrix_[minCol][col]); // complete linkage
-#endif
-      insertEdge(mergeScanId, col, value);
-    }
-  }
-  
-  matrix_.erase(minRow);
-  matrix_.erase(minCol);
-  */
 }
 
 // Based on http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2718652/
@@ -274,10 +254,8 @@ void SparseClustering::doClustering(double cutoff) {
   unsigned int mergeCnt = 0u;
   while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
-    if (isAlive_[minEdge.row] && isAlive_[minEdge.col]) {
-      isAlive_[minEdge.row] = false;
-      isAlive_[minEdge.col] = false;
-      
+    popEdge();
+    if (matrix_.isAlive(minEdge.row) && matrix_.isAlive(minEdge.col)) {
       if (mergeCnt % 10000 == 0) {
         std::cerr << "It. " << mergeCnt << ": minRow = " << minEdge.row 
                   << ", minCol = " << minEdge.col 
@@ -287,7 +265,6 @@ void SparseClustering::doClustering(double cutoff) {
       ScanId minRowRoot = getRoot(minEdge.row);
       ScanId mergeScanId(mergeOffset_, mergeCnt++);
       setRoot(mergeScanId, minRowRoot);
-      isAlive_[mergeScanId] = true;
       
       if (writeTree) {
         ScanId minColRoot = getRoot(minEdge.col);
@@ -298,7 +275,6 @@ void SparseClustering::doClustering(double cutoff) {
       joinClusters(minEdge.row, minEdge.col, mergeScanId);
       updateMatrix(minEdge.row, minEdge.col, mergeScanId);
     }
-    popEdge();
   }
   
   std::cerr << "Finished MinHeap clustering" << std::endl;
