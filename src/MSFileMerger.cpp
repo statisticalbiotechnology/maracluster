@@ -344,10 +344,17 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
                 << " (" << i*100 / (fileList_.size()-1) << "%)" << std::endl;
       
       MSReaderList readerList;
-      msDataPtrs.at(i - startFileIdx) = MSDataPtr(new MSDataFile(filePath, &readerList));
-      SpectrumListPtr sl = msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr;
+    #pragma omp critical (load_msdata_file)
+      {
+        /* loading multiple MSDataFile objects in parallel is slower (15-20%) 
+           and seems to cause intermittent runtime errors */
+        msDataPtrs.at(i - startFileIdx) = MSDataPtr(new MSDataFile(filePath, &readerList));
+      }
       
-      /* use a skeleton (i.e. without spectra data) in the msDatPtrs vector */
+      SpectrumListPtr sl = msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr;
+        
+      /* use a skeleton (i.e. without spectra data) in the msDatPtrs vector 
+         to propagate meta data to the final file */
       msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr = SpectrumListSimplePtr(new SpectrumListSimple);
       
       std::vector<SpectrumListSimplePtr> spectrumLists(numClusterBins_);
