@@ -1,0 +1,125 @@
+###############################################################################
+# PACKAGING
+###############################################################################
+
+# PACKAGING OPTIONS: GENERAL
+
+set(CPACK_SET_DESTDIR TRUE) # Enabling absolute paths for CPack (important for linux!)
+set(CPACK_SOURCE_GENERATOR "TGZ") # This file format is used to package source code ("make package_source")
+if (NOT APPLE)
+  set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_PROJECT_NAME};ALL;/")
+endif (NOT APPLE)
+set(CPACK_PACKAGE_VENDOR "MaRaCluster")
+set(CPACK_PACKAGE_NAME ${PACKAGE_NICKNAME})
+
+set(MARACLUSTER_VERSION "v${CPACK_PACKAGE_VERSION_MAJOR}-${CPACK_PACKAGE_VERSION_MINOR}")
+file(COPY ${MARACLUSTER_SOURCE_DIR}/ReadMe.md DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY ${MARACLUSTER_SOURCE_DIR}/LICENSE DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/LICENSE ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.txt)
+file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/ReadMe.md ${CMAKE_CURRENT_BINARY_DIR}/ReadMe.txt)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_BINARY_DIR}/LICENSE.txt")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_BINARY_DIR}/ReadMe.txt")
+
+IF(APPLE)
+  set(CPACK_SET_DESTDIR FALSE)
+	set(CPACK_GENERATOR DragNDrop)
+	set(CPACK_DMG_BACKGROUND_IMAGE "${MARACLUSTER_SOURCE_DIR}/packaging/mac_bg.tif")
+	set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${MARACLUSTER_SOURCE_DIR}/packaging/CMakeDMGSetup.scpt")
+	set(CPACK_PACKAGE_ICON "${MARACLUSTER_SOURCE_DIR}/icon/maracluster.ico")
+	set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NICKNAME}-${MARACLUSTER_VERSION}-osx-${TARGET_ARCH}")
+	set(MACOSX_BUNDLE_ICON_FILE maracluster.icns)
+elseif(UNIX)
+  set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NICKNAME}-${MARACLUSTER_VERSION}-linux-${TARGET_ARCH}")
+elseif(MSVC)
+  set(CPACK_SET_DESTDIR FALSE)
+  set(CPACK_GENERATOR "NSIS")
+  if (CMAKE_GENERATOR MATCHES "Win64")
+    set(MSVC_PACK_NAME win64)
+  else()
+    set(MSVC_PACK_NAME win32)
+  endif()
+  set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NICKNAME}-${MARACLUSTER_VERSION}-${MSVC_PACK_NAME}")
+  set(CPACK_NSIS_PACKAGE_NAME "${PACKAGE_NICKNAME}-${MARACLUSTER_VERSION}")
+  set(CPACK_NSIS_CONTACT "Matthew The <matthew.the@scilifelab.se>")
+  set(CPACK_NSIS_MENU_LINKS "bin\\\\maracluster-gui.exe" "MaRaCluster-GUI")
+  set(CPACK_NSIS_MUI_FINISHPAGE_RUN "maracluster-gui.exe")
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${PACKAGE_NICKNAME}-${MARACLUSTER_VERSION}")
+endif()
+
+if(UNIX)
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(SPECIFIC_SYSTEM_VERSION_NAME "${CMAKE_SYSTEM_NAME}")
+    set(CPACK_GENERATOR "TGZ")
+    if(EXISTS "/etc/redhat-release")
+      set(LINUX_NAME "")
+      file(READ "/etc/redhat-release" LINUX_ISSUE)
+    elseif(EXISTS "/etc/issue")
+      set(LINUX_NAME "")
+      file(READ "/etc/issue" LINUX_ISSUE)
+    endif()
+    if(DEFINED LINUX_ISSUE)
+      # Fedora case
+      if(LINUX_ISSUE MATCHES "Fedora")
+        string(REGEX MATCH "release ([0-9]+)" FEDORA "${LINUX_ISSUE}")
+        set(LINUX_NAME "FC${CMAKE_MATCH_1}")  
+        set(CPACK_GENERATOR "RPM")      
+      endif(LINUX_ISSUE MATCHES "Fedora")
+      # Red Hat case
+      if(LINUX_ISSUE MATCHES "Red")
+        string(REGEX MATCH "release ([0-9]+\\.[0-9]+)" REDHAT "${LINUX_ISSUE}")      
+        set(LINUX_NAME "RHEL_${CMAKE_MATCH_1}")  
+        set(CPACK_GENERATOR "RPM")      
+      endif(LINUX_ISSUE MATCHES "Red")
+      # CentOS case
+      if(LINUX_ISSUE MATCHES "CentOS")
+        string(REGEX MATCH "release ([0-9]+\\.[0-9]+)" CENTOS "${LINUX_ISSUE}")      
+        set(LINUX_NAME "CentOS_${CMAKE_MATCH_1}")  
+        set(CPACK_GENERATOR "RPM")      
+      endif(LINUX_ISSUE MATCHES "CentOS")
+      # Ubuntu case
+      if(LINUX_ISSUE MATCHES "Ubuntu")
+        string(REGEX MATCH "buntu ([0-9]+\\.[0-9]+)" UBUNTU "${LINUX_ISSUE}")
+        set(LINUX_NAME "Ubuntu_${CMAKE_MATCH_1}")        
+        set(CPACK_GENERATOR "DEB")
+      endif(LINUX_ISSUE MATCHES "Ubuntu")
+      # Debian case
+      if(LINUX_ISSUE MATCHES "Debian")
+        string(REGEX MATCH "Debian .*ux ([a-zA-Z]*/?[a-zA-Z]*) .*" DEBIAN "${LINUX_ISSUE}")
+        set(LINUX_NAME "Debian_${CMAKE_MATCH_1}")
+        string(REPLACE "/" "_" LINUX_NAME ${LINUX_NAME}) 
+        set(CPACK_GENERATOR "DEB")       
+      endif(LINUX_ISSUE MATCHES "Debian")      
+      # Open SuSE case
+      if(LINUX_ISSUE MATCHES "SUSE")
+        string(REGEX MATCH "SUSE  ([0-9]+\\.[0-9]+)" SUSE "${LINUX_ISSUE}")
+        set(LINUX_NAME "openSUSE_${CMAKE_MATCH_1}")
+        string(REPLACE "/" "_" LINUX_NAME ${LINUX_NAME})   
+        set(CPACK_GENERATOR "RPM")     
+      endif(LINUX_ISSUE MATCHES "SUSE")
+    endif(DEFINED LINUX_ISSUE)      
+  endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+endif(UNIX)
+
+#set(CPACK_STRIP_FILES TRUE)
+
+if (NOT APPLE)
+  file(GLOB_RECURSE DOT_FILES_BEGIN ".*") # To be ignored by Cpack
+  file(GLOB_RECURSE TILD_FILES "*~*") # To be ignored by Cpack
+endif (NOT APPLE)
+
+set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/.svn/;/.swp$/;cscope.*;/.git/;${CMAKE_CURRENT_BINARY_DIR}/;/.bzr/;/.settings/;${DOT_FILES_BEGIN};${TILD_FILES}")
+
+if( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )
+  install( PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION bin COMPONENT System )
+endif( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )
+
+# PACKAGING OPTIONS: DEB
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Matthew The <matthew.the@scilifelab.se>")
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${TARGET_ARCH})
+
+# PACKAGING OPTIONS: RPM
+set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 license")
+set(CPACK_RPM_PACKAGE_VENDOR "MaRaCluster")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Engineering")
+set(CPACK_RPM_PACKAGE_RELOCATABLE FALSE)
+
