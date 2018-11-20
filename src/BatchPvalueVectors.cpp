@@ -169,7 +169,7 @@ void BatchPvalueVectors::calculatePvalueVector(PvalueVectorsDbRow& pvecRow,
     if (Globals::VERB > 4) {
       std::cerr << "Inserted pvalue vector " << pvecRow.scannr << std::endl;
     }
-  } else if (Globals::VERB > 2) {
+  } else if (Globals::VERB > 3) {
     std::cerr << "Ignoring " << pvecRow.scannr << ". Not enough scoring peaks: " << pvecRow.pvalCalc.getNumScoringPeaks() << std::endl;
   }
 }

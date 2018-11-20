@@ -107,8 +107,11 @@ void MSFileHandler::msgfFixMzML(const std::string& spectrumInFN, const int maxSp
       msdNew.run.spectrumListPtr = slNew;
       
       ++partIdx;
-      std::string partSpecOutFN = getPartFN(
-          spectrumOutFN_, "part" + boost::lexical_cast<std::string>(partIdx));
+      std::string partSpecOutFN = spectrumOutFN_;
+      if (maxSpectraPerFile > 0) {
+        partSpecOutFN = getPartFN(
+            spectrumOutFN_, "part" + boost::lexical_cast<std::string>(partIdx));
+      }
       writeMSData(msdNew, partSpecOutFN);
       slNew->spectra.clear();
     }

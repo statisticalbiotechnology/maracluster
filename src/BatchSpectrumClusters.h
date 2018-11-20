@@ -63,8 +63,10 @@ class BatchSpectrumClusters {
   void writeClusters(
     std::map<ScanId, std::vector<ScanId> >& clusters,
     SpectrumFileList& fileList, const std::string& resultFN);
-  void writeSingletonClusters(std::set<ScanId>& seenScannrs,
+  size_t writeSingletonClusters(std::set<ScanId>& seenScannrs,
     SpectrumFileList& fileList, std::ofstream& resultStream);
+  void writeClusterSummary(
+    std::vector<std::pair<size_t, size_t> >& clusterSizeCounts);
 };
 
 } /* namespace maracluster */

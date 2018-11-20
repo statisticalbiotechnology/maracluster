@@ -299,13 +299,13 @@ void MSFileMerger::mergeSpectraScalable() {
   std::map<ScanId, ScanId> scannrToMergedScannr;
   createScannrToMergedScannrMap(scannrToMergedScannr);
 
-  numBatches_ = (fileList_.size()-1) / maxMSFilePtrs_ + 1;
-  numMSFilePtrsPerBatch_ = fileList_.size() / numBatches_ + 1;
-
-  unsigned int numSpectra = scannrToMergedScannr.size();
-  size_t numClusterBinsIn = (numSpectra-1) / maxSpectraPerFile_ + 1;
-  size_t numClusterBinsOut =
-      (combineSets_.size()-1u) / maxConsensusSpectraPerFile_ + 1u;
+  numBatches_ = calcNumBatches(fileList_.size(), maxMSFilePtrs_);
+  numMSFilePtrsPerBatch_ = calcNumBatches(fileList_.size(), numBatches_);
+  
+  size_t numClusterBinsIn = calcNumBatches(
+      scannrToMergedScannr.size(), maxSpectraPerFile_);
+  size_t numClusterBinsOut = calcNumBatches(
+      combineSets_.size(), maxConsensusSpectraPerFile_);
   numClusterBins_ = std::max(numClusterBinsIn, numClusterBinsOut);
 
   splitSpecFilesByConsensusSpec(scannrToMergedScannr);
@@ -332,61 +332,64 @@ void MSFileMerger::splitSpecFilesByConsensusSpec(
     int startFileIdx = batchNr*numMSFilePtrsPerBatch_;
     int endFileIdx = (std::min)((batchNr+1)*numMSFilePtrsPerBatch_, fileList_.size());
     std::vector<MSDataPtr> msDataPtrs(endFileIdx - startFileIdx);
-    int removeIdx = -1;
-  #pragma omp parallel for schedule(dynamic, 1)
-    for (int i = startFileIdx; i < endFileIdx; ++i) {
-      std::string filePath = fileList_.getFilePath(i);
-      if (filePath == spectrumOutFN_) {
-        removeIdx = i - startFileIdx;
-        continue;
-      }
-      std::cerr << "Splitting " << filePath
-                << " (" << i*100 / (fileList_.size()-1) << "%)" << std::endl;
+    int removeIdx = -1; /* index for the output mergeFile */
+  #pragma omp parallel 
+    {
+      /* create one spectrumLists 2D vector for each thread */
+      std::vector<std::vector<SpectrumPtr> > spectrumLists(numClusterBins_);
       
-      MSReaderList readerList;
-    #pragma omp critical (load_msdata_file)
-      {
-        /* loading multiple MSDataFile objects in parallel is slower (15-20%) 
-           and seems to cause intermittent runtime errors */
-        msDataPtrs.at(i - startFileIdx) = MSDataPtr(new MSDataFile(filePath, &readerList));
-      }
-      
-      SpectrumListPtr sl = msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr;
+    #pragma omp for schedule(dynamic, 1)
+      for (int i = startFileIdx; i < endFileIdx; ++i) {
+        std::string filePath = fileList_.getFilePath(i);
+        if (filePath == spectrumOutFN_) {
+          removeIdx = i - startFileIdx;
+          continue;
+        }
+        std::cerr << "Splitting " << filePath
+                  << " (" << i*100 / (fileList_.size()-1) << "%)" << std::endl;
         
-      /* use a skeleton (i.e. without spectra data) in the msDatPtrs vector 
-         to propagate meta data to the final file */
-      msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr = SpectrumListSimplePtr(new SpectrumListSimple);
-      
-      std::vector<SpectrumListSimplePtr> spectrumLists(numClusterBins_);
-      for (size_t k = 0; k < numClusterBins_; ++k) {
-        spectrumLists[k] = SpectrumListSimplePtr(new SpectrumListSimple);
-        spectrumLists[k]->dp = DataProcessingPtr(new DataProcessing("MaRaCluster_consensus_builder"));
-      }
-      for (unsigned int j = 0; j < sl->size(); ++j) {
-        SpectrumPtr s = sl->spectrum(j, true);
-        unsigned int scannr = SpectrumHandler::getScannr(s);
-        ScanId scanId = fileList_.getScanId(filePath, scannr);
-        if (scannrToMergedScannr.find(scanId) != scannrToMergedScannr.end()) {
-          SpectrumHandler::setScannr(s, scanId);
-          SpectrumHandler::updateMassChargeCandidates(s); // fixes some incompatibility issues between mgf and ms2
+        MSReaderList readerList;
+      #pragma omp critical (load_msdata_file)
+        {
+          /* loading multiple MSDataFile objects in parallel is slower (15-20%) 
+             and (in rare cases) seems to cause runtime exceptions */
+          msDataPtrs.at(i - startFileIdx) = MSDataPtr(new MSDataFile(filePath, &readerList));
+        }
+        
+        SpectrumListPtr sl = msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr;
+          
+        /* use a skeleton (i.e. without spectra data) in the msDataPtrs vector 
+           to propagate meta data to the final file */
+        msDataPtrs.at(i - startFileIdx)->run.spectrumListPtr = SpectrumListSimplePtr(new SpectrumListSimple);
+        
+        for (unsigned int j = 0; j < sl->size(); ++j) {
+          SpectrumPtr s = sl->spectrum(j, true);
+          unsigned int scannr = SpectrumHandler::getScannr(s);
+          ScanId scanId = fileList_.getScanId(filePath, scannr);
+          if (scannrToMergedScannr.find(scanId) != scannrToMergedScannr.end()) {
+            SpectrumHandler::setScannr(s, scanId);
+            SpectrumHandler::updateMassChargeCandidates(s); // fixes some incompatibility issues between mgf and ms2
 
-          ScanId mergedScannr = scannrToMergedScannr[scanId];
-          unsigned int clusterBin = getClusterBin(mergedScannr);
-          spectrumLists[clusterBin]->spectra.push_back(s);
+            ScanId mergedScannr = scannrToMergedScannr[scanId];
+            unsigned int clusterBin = getClusterBin(mergedScannr);
+            spectrumLists[clusterBin].push_back(s);
+          }
         }
       }
+      
+      /* collect spectrumLists from all threads */
     #pragma omp critical (merge_speclists)
       {
         for (size_t k = 0; k < numClusterBins_; ++k) {
           spectrumListsAcc[k]->spectra.reserve(
-              spectrumListsAcc[k]->spectra.size() + spectrumLists[k]->spectra.size() ); // preallocate memory
+              spectrumListsAcc[k]->spectra.size() + spectrumLists[k].size());
           spectrumListsAcc[k]->spectra.insert(
               spectrumListsAcc[k]->spectra.end(),
-              spectrumLists[k]->spectra.begin(),
-              spectrumLists[k]->spectra.end() );
+              spectrumLists[k].begin(),
+              spectrumLists[k].end() );
         }
-      } 
-    }
+      }
+    } /* end omp parallel */
      
     if (removeIdx >= 0) {
       msDataPtrs.erase(msDataPtrs.begin() + removeIdx);

@@ -77,40 +77,73 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   CommandLineParser cmd(intro.str());
   cmd.defineOption("b",
       "batch",
-      "File with spectrum files to be processed in batch, one per line",
+      "File with spectrum files to be processed in batch, one per line. Files should be readable by ProteoWizard (e.g. ms2, mgf, mzML).",
       "filename");
   cmd.defineOption("f",
       "output-folder",
-      "Writable folder for output files",
+      "Writable folder for output files (default: ./maracluster_output).",
       "path");
+  cmd.defineOption("p",
+      "precursorTolerance",
+      "Set precursor tolerance in units of ppm or Da. The units have to be \"Da\" or \"ppm\", case sensitive; if no unit is specified ppm is assumed (default: 20.0ppm).",
+      "string");
+  cmd.defineOption("t",
+      "pvalThreshold",
+      "Set log(p-value) threshold (default: -5.0).",
+      "double");
+  cmd.defineOption("c",
+      "clusterThresholds",
+      "Clustering thresholds at which to produce cluster files; listed as a comma separated list (default: -30.0,-25.0,-20.0,-15.0,-10.0,-5.0)",
+      "string");
+  cmd.defineOption("v",
+      "verbatim",
+      "Set the verbatim level (lowest: 0, highest: 5, default: 3).",
+      "int");
   cmd.defineOption("a",
       "prefix",
       "Output files will be prefixed as e.g. <prefix>.clusters_p10.tsv (default: 'MaRaCluster')",
       "name");
-  cmd.defineOption("i",
-      "specIn",
-      "File readable by ProteoWizard (e.g. ms2, mzML) with spectra to be"     
-      " clustered",
-      "filename");
-  cmd.defineOption("z",
-      "lib",
-      "File readable by ProteoWizard (e.g. ms2, mzML) with spectral library",
-      "filename");
   cmd.defineOption("l",
       "clusterFile",
-      "File with filepaths and scannrs, separated by tabs",
+      "Input file for generating consensus spectra containing filepaths and scan numbers, separated by tabs.",
       "filename");
-  cmd.defineOption("q",
-      "pvalOut",
-      "File where p-values will be written to",
+  cmd.defineOption("o",
+      "specOut",
+      "Output file for the consensus spectra. Can be in any format supported by ProteoWizard (e.g. ms2, mzML).",
+      "filename");
+  cmd.defineOption("M",
+      "minClusterSize",
+      "Set the minimum size for a cluster for producing consensus spectra (default: 1).",
+      "int");
+  cmd.defineOption("S",
+      "splitMassChargeStates",
+      "Split mass charge states in spectrum output file into separate spectrum copies with the same peak list, as some formats (e.g. mgf) and software packages (e.g. MS-GF+) do not support multiple charge states for a single peak list (default: auto-detect from output file format).",
+      "",
+      TRUE_IF_SET);
+  cmd.defineOption("i",
+      "specIn",
+      "Input file readable by ProteoWizard (e.g. ms2, mzML). For multiple input files use the -b/--batch option instead.",
+      "filename");
+  cmd.defineOption("y",
+      "pvalueVecFile",
+      "Input file with pvalue vectors",
       "filename");
   cmd.defineOption("r",
       "pvecOut",
-      "File basename where p-values vectors will be written to",
+      "Output file basename for p-values vectors.",
+      "filename");
+  cmd.defineOption("w",
+      "overlapBatch",
+      "File with 2 tab separated columns as: tail_file <tab> head_file for"
+      " which overlapping p-values should be calculated",
+      "filename");
+  cmd.defineOption("q",
+      "pvalOut",
+      "File where p-values will be written to.",
       "filename");
   cmd.defineOption("d",
       "percOut",
-      "Tab delimited percolator output file containing peptides and qvalues",
+      "Tab delimited percolator output file containing peptides and qvalues. This is meant for annotation of the clusterfile.",
       "filename");
   cmd.defineOption("g",
       "peakCountsFN",
@@ -132,53 +165,19 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       "clusteringTree",
       "File containing the clustering tree result as a list of merged scannrs with corresponding p value.",
       "filename");
-  cmd.defineOption("c",
-      "clusterThresholds",
-      "Clustering thresholds listed as a comma separated list (default: -30.0,-25.0,-20.0,-15.0,-10.0,-5.0)",
-      "string");
   cmd.defineOption("e",
       "skipFilterAndSort",
       "Skips filtering and sorting of the input matrix, only use if the input is a filtered and sorted binary list p-values.",
       "",
       TRUE_IF_SET);
-  cmd.defineOption("p",
-      "precursorTolerance",
-      "Set precursor tolerance in units of ppm or Da. If no unit is specified ppm is assumed. The units have to be \"Da\" or \"ppm\", case sensitive. (default: 20.0ppm).",
-      "string");
   cmd.defineOption("C",
       "chargeUncertainty",
       "Set charge uncertainty, i.e. if set to 1, then for a spectrum with precursor ion charge C, also precursor ion charges C-1 and C+1 are considered (default: 0).",
       "int");
-  cmd.defineOption("t",
-      "pvalThreshold",
-      "Set log(p-value) threshold for database insertion (default: -5.0).",
-      "double");
-  cmd.defineOption("w",
-      "overlapBatch",
-      "File with 2 tab separated columns as: tail_file <tab> head_file for"
-      " which overlapping p-values should be calculated",
+  cmd.defineOption("z",
+      "lib",
+      "File readable by ProteoWizard (e.g. ms2, mzML) with spectral library",
       "filename");
-  cmd.defineOption("y",
-      "pvalueVecFile",
-      "File with pvalue vectors",
-      "filename");
-  cmd.defineOption("o",
-      "specOut",
-      "File where you want the merged spectra to be written",
-      "filename");
-  cmd.defineOption("M",
-      "minClusterSize",
-      "Set the minimum size for a cluster for producing consensus spectra (default: 1).",
-      "int");
-  cmd.defineOption("S",
-      "splitMassChargeStates",
-      "Split mass charge states in spectrum output file into separate spectrum copies with the same peak list, as some formats (e.g. mgf) and software packages (e.g. MS-GF+) do not support multiple charge states for a single peak list (default: auto-detect from output file format).",
-      "",
-      TRUE_IF_SET);
-  cmd.defineOption("v",
-      "verbatim",
-      "Set the verbatim level (lowest: 0, highest: 5, default: 3).",
-      "int");
       
   // finally parse and handle return codes (display help etc...)
   cmd.parseArgs(argc, argv);
@@ -233,6 +232,17 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   if (cmd.optionSet("u")) resultTreeFN_ = cmd.options["u"];
   if (cmd.optionSet("e")) skipFilterAndSort_ = true;
   if (cmd.optionSet("d")) scanDescFN_ = cmd.options["d"];
+  
+  // file output option for maracluster consensus
+  if (cmd.optionSet("o")) spectrumOutFN_ = cmd.options["o"];
+  if (cmd.optionSet("M")) minConsensusClusterSize_ = cmd.getInt("M", 0, 100000);
+  if (cmd.optionSet("S")) MSFileHandler::splitMassChargeStates_ = true;
+  
+  // file input option for maracluster search
+  if (cmd.optionSet("z")) spectrumLibraryFN_ = cmd.options["z"];
+  
+  // general options
+  if (cmd.optionSet("t")) dbPvalThreshold_ = cmd.getDouble("t", -1000.0, 0.0);
   if (cmd.optionSet("c")) {
     std::istringstream ss(cmd.options["c"]);
     std::string token;
@@ -245,25 +255,18 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       return false;
     }
   } else {
-    clusterThresholds_.push_back(-30.0);
-    clusterThresholds_.push_back(-25.0);
-    clusterThresholds_.push_back(-20.0);
-    clusterThresholds_.push_back(-15.0);
-    clusterThresholds_.push_back(-10.0);
-    clusterThresholds_.push_back(-5.0);
+    if (dbPvalThreshold_ > -30.0) clusterThresholds_.push_back(-30.0);
+    if (dbPvalThreshold_ > -25.0) clusterThresholds_.push_back(-25.0);
+    if (dbPvalThreshold_ > -20.0) clusterThresholds_.push_back(-20.0);
+    if (dbPvalThreshold_ > -15.0) clusterThresholds_.push_back(-15.0);
+    if (dbPvalThreshold_ > -10.0) clusterThresholds_.push_back(-10.0);
+    if (dbPvalThreshold_ > -5.0) clusterThresholds_.push_back(-5.0);
+    if (std::find(clusterThresholds_.begin(), clusterThresholds_.end(), dbPvalThreshold_) == clusterThresholds_.end()) {
+      clusterThresholds_.push_back(dbPvalThreshold_);
+    }
   }
   std::sort(clusterThresholds_.begin(), clusterThresholds_.end());
   
-  // file output option for maracluster consensus
-  if (cmd.optionSet("o")) spectrumOutFN_ = cmd.options["o"];
-  if (cmd.optionSet("M")) minConsensusClusterSize_ = cmd.getInt("M", 0, 100000);
-  if (cmd.optionSet("S")) MSFileHandler::splitMassChargeStates_ = true;
-  
-  // file input option for maracluster search
-  if (cmd.optionSet("z")) spectrumLibraryFN_ = cmd.options["z"];
-  
-  // general options
-  if (cmd.optionSet("t")) dbPvalThreshold_ = cmd.getDouble("t", -1000.0, 0.0);
   if (cmd.optionSet("p")) {
     std::string precursorToleranceString = cmd.options["p"];
     size_t unitIdx = precursorToleranceString.find("Da");

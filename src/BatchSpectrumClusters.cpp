@@ -196,13 +196,20 @@ void BatchSpectrumClusters::writeClusters(
     std::map<ScanId, std::vector<ScanId> >& clusters,
     SpectrumFileList& fileList, const std::string& resultFN) {
   if (Globals::VERB > 2) {
-    std::cerr << "Writing clustering to " << resultFN << std::endl;
+    std::cerr << "Writing clusters to " << resultFN << std::endl;
   }
   std::ofstream resultStream(resultFN.c_str());
   std::map<ScanId, std::vector<ScanId> >::const_iterator it;
   std::set<ScanId> seenScannrs;
+  std::vector<std::pair<size_t, size_t> > clusterSizeCounts(10);
   for (it = clusters.begin(); it != clusters.end(); ++it) {
     if (it->second.size() > 0) {
+      size_t clusterSizeBin = 0u;
+      size_t clusterSize = it->second.size();
+      while (clusterSize >>= 1 && clusterSizeBin < 9) ++clusterSizeBin;
+      ++clusterSizeCounts[clusterSizeBin].first;
+      clusterSizeCounts[clusterSizeBin].second += it->second.size();
+      
       std::vector<ScanId>::const_iterator it2;
       for (it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
         ScanId globalScannr = *it2;
@@ -219,16 +226,46 @@ void BatchSpectrumClusters::writeClusters(
       resultStream << std::endl;
     }
   }
-  writeSingletonClusters(seenScannrs, fileList, resultStream);
+  size_t addedSingletons = writeSingletonClusters(seenScannrs, fileList, resultStream);
+  clusterSizeCounts[0].first += addedSingletons;
+  clusterSizeCounts[0].second += addedSingletons;
+  
+  if (Globals::VERB > 2) {
+    writeClusterSummary(clusterSizeCounts);
+  }
+}
+
+void BatchSpectrumClusters::writeClusterSummary(std::vector<std::pair<size_t, size_t> >& clusterSizeCounts) {
+  std::cerr << "clust_size\t#clusters\t#spectra" << std::endl;
+  size_t totalClusters = 0u, totalSpectra = 0u;
+  for (size_t i = 0u; i < 10u; ++i) {
+    size_t minClusterSize = 1 << i;
+    size_t maxClusterSize = (1 << (i+1)) - 1;
+    if (i == 9u) {
+      std::cerr << minClusterSize << "+";
+    } else if (minClusterSize < maxClusterSize) {
+      std::cerr << minClusterSize << "-" << maxClusterSize;
+    } else {
+      std::cerr << minClusterSize;
+    }
+    std::cerr << '\t' << clusterSizeCounts.at(i).first << '\t' << clusterSizeCounts.at(i).second << std::endl;
+    totalClusters += clusterSizeCounts.at(i).first;
+    totalSpectra += clusterSizeCounts.at(i).second;
+  }
+  std::cerr << "total\t" << totalClusters << '\t' << totalSpectra << std::endl;
+  std::cerr << std::endl;
 }
   
-void BatchSpectrumClusters::writeSingletonClusters(
+size_t BatchSpectrumClusters::writeSingletonClusters(
     std::set<ScanId>& seenScannrs, SpectrumFileList& fileList,
     std::ofstream& resultStream) {
+  size_t addedSingletonClusters = 0u;
   std::map<ScanId, ScanMergeInfo>::const_iterator spmIt;
   for (spmIt = scanPeptideMap_.begin(); spmIt != scanPeptideMap_.end(); ++spmIt) {
     if (seenScannrs.find(spmIt->first) == seenScannrs.end()) {
       ScanId globalScannr = spmIt->first;
+      
+      addedSingletonClusters += 1;
       
       unsigned int localScannr = fileList.getScannr(globalScannr);
       std::string filePath = fileList.getFilePath(globalScannr);
@@ -238,6 +275,7 @@ void BatchSpectrumClusters::writeSingletonClusters(
                    << '\t' << peptide << '\t' << qvalue << '\n' << '\n';
     }
   }
+  return addedSingletonClusters;
 }
 
 bool BatchSpectrumClusters::scanDescReadUnitTest() {

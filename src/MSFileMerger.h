@@ -96,6 +96,9 @@ class MSFileMerger : public MSFileHandler {
 
   void mergeSplitSpecFiles();
   
+  inline size_t calcNumBatches(size_t total, size_t batchSize) {
+    return (total - 1u) / batchSize + 1u;
+  }
   virtual void mergeMccs(std::vector<MassChargeCandidate>& allMccs,
       std::vector<MassChargeCandidate>& consensusMccs, int clusterIdx);
   
