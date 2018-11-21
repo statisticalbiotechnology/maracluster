@@ -13,6 +13,7 @@ while getopts “s:b:r:t:” OPTION; do
     t) branch=${OPTARG};;
     r) release_dir=${OPTARG};;
     b) build_dir=${OPTARG};;
+    g) no_gui=true;;
     \?) echo "Invalid option: -${OPTARG}" >&2;;
   esac
 done
@@ -140,6 +141,21 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include/zlib
 fi
 
+if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
+  cd ${build_dir}/tools
+
+  if [ ! -f qtbase-everywhere-src-5.11.2.tar.xz ]; then
+    wget http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/qtbase-everywhere-src-5.11.2.tar.xz
+  fi
+
+  tar xf qtbase-everywhere-src-5.11.2.tar.xz
+  cd qtbase-everywhere-src-5.11.2
+
+  ./configure -prefix ../build/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
+
+  make -j4
+fi
+
 #-------------------------------------------
 
 mkdir -p $build_dir/maracluster
@@ -154,10 +170,24 @@ make -j 4;
 make -j 4 package;
 #sudo make install;
 
-#--------------------------------------------
-
 echo "build directory was : ${build_dir}";
 
 mkdir -p $release_dir
 cp -v $build_dir/maracluster/mar*.dmg $release_dir
+
+if [ "$no_gui" != true ] ; then
+  #######maracluster-gui########
+  mkdir -p $build_dir/maracluster-gui
+  cd $build_dir/maracluster-gui
+  
+  cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_56_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
+  make -j4
+  make -j4 package
+  
+  cp -v $build_dir/maracluster-gui/mar*.dmg $release_dir
+fi
+
+#--------------------------------------------
+
+
 

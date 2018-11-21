@@ -30,8 +30,9 @@ SHIFT
 GOTO parse
 :endparse
 
-del "%BUILD_DIR%\maracluster\mar*.exe"
-del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" "%RELEASE_DIR%"
+:: del "%BUILD_DIR%\maracluster\mar*.exe"
+:: del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe"
+:: del "%BUILD_DIR%\maracluster-gui\mar*.exe"
 
 :: use the VS command prompt settings to set-up paths for compiler and builder
 call "C:\Program Files (x86)\Microsoft Visual Studio %MSVC_VER%.0\Common7\Tools\VsDevCmd.bat"
@@ -214,6 +215,18 @@ msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TY
 ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 ::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 
+::::::: Building maracluster with GUI :::::::
+if not exist "%BUILD_DIR%\maracluster-gui" (md "%BUILD_DIR%\maracluster-gui")
+cd /D "%BUILD_DIR%\maracluster-gui"
+echo cmake maracluster gui.....
+%CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_56_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;C:\Qt\Qt5.11.2\5.11.2\msvc2015_64" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
+
+echo build maracluster gui (this will take a few minutes).....
+msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+
+::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+
 :::::::::::::::::::::::::::::::::::::::
 :::::::::::: END BUILD ::::::::::::::::
 :::::::::::::::::::::::::::::::::::::::
@@ -221,6 +234,7 @@ msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TY
 echo Copying installers to %RELEASE_DIR%
 copy "%BUILD_DIR%\maracluster\mar*.exe" "%RELEASE_DIR%"
 copy "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" "%RELEASE_DIR%"
+copy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
 
 echo Finished buildscript execution in build directory %BUILD_DIR%
 

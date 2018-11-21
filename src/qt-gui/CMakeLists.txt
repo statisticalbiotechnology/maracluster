@@ -1,15 +1,25 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.5)
+project(MARACLUSTER_GUI)
+set(MARACLUSTER_GUI_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-project(maracluster-gui)
-set(MARACLUSTER_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+# get the maracluster executable
+if (UNIX)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib/maracluster")
+endif ()
+if (APPLE)
+  set(MARACLUSTER_BIN_DESTINATION maracluster-gui.app/Contents/MacOS)
+endif ()
 
+set(SKIP_MAIN_CPACK ON)
+
+set(MARACLUSTER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+add_subdirectory(${MARACLUSTER_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/main)
+
+# variables set by add_subdirectory are not transferred to the parent scope
 set(CMAKE_MODULE_PATH ${MARACLUSTER_SOURCE_DIR}/cmake)
+include("${MARACLUSTER_SOURCE_DIR}/CommonCMake.txt")
 
 set(CMAKE_INSTALL_DO_STRIP ON)
-
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "05")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -41,7 +51,6 @@ elseif (MSVC)
   set(ICON_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/packaging/maracluster-gui.rc)
   set(Qt_libs Qt5::Core Qt5::Gui Qt5::Widgets)
 elseif (UNIX)
-  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib/maracluster")
   set(Qt_libs Qt5::Core Qt5::Gui Qt5::Widgets)
 endif (APPLE)
 
@@ -52,55 +61,62 @@ target_link_libraries(maracluster-gui ${Qt_libs})
 
 install(TARGETS maracluster-gui EXPORT MARACLUSTER BUNDLE DESTINATION . RUNTIME DESTINATION bin) # Important to use relative path here (used by CPack)!
 
-
 ### INSTALL DEPENDENCIES (PLATFORM DEPENDENT) ###
 
-macro(_qt5_get_shared_library lib)
-  get_target_property(Qt${lib}_location Qt5::${lib} LOCATION)
-  get_target_property(Qt${lib}_soname Qt5::${lib} IMPORTED_SONAME_RELEASE)
-  get_filename_component(Qt${lib}_path ${Qt${lib}_location} PATH)
-  set(Qt${lib}_so_path "${Qt${lib}_path}/${Qt${lib}_soname}")
-  set(QT_SO_LIBRARIES ${QT_SO_LIBRARIES} ${Qt${lib}_so_path} ${Qt${lib}_location})
-endmacro()
-
 if (UNIX AND NOT APPLE)
-  find_package(ICU REQUIRED COMPONENTS uc i18n data)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES_BACKUP ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES .so) # only look for shared libraries!
   
+  find_package(ICU REQUIRED COMPONENTS uc i18n data)
   find_package(Freetype REQUIRED)
-  find_library (
-    FREETYPE_LIBRARIES 
-    NAMES libfreetype.so.6
-    )
+  
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_BACKUP})
   
   message( STATUS "${ICU_VERSION} ${FREETYPE_VERSION_STRING}")
+  
+  # these two packages (DBus and XcbQpa) are required by the Xcb Plugin
+  find_package(Qt5DBus CONFIG REQUIRED)
+  find_library (
+    QtXcbQpa_LIBRARY_FULL
+    NAMES libQt5XcbQpa.so
+    )
+  find_library (
+    STDCPP_LIBRARY
+    NAMES libstdc++.so.6
+    )
+  
+  macro(_qt5_get_shared_library lib)
+    get_target_property(Qt${lib}_location Qt5::${lib} LOCATION)
+    get_target_property(Qt${lib}_soname Qt5::${lib} IMPORTED_SONAME_RELEASE)
+    get_filename_component(Qt${lib}_path ${Qt${lib}_location} PATH)
+    set(Qt${lib}_so_path "${Qt${lib}_path}/${Qt${lib}_soname}")
+    set(QT_SO_LIBRARIES ${QT_SO_LIBRARIES} ${Qt${lib}_so_path} ${Qt${lib}_location})
+  endmacro()
   
   _qt5_get_shared_library(Core)
   _qt5_get_shared_library(Widgets)
   _qt5_get_shared_library(Gui)
-  
-  # these two packages (DBus and XcbQpa) are required by the Xcb Plugin
-  find_package(Qt5DBus CONFIG REQUIRED)
   _qt5_get_shared_library(DBus)
-  find_library (
-    QtXcbQpa_LIBRARY_FULL
-    NAMES libQt5XcbQpa.so.${Qt5Core_VERSION_STRING}
-    )
-  find_library (
-    QtXcbQpa_LIBRARY
-    NAMES libQt5XcbQpa.so.5
-    )
-  set(QT_SO_LIBRARIES ${QT_SO_LIBRARIES} ${QtXcbQpa_LIBRARY_FULL} ${QtXcbQpa_LIBRARY})
   
-  message( STATUS "Installing shared libraries: ${ICU_LIBRARIES};${FREETYPE_LIBRARIES};${QT_SO_LIBRARIES}")
+  foreach (LIBRARY ${ICU_LIBRARIES} ${FREETYPE_LIBRARIES} ${QtXcbQpa_LIBRARY_FULL} ${STDCPP_LIBRARY})
+    get_filename_component(LIBRARY_RESOLVED ${LIBRARY} REALPATH)
+    list(APPEND LIBRARIES_RESOLVED ${LIBRARY_RESOLVED})
+    string(REGEX REPLACE "(.*\.so.[0-9]+).*" "\\1" LIBRARY_MAIN_VERSION "${LIBRARY_RESOLVED}")
+    list(APPEND LIBRARIES_RESOLVED ${LIBRARY_MAIN_VERSION})
+  endforeach (LIBRARY)
+  message( STATUS "Resolved libraries: ${LIBRARIES_RESOLVED}")
   
-  install(PROGRAMS ${QT_SO_LIBRARIES} ${FREETYPE_LIBRARIES} ${ICU_LIBRARIES} DESTINATION lib/maracluster)
+  
+  message( STATUS "Installing shared libraries: ${LIBRARIES_RESOLVED};${QT_SO_LIBRARIES}")
+  
+  install(PROGRAMS ${QT_SO_LIBRARIES} ${LIBRARIES_RESOLVED} DESTINATION lib/maracluster)
   
   get_target_property(QtXcbPlugin_location Qt5::QXcbIntegrationPlugin LOCATION)
   
   get_filename_component(QtXcbPlugin_filename ${QtXcbPlugin_location} NAME)
   install(PROGRAMS ${QtXcbPlugin_location} DESTINATION bin/platforms)
   
-  install(CODE "execute_process(COMMAND patchelf --set-rpath '$ORIGIN/../../lib/maracluster' ${CMAKE_INSTALL_PREFIX}/bin/platforms/${QtXcbPlugin_filename})")
+  #install(CODE "execute_process(COMMAND patchelf --set-rpath '$ORIGIN/../../lib/maracluster' ${CMAKE_INSTALL_PREFIX}/bin/platforms/${QtXcbPlugin_filename})")
   
   # Problem with static linking of Qt: https://bugreports.qt.io/browse/QTBUG-38913
   # obtained dependencies from ${_qt5Core_install_prefix}/lib/pkfconfig/Qt5Core.pc

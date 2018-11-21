@@ -1,7 +1,7 @@
 
 
 ###############################################################################
-# FIND EXTERNAL LIBRARIES REQUIRED BY MERGESPEC
+# FIND EXTERNAL LIBRARIES REQUIRED BY MARACLUSTER
 ###############################################################################
 
 # INCLUDE HEADER FILES IN SRC DIRECTORY
@@ -106,7 +106,10 @@ target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRA
 #endif(MSVC)
 
 # INSTALL MARACLUSTER
-install(TARGETS maracluster EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
+if (NOT DEFINED MARACLUSTER_BIN_DESTINATION)
+  set(MARACLUSTER_BIN_DESTINATION bin)
+endif ()
+install(TARGETS maracluster EXPORT MARACLUSTER RUNTIME DESTINATION ${MARACLUSTER_BIN_DESTINATION}) # Important to use relative path here (used by CPack)!
 #install(TARGETS extractspec EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #install(TARGETS msgffixmzml EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #if(MSVC)

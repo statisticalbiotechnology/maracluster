@@ -3,7 +3,9 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.6)
 project(MARACLUSTER)
-set(MARACLUSTER_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+if (NOT DEFINED MARACLUSTER_SOURCE_DIR)
+  set(MARACLUSTER_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+endif ()
 include("CommonCMake.txt")
 
 ###############################################################################
@@ -11,7 +13,7 @@ include("CommonCMake.txt")
 ###############################################################################
 
 my_set(CMAKE_BUILD_TYPE "Debug" "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
-my_set(CMAKE_PREFIX_PATH "../" "Default path to packages")
+#my_set(CMAKE_PREFIX_PATH "../" "Default path to packages")
 
 option(FINGERPRINT_FILTER "Use pre-filtering of spectrum pairs by their fragment fingerprints." OFF)
 if(FINGERPRINT_FILTER)
@@ -119,9 +121,11 @@ endif(VENDOR_SUPPORT)
 
 set(PACKAGE_NICKNAME "maracluster${NICKNAME_SUFFIX}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Clustering spectra")
-include("CPack.txt")
-
 set(CPACK_RPM_PACKAGE_DEPENDS "libc6, libgcc1")
 
-
-include(CPack)
+if (NOT SKIP_MAIN_CPACK)
+  include("CPack.txt")
+  include(CPack)
+else (NOT SKIP_MAIN_CPACK)
+  message(STATUS "Skipping main CPack")
+endif (NOT SKIP_MAIN_CPACK)

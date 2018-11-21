@@ -222,7 +222,7 @@ void MainWidget::onRunButtonReleased()
     // Set up our process to write to stdout and run our command
     process_.setCurrentWriteChannel(QProcess::StandardOutput); // Set the write channel
     QString cmd;
-    cmd += QCoreApplication::applicationDirPath() + "/maracluster batch --batch " + file.fileName();
+    cmd += "\"" + QCoreApplication::applicationDirPath() + "/maracluster\" batch --batch " + file.fileName();
     cmd += " --output-folder " + outputFolder;
     cmd += " --pvalThreshold " + QString::number(pvalThreshInput_->value());
     cmd += " --precursorTolerance " + QString::number(precTolInput_->value());

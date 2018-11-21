@@ -1,11 +1,12 @@
 #!/bin/bash
 # managing input arguments
-while getopts “s:b:r:t:” OPTION; do
+while getopts “s:b:r:t:g” OPTION; do
   case $OPTION in
     s) src_dir=${OPTARG};;
     t) branch=${OPTARG};;
     r) release_dir=${OPTARG};;
     b) build_dir=${OPTARG};;
+    g) no_gui=true;;
     \?) echo "Invalid option: -${OPTARG}" >&2;;
   esac
 done
@@ -87,6 +88,27 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   find ./ -type f | grep -i '.h$\|.hpp$' | xargs -i cp --parents {} ../../../include/
 fi
 
+#-----MaRaCluster-GUI dependencies-------
+
+if [ "$no_gui" != true ] ; then
+  sudo apt -y install patchelf
+  ubuntu_qt=qtbase-everywhere-src-5.11.2
+  if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
+    cd ${build_dir}/tools
+
+    if [ ! -f ${ubuntu_qt}.tar.xz ]; then
+      wget http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/${ubuntu_qt}.tar.xz
+    fi
+
+    tar xf ${ubuntu_qt}.tar.xz
+    cd ${ubuntu_qt}
+
+    ./configure -prefix ${build_dir}/tools/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
+
+    make -j4
+  fi
+fi
+
 mkdir -p $build_dir/maracluster
 #-----cmake-----
 cd $build_dir/maracluster;
@@ -100,4 +122,27 @@ sudo make install;
 
 mkdir -p $release_dir
 cp -v $build_dir/maracluster/mar*.deb $release_dir
+
+if [ "$no_gui" != true ] ; then
+  #######maracluster-gui########
+  mkdir -p $build_dir/maracluster-gui
+  cd $build_dir/maracluster-gui
+  #-----cmake-----
+  echo -n "cmake maracluster-gui.....";
+  cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$build_dir/maracluster-gui-zip/ -DCMAKE_PREFIX_PATH="$build_dir/tools/;$build_dir/tools/Qt-dynamic/" $src_dir/maracluster/src/qt-gui;
+
+  #-----make------
+  echo -n "make maracluster-gui (this will take few minutes).....";
+
+  make -j 4;
+  #make -j 4 package;
+  sudo make install
+
+  sudo patchelf --set-rpath '$ORIGIN/../../lib/maracluster' $build_dir/maracluster-gui-zip/bin/platforms/libqxcb.so
+  
+  
+  cp -v $build_dir/maracluster-gui/mar*.deb $release_dir
+fi
+
+
 
