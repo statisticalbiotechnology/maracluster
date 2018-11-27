@@ -91,7 +91,19 @@ fi
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then
-  sudo apt -y install patchelf
+  # patchelf is available from Ubuntu 16.04, install from source otherwise
+  sudo apt -y install patchelf || missing_patchelf=true
+  if [ "$missing_patchelf" == true ] ; then
+    wget http://nixos.org/releases/patchelf/patchelf-0.8/patchelf-0.8.tar.bz2
+    tar xf patchelf-0.8.tar.bz2
+    cd patchelf-0.8/
+    ./configure --prefix="${build_dir}/tools"
+    make install
+    patchelf_binary=${build_dir}/tools/bin/patchelf
+  else
+    patchelf_binary=patchelf
+  fi
+  
   ubuntu_qt=qtbase-everywhere-src-5.11.2
   if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
     cd ${build_dir}/tools
@@ -106,6 +118,7 @@ if [ "$no_gui" != true ] ; then
     ./configure -prefix ${build_dir}/tools/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
 
     make -j4
+    make install -j4
   fi
 fi
 
@@ -129,20 +142,15 @@ if [ "$no_gui" != true ] ; then
   cd $build_dir/maracluster-gui
   #-----cmake-----
   echo -n "cmake maracluster-gui.....";
-  cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$build_dir/maracluster-gui-zip/ -DCMAKE_PREFIX_PATH="$build_dir/tools/;$build_dir/tools/Qt-dynamic/" $src_dir/maracluster/src/qt-gui;
+  cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH="$build_dir/tools/;$build_dir/tools/Qt-dynamic/" $src_dir/maracluster/src/qt-gui;
 
   #-----make------
   echo -n "make maracluster-gui (this will take few minutes).....";
 
   make -j 4;
-  #make -j 4 package;
+  make -j 4 package;
   sudo make install
-
-  sudo patchelf --set-rpath '$ORIGIN/../../lib/maracluster' $build_dir/maracluster-gui-zip/bin/platforms/libqxcb.so
-  
   
   cp -v $build_dir/maracluster-gui/mar*.deb $release_dir
 fi
-
-
 

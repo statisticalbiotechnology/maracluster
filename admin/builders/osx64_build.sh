@@ -154,6 +154,7 @@ if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
   ./configure -prefix ../build/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
 
   make -j4
+  make install -j4
 fi
 
 #-------------------------------------------
