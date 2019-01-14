@@ -29,6 +29,4 @@ For more information and options run `maracluster -h` on the command line.
 
 ### Installation from source
 
-MaRaCluster depends on the Proteowizard and Boost libraries, these can conveniently be installed simultaneously using the provided installation script (`/bin/install_proteowizard.sh`). The libraries will be build in a newly created `./libs` folder, no superuser rights are necessary.
-
 To install MaRaCluster, you can use the provided installation script `./quickbuild.sh`, which will build the package in `./bin/build`, and install the executables in the `/usr/bin` folder (needs superuser rights). If you do not have superuser rights, or want to install the executable somewhere else, modify the script accordingly by setting the `-DCMAKE_INSTALL_PREFIX` flag to the desired location, and change the last line from `sudo make install` to `make install`.

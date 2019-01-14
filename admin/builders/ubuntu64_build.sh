@@ -27,7 +27,7 @@ if [[ -z ${release_dir} ]]; then
   release_dir=${HOME}/release
 fi
 
-rm $build_dir/maracluster/mar*.deb
+#rm -f $build_dir/maracluster/mar*.deb
 
 sudo apt-get update;
 sudo apt-get upgrade;

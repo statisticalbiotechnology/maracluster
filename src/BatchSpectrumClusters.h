@@ -45,6 +45,9 @@ class BatchSpectrumClusters {
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
     const std::string& scanInfoFN, const std::string& scanDescFN,
     const std::string& resultBaseFN);
+  
+  static std::string getClusterFN(const std::string resultBaseFN, double threshold);
+  
   static bool scanDescReadUnitTest();
  private:
   ScanPeptideMap scanPeptideMap_;

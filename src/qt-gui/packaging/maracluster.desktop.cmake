@@ -7,3 +7,4 @@ Icon=maracluster
 Terminal=false
 Type=Application
 Categories=Application;
+StartupWMClass=maracluster-gui

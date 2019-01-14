@@ -26,7 +26,6 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include "Globals.h"
-#include "BatchStatement.h"
 #include "BatchPvalues.h"
 #include "BatchPvalueVectors.h"
 #include "BatchSpectrum.h"

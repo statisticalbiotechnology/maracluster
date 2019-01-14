@@ -135,10 +135,7 @@ void BatchSpectrumClusters::createClusterings(
   
   BOOST_FOREACH (PvalueTriplet& pvalTriplet, pvals) {
     while (pvalTriplet.pval > clusterThresholds.at(thresholdIdx)) {
-      int negIntThreshold = 
-          -1*static_cast<int>(clusterThresholds.at(thresholdIdx));
-      std::string resultFN = resultBaseFN + "p" +
-          boost::lexical_cast<std::string>(negIntThreshold) + ".tsv";
+      std::string resultFN = getClusterFN(resultBaseFN, clusterThresholds.at(thresholdIdx));
       writeClusters(clusters, fileList, resultFN);
       if (++thresholdIdx >= clusterThresholds.size()) break;
     }
@@ -165,7 +162,8 @@ void BatchSpectrumClusters::createClusterings(
     
     if (clusters[pvalTriplet.scannr1].size() == 0) {
       std::cerr << "ERROR: Empty clusters: " << pvalTriplet.scannr1 
-          << " " << clusters[pvalTriplet.scannr2].size() << " " << pvalTriplet.scannr2 << " " << pvalTriplet.pval << std::endl;   
+          << " " << clusters[pvalTriplet.scannr2].size() << " " 
+          << pvalTriplet.scannr2 << " " << pvalTriplet.pval << std::endl;   
     }
     
     clusters[pvalTriplet.scannr1].insert(
@@ -179,10 +177,7 @@ void BatchSpectrumClusters::createClusterings(
   }
   
   while (thresholdIdx < clusterThresholds.size()) {
-    int negIntThreshold = 
-        -1*static_cast<int>(clusterThresholds.at(thresholdIdx));
-    std::string resultFN = resultBaseFN + "p" +
-        boost::lexical_cast<std::string>(negIntThreshold) + ".tsv";
+    std::string resultFN = getClusterFN(resultBaseFN, clusterThresholds.at(thresholdIdx));
     writeClusters(clusters, fileList, resultFN);
     ++thresholdIdx;
   }
@@ -190,6 +185,14 @@ void BatchSpectrumClusters::createClusterings(
   if (Globals::VERB > 1) {
     std::cerr << "Finished writing clusterings." << std::endl;
   }
+}
+
+std::string BatchSpectrumClusters::getClusterFN(
+    const std::string resultBaseFN, double threshold) {
+  int negIntThreshold = -1*static_cast<int>(threshold);
+  std::string resultFN = resultBaseFN + "p" +
+      boost::lexical_cast<std::string>(negIntThreshold) + ".tsv";
+  return resultFN;
 }
 
 void BatchSpectrumClusters::writeClusters(
@@ -235,7 +238,8 @@ void BatchSpectrumClusters::writeClusters(
   }
 }
 
-void BatchSpectrumClusters::writeClusterSummary(std::vector<std::pair<size_t, size_t> >& clusterSizeCounts) {
+void BatchSpectrumClusters::writeClusterSummary(
+    std::vector<std::pair<size_t, size_t> >& clusterSizeCounts) {
   std::cerr << "clust_size\t#clusters\t#spectra" << std::endl;
   size_t totalClusters = 0u, totalSpectra = 0u;
   for (size_t i = 0u; i < 10u; ++i) {
@@ -248,7 +252,8 @@ void BatchSpectrumClusters::writeClusterSummary(std::vector<std::pair<size_t, si
     } else {
       std::cerr << minClusterSize;
     }
-    std::cerr << '\t' << clusterSizeCounts.at(i).first << '\t' << clusterSizeCounts.at(i).second << std::endl;
+    std::cerr << '\t' << clusterSizeCounts.at(i).first 
+              << '\t' << clusterSizeCounts.at(i).second << std::endl;
     totalClusters += clusterSizeCounts.at(i).first;
     totalSpectra += clusterSizeCounts.at(i).second;
   }

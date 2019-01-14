@@ -519,6 +519,20 @@ int MaRaCluster::run() {
       SpectrumFileList fileList;
       fileList.initFromFile(spectrumBatchFileFN_);
       error = doClustering(pvalFNs, pvalTreeFNs, fileList); 
+      if (error != EXIT_SUCCESS) return EXIT_FAILURE;
+      
+      if (!spectrumOutFN_.empty()) {
+        if (clusterFileFN_.empty()) {
+          std::string clusterBaseFN(outputFolder_ + "/" + fnPrefix_ + ".clusters_");
+          clusterFileFN_ = BatchSpectrumClusters::getClusterFN(clusterBaseFN, dbPvalThreshold_);
+        }
+        if (Globals::VERB > 1) {
+          std::cerr << "Creating consensus spectra using clusters generated in "
+                    << clusterFileFN_ << std::endl;
+        }
+        error = mergeSpectra();
+        if (error != EXIT_SUCCESS) return EXIT_FAILURE;
+      }
       
       time_t endTime;
       clock_t endClock = clock();
@@ -528,7 +542,7 @@ int MaRaCluster::run() {
       std::cerr << "Running MaRaCluster took: "
         << ((double)(endClock - startClock)) / (double)CLOCKS_PER_SEC
         << " cpu seconds or " << diff_time << " seconds wall time" << std::endl;
-                 
+      
       return error;
     }
     case INDEX:
