@@ -39,8 +39,8 @@ std::string MaRaCluster::greeter() {
   std::ostringstream oss;
   oss << "MaRaCluster version " << VERSION << ", ";
   oss << "Build Date " << __DATE__ << " " << __TIME__ << std::endl;
-  oss << "Copyright (c) 2015-17 Matthew The. All rights reserved.\n"
-      << "Written by Matthew The (matthew.the@scilifelab.se) in the\n"
+  oss << "Copyright (c) 2015-19 Matthew The. All rights reserved.\n"
+      << "Written by Matthew The (matthewt@kth.se) in the\n"
       << "School of Biotechnology at the Royal Institute of Technology in Stockholm.\n";
   return oss.str();
 }
@@ -51,7 +51,7 @@ std::string MaRaCluster::extendedGreeter(time_t& startTime) {
   oss << greeter();
   oss << "Issued command:" << std::endl << call_ << std::endl;
   oss << "Started " << ctime(&startTime) << std::endl;
-  oss.seekp(-1, ios_base::cur);
+  oss.seekp(-1, std::ios_base::cur);
   if (host) oss << " on " << host << std::endl;
   return oss.str();
 }
@@ -208,50 +208,50 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   // now query the parsing results
   
   // file input for maracluster batch and index (also for some other methods)
-  if (cmd.optionSet("b")) spectrumBatchFileFN_ = cmd.options["b"];
-  if (cmd.optionSet("f")) outputFolder_ = cmd.options["f"];
-  if (cmd.optionSet("a")) fnPrefix_ = cmd.options["a"];
+  if (cmd.optionSet("batch")) spectrumBatchFileFN_ = cmd.options["batch"];
+  if (cmd.optionSet("output-folder")) outputFolder_ = cmd.options["output-folder"];
+  if (cmd.optionSet("prefix")) fnPrefix_ = cmd.options["prefix"];
   
   // file output for maracluster batch and index (also for some other methods)
-  if (cmd.optionSet("j")) datFNFile_ = cmd.options["j"];
-  if (cmd.optionSet("g")) peakCountFN_ = cmd.options["g"];
-  if (cmd.optionSet("s")) scanInfoFN_ = cmd.options["s"];
+  if (cmd.optionSet("datFNfile")) datFNFile_ = cmd.options["datFNfile"];
+  if (cmd.optionSet("peakCountsFN")) peakCountFN_ = cmd.options["peakCountsFN"];
+  if (cmd.optionSet("scanInfoFN")) scanInfoFN_ = cmd.options["scanInfoFN"];
   
   // file input options for maracluster pvalue
-  if (cmd.optionSet("i")) spectrumInFN_ = cmd.options["i"];
-  if (cmd.optionSet("l")) clusterFileFN_ = cmd.options["l"];
-  if (cmd.optionSet("w")) overlapBatchFileFN_ = cmd.options["w"];
-  if (cmd.optionSet("y")) pvalVecInFileFN_ = cmd.options["y"];
+  if (cmd.optionSet("specIn")) spectrumInFN_ = cmd.options["specIn"];
+  if (cmd.optionSet("clusterFile")) clusterFileFN_ = cmd.options["clusterFile"];
+  if (cmd.optionSet("overlapBatch")) overlapBatchFileFN_ = cmd.options["overlapBatch"];
+  if (cmd.optionSet("pvalueVecFile")) pvalVecInFileFN_ = cmd.options["pvalueVecFile"];
   
   // file output options for maracluster pvalue
-  if (cmd.optionSet("q")) pvaluesFN_ = cmd.options["q"];
-  if (cmd.optionSet("r")) pvalueVectorsBaseFN_ = cmd.options["r"];
+  if (cmd.optionSet("pvalOut")) pvaluesFN_ = cmd.options["pvalOut"];
+  if (cmd.optionSet("pvecOut")) pvalueVectorsBaseFN_ = cmd.options["pvecOut"];
   
   // file input options for maracluster cluster
-  if (cmd.optionSet("m")) matrixFN_ = cmd.options["m"];
-  if (cmd.optionSet("u")) resultTreeFN_ = cmd.options["u"];
-  if (cmd.optionSet("e")) skipFilterAndSort_ = true;
-  if (cmd.optionSet("d")) scanDescFN_ = cmd.options["d"];
+  if (cmd.optionSet("clusteringMatrix")) matrixFN_ = cmd.options["clusteringMatrix"];
+  if (cmd.optionSet("clusteringTree")) resultTreeFN_ = cmd.options["clusteringTree"];
+  if (cmd.optionSet("skipFilterAndSort")) skipFilterAndSort_ = true;
+  if (cmd.optionSet("percOut")) scanDescFN_ = cmd.options["percOut"];
   
   // file output option for maracluster consensus
-  if (cmd.optionSet("o")) spectrumOutFN_ = cmd.options["o"];
-  if (cmd.optionSet("M")) minConsensusClusterSize_ = cmd.getInt("M", 0, 100000);
-  if (cmd.optionSet("S")) MSFileHandler::splitMassChargeStates_ = true;
+  if (cmd.optionSet("specOut")) spectrumOutFN_ = cmd.options["specOut"];
+  if (cmd.optionSet("minClusterSize")) minConsensusClusterSize_ = cmd.getInt("minClusterSize", 0, 100000);
+  if (cmd.optionSet("splitMassChargeStates")) MSFileHandler::splitMassChargeStates_ = true;
   
   // file input option for maracluster search
-  if (cmd.optionSet("z")) spectrumLibraryFN_ = cmd.options["z"];
+  if (cmd.optionSet("lib")) spectrumLibraryFN_ = cmd.options["lib"];
   
   // general options
-  if (cmd.optionSet("t")) dbPvalThreshold_ = cmd.getDouble("t", -1000.0, 0.0);
-  if (cmd.optionSet("c")) {
-    std::istringstream ss(cmd.options["c"]);
+  if (cmd.optionSet("pvalThreshold")) dbPvalThreshold_ = cmd.getDouble("pvalThreshold", -1000.0, 0.0);
+  if (cmd.optionSet("clusterThresholds")) {
+    std::istringstream ss(cmd.options["clusterThresholds"]);
     std::string token;
     while(std::getline(ss, token, ',')) {
       clusterThresholds_.push_back(atof(token.c_str()));
     }
     if (clusterThresholds_.empty()) {
       std::cerr << "Error: invalid input for clusterThreshold parameter: " << 
-                    cmd.options["c"] << std::endl;
+                    cmd.options["clusterThresholds"] << std::endl;
       return false;
     }
   } else {
@@ -267,8 +267,8 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   }
   std::sort(clusterThresholds_.begin(), clusterThresholds_.end());
   
-  if (cmd.optionSet("p")) {
-    std::string precursorToleranceString = cmd.options["p"];
+  if (cmd.optionSet("precursorTolerance")) {
+    std::string precursorToleranceString = cmd.options["precursorTolerance"];
     size_t unitIdx = precursorToleranceString.find("Da");
     if (unitIdx != std::string::npos) {
       precursorTolerance_ = atof(precursorToleranceString.substr(0, unitIdx).c_str());
@@ -278,8 +278,8 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       precursorTolerance_ = atof(precursorToleranceString.substr(0, unitIdx).c_str());
     }
   }
-  if (cmd.optionSet("C")) chargeUncertainty_ = cmd.getInt("C", 0, 5);
-  if (cmd.optionSet("v")) Globals::VERB = cmd.getInt("v", 0, 5);
+  if (cmd.optionSet("chargeUncertainty")) chargeUncertainty_ = cmd.getInt("chargeUncertainty", 0, 5);
+  if (cmd.optionSet("verbatim")) Globals::VERB = cmd.getInt("verbatim", 0, 5);
 
   return true;
 }
@@ -297,7 +297,7 @@ int MaRaCluster::mergeSpectra() {
   }
   
   if (clusterFileFN_.empty() || !Globals::fileExists(clusterFileFN_)) {
-    std::cerr << "Error: Could not find cluster input file (-l flag) " << clusterFileFN_ << std::endl;
+    std::cerr << "Error: Could not find cluster input file (-l/--clusterFile flag) " << clusterFileFN_ << std::endl;
     return EXIT_FAILURE;
   }
   
@@ -316,7 +316,7 @@ int MaRaCluster::mergeSpectra() {
 
 int MaRaCluster::createIndex() {
   if (spectrumBatchFileFN_.empty()) {
-    std::cerr << "Error: no batch file specified with -b flag" << std::endl;
+    std::cerr << "Error: no batch file specified with -b/--batch flag" << std::endl;
     return EXIT_FAILURE;
   }
   
@@ -347,11 +347,11 @@ int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs,
     std::vector<std::string> pvalTreeFNs, SpectrumFileList& fileList) {
   // input checks
   if (scanInfoFN_.empty()) {
-    std::cerr << "Error: no scannrs file specified with -s flag" << std::endl;
+    std::cerr << "Error: no scannrs file specified with -s/--scanInfoFN flag" << std::endl;
     return EXIT_FAILURE;
   }
   if (matrixFN_.empty() && resultTreeFN_.empty()) {
-    std::cerr << "Error: no input file specified with -m or -u flag" << std::endl;
+    std::cerr << "Error: no input file specified with -m/--clusteringMatrix or -u/--clusteringTree flag" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -426,7 +426,7 @@ int MaRaCluster::run() {
                   -f /media/storage/mergespec/data/Linfeng/batchcluster/output/ 
       */
       if (spectrumBatchFileFN_.empty()) {
-        std::cerr << "Error: no batch file specified with -b flag" << std::endl;
+        std::cerr << "Error: no batch file specified with -b/--batch flag" << std::endl;
         return EXIT_FAILURE;
       }
       
@@ -578,7 +578,7 @@ int MaRaCluster::run() {
         // calculate p-values from a cluster in a scan description list
         // maracluster pvalue -l <scan_desc_file> -g <peak_counts_file>
         if (peakCountFN_.empty()) {
-          std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
+          std::cerr << "Error: no peak counts file specified with -g/--peakCountsFN flag" << std::endl;
           return EXIT_FAILURE;
         }
         std::string spectrumOutFN = "";
@@ -613,11 +613,11 @@ int MaRaCluster::run() {
                         -t -10.0
         */
         if (peakCountFN_.empty()) {
-          std::cerr << "Error: no peak counts file specified with -g flag" << std::endl;
+          std::cerr << "Error: no peak counts file specified with -g/--peakCountsFN flag" << std::endl;
           return EXIT_FAILURE;
         }
         if (spectrumBatchFileFN_.empty() && spectrumInFN_.empty()) {
-          std::cerr << "Error: no input file specified with -i or -b flag" << std::endl;
+          std::cerr << "Error: no input file specified with -i/--specIn or -b/--batch flag" << std::endl;
           return EXIT_FAILURE;
         }
         std::string pvalueVectorsBaseFN = outputFolder_ + "/" + fnPrefix_ + ".pvalue_vectors";
@@ -657,7 +657,7 @@ int MaRaCluster::run() {
       pvalFNs.push_back(matrixFN_);
       
       if (spectrumBatchFileFN_.empty()) {
-        std::cerr << "Error: no batch file specified with -b flag" << std::endl;
+        std::cerr << "Error: no batch file specified with -b/--batch flag" << std::endl;
         return EXIT_FAILURE;
       }
       SpectrumFileList fileList;
@@ -677,13 +677,13 @@ int MaRaCluster::run() {
     case SEARCH:
     {
       if (spectrumLibraryFN_.empty()) {
-        std::cerr << "Error: no spectrum library file specified with -z flag" << std::endl;
+        std::cerr << "Error: no spectrum library file specified with -z/--lib flag" << std::endl;
         return EXIT_FAILURE;
       } else if (spectrumBatchFileFN_.empty() && spectrumInFN_.empty()) {
-        std::cerr << "Error: no query spectrum file(s) specified with -i or -b flag" << std::endl;
+        std::cerr << "Error: no query spectrum file(s) specified with -i/--specIn or -b/--batch flag" << std::endl;
         return EXIT_FAILURE;
       } else if (!spectrumBatchFileFN_.empty() && !spectrumInFN_.empty()) {
-        std::cerr << "Error: ambiguous query spectrum file(s) input, please use only one of the -i and -b flags" << std::endl;
+        std::cerr << "Error: ambiguous query spectrum file(s) input, please use only one of the -i/--specIn and -b/--batch flags" << std::endl;
         return EXIT_FAILURE;
       }
       

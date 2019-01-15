@@ -1,4 +1,5 @@
 #include <QtWidgets>
+#include "Version.h"
 #include "mainwidget.h"
 
 // Constructor for main window
@@ -49,7 +50,8 @@ MainWidget::MainWidget(QWidget *parent) :
   QPushButton* clearStdoutButton = new QPushButton(tr("Clear log"), this);
   QPushButton* saveStdoutButton = new QPushButton(tr("Save log file"), this);
   
-  QLabel* copyrightText = new QLabel(QChar(0x00A9) + tr(" 2018 Matthew The"), this);
+  QLabel* versionText = new QLabel(tr("v") + tr(VERSION) + tr("; Build Date ") + tr(__DATE__) + tr(" ") + tr(__TIME__), this);
+  QLabel* copyrightText = new QLabel(QChar(0x00A9) + tr(" 2018-19 Matthew The. All Rights Reserved."), this);
   QLabel* citeText = new QLabel(tr("Please cite: \"MaRaCluster: A Fragment Rarity Metric for Clustering Fragment Spectra"), this);
   QLabel* linkText = new QLabel(tr("in Shotgun Proteomics\", <a href=\"https://doi.org/10.1021/acs.jproteome.5b00749\">https://doi.org/10.1021/acs.jproteome.5b00749</a>"), this);
   linkText->setTextFormat(Qt::RichText);
@@ -62,11 +64,11 @@ MainWidget::MainWidget(QWidget *parent) :
   QMenu* fileMenu = menuBar->addMenu(tr("&File"));
   QMenu* helpMenu = menuBar->addMenu(tr("&Help"));
   
-  QAction* loadAct = new QAction(tr("&Open project"), this);
+  QAction* loadAct = new QAction(tr("&Open parameter file"), this);
   loadAct->setShortcuts(QKeySequence::Open);
   connect(loadAct, &QAction::triggered, this, &MainWidget::loadProject);
   
-  QAction* saveAct = new QAction(tr("&Save project"), this);
+  QAction* saveAct = new QAction(tr("&Save parameter file"), this);
   saveAct->setShortcuts(QKeySequence::Save);
   connect(saveAct, &QAction::triggered, this, &MainWidget::saveProject);
   
@@ -114,6 +116,7 @@ MainWidget::MainWidget(QWidget *parent) :
   mainLayout_->addWidget(otherParamsInput_,     6,1,1,2);
   mainLayout_->addWidget(runButton_,            7,0,1,3);
   
+  mainLayout_->addWidget(versionText,           8,0,1,3);
   mainLayout_->addWidget(copyrightText,         9,0,1,3);
   
   // right panel

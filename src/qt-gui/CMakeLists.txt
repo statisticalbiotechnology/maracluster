@@ -15,6 +15,7 @@ endif (APPLE)
 set(SKIP_MAIN_CPACK ON)
 set(MARACLUSTER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 add_subdirectory(${MARACLUSTER_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/main)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/main/src)
 
 # variables set by add_subdirectory are not transferred to the parent scope
 set(CMAKE_MODULE_PATH ${MARACLUSTER_SOURCE_DIR}/cmake)

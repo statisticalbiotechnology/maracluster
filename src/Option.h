@@ -14,71 +14,80 @@
  limitations under the License.
 
  *******************************************************************************/
-
-#ifndef MARACLUSTER_OPTION_H_
-#define MARACLUSTER_OPTION_H_
+#ifndef OPTION_H_
+#define OPTION_H_
 
 #include <string>
 #include <map>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <cstdlib>
+#include <sstream>
+#include <functional>
+#include <cctype>
 
 #include "MyException.h"
 
 namespace maracluster {
-
-using namespace std;
 
 typedef enum {
   FALSE_IF_SET = 0, TRUE_IF_SET, VALUE, MAYBE
 } OptionOption;
 
 class Option {
-  public:
-    Option(std::string shrt, std::string lng, std::string dest, std::string hlp = "",
-           std::string hlpType = "", OptionOption type = VALUE, std::string defau =
-               "");
-    ~Option();
-    bool operator ==(const std::string& option);
-    OptionOption type;
-    std::string shortOpt;
-    std::string longOpt;
-    std::string help;
-    std::string name;
-    std::string helpType;
-    std::string deflt;
+ public:
+  Option(std::string shrt, std::string lng, std::string dest, 
+         std::string hlp = "", std::string hlpType = "", 
+         OptionOption type = VALUE, std::string defau = "");
+  ~Option();
+  bool operator ==(const std::string& option);
+  OptionOption type;
+  std::string shortOpt;
+  std::string longOpt;
+  std::string help;
+  std::string name;
+  std::string helpType;
+  std::string deflt;
+  
+  /* allow options without a short flag and for experimental features */
+  static const std::string NO_SHORT_OPT, EXPERIMENTAL_FEATURE; 
 };
 
 class CommandLineParser {
-  public:
-    CommandLineParser(std::string usage = "", std::string tail = "");
-    ~CommandLineParser();
-    void error(std::string msg);
-    void defineOption(std::string shortOpt, std::string longOpt, std::string help = "",
-                      std::string helpType = "", OptionOption type = VALUE,
-                      std::string defaultVal = "");
-    void defineOption(std::string shortOpt, std::string longOpt, std::string help,
-                      std::string helpType, std::string defaultVal) {
-      defineOption(shortOpt, longOpt, help, helpType, VALUE, defaultVal);
-    }
-    void parseArgs(int argc, char** argv);
-    inline bool optionSet(std::string dest) {
-      //return (options.find(dest) != options.end());
-      return (options[dest].length() > 0);
-    }
-    double getDouble(std::string dest, double lower, double upper);
-    int getInt(std::string dest, int lower, int upper);
-    void help();
-    void htmlHelp();
-    map<std::string, std::string> options;
-    vector<std::string> arguments;
-  private:
-    unsigned int optMaxLen;
-    const static unsigned int lineLen = 80;
-    std::string header, endnote;
-    vector<Option> opts;
-    void findOption(char** argv, int& index);
+ public:
+  CommandLineParser(std::string usage = "", std::string tail = "");
+  ~CommandLineParser();
+  void error(std::string msg);
+  void defineOption(std::string shortOpt, std::string longOpt, std::string help = "",
+                    std::string helpType = "", OptionOption type = VALUE,
+                    std::string defaultVal = "");
+  void defineOption(std::string shortOpt, std::string longOpt, std::string help,
+                    std::string helpType, std::string defaultVal) {
+    defineOption(shortOpt, longOpt, help, helpType, VALUE, defaultVal);
+  }
+  void parseArgs(int argc, char** argv);
+  void parseArgsParamFile(const std::string paramFile);
+  inline bool optionSet(std::string dest) {
+    //return (options.find(dest) != options.end());
+    return (options[dest].length() > 0);
+  }
+  double getDouble(std::string dest, double lower, double upper);
+  int getInt(std::string dest, int lower, int upper);
+  void help();
+  void htmlHelp();
+  std::map<std::string, std::string> options;
+  std::vector<std::string> arguments;
+ private:
+  size_t optMaxLen;
+  const static unsigned int lineLen = 80;
+  std::string header, endnote;
+  std::vector<Option> opts;
+  void findOption(char** argv, int& index, int argc);
+  static inline std::string &rtrim(std::string &s);
 };
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_OPTION_H_ */
+#endif /*OPTION_H_*/
