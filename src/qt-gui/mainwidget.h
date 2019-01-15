@@ -35,11 +35,13 @@ class MainWidget : public QMainWindow
   void onClearStdoutButtonReleased(); 
   void onCaptureProcessOutput(); // Handler for Process output
   
-  void saveProject() {}
-  void loadProject() {}
+  void saveProject();
+  void loadProject();
   void help();
 
  private:
+  QString prepareCmd();
+  
   QGridLayout* mainLayout_;
   
   QFileDialog* fileDialog_;
@@ -53,7 +55,6 @@ class MainWidget : public QMainWindow
   QFileDialog* outputFolderDialog_;
   
   QLineEdit* consensusFileInput_;
-  QFileDialog* consensusFileDialog_;
   
   QLineEdit* otherParamsInput_;
   

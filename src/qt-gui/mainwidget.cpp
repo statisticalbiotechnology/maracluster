@@ -34,7 +34,6 @@ MainWidget::MainWidget(QWidget *parent) :
   
   QLabel* consensusFileLabel = new QLabel(tr("Consensus spectra file (optional):"), this);
   consensusFileInput_ = new QLineEdit(this);
-  consensusFileDialog_ = new QFileDialog(this);
   QPushButton* consensusFileButton = new QPushButton(tr("Browse..."), this);
   
   QLabel* otherParamsLabel = new QLabel(tr("Extra command line params:"), this);
@@ -50,7 +49,7 @@ MainWidget::MainWidget(QWidget *parent) :
   QPushButton* clearStdoutButton = new QPushButton(tr("Clear log"), this);
   QPushButton* saveStdoutButton = new QPushButton(tr("Save log file"), this);
   
-  QLabel* versionText = new QLabel(tr("v") + tr(VERSION) + tr("; Build Date ") + tr(__DATE__) + tr(" ") + tr(__TIME__), this);
+  QLabel* versionText = new QLabel(tr("v") + tr(VERSION) + tr("(Build Date ") + tr(__DATE__) + tr(" ") + tr(__TIME__) + tr(")"), this);
   QLabel* copyrightText = new QLabel(QChar(0x00A9) + tr(" 2018-19 Matthew The. All Rights Reserved."), this);
   QLabel* citeText = new QLabel(tr("Please cite: \"MaRaCluster: A Fragment Rarity Metric for Clustering Fragment Spectra"), this);
   QLabel* linkText = new QLabel(tr("in Shotgun Proteomics\", <a href=\"https://doi.org/10.1021/acs.jproteome.5b00749\">https://doi.org/10.1021/acs.jproteome.5b00749</a>"), this);
@@ -202,13 +201,14 @@ void MainWidget::onOutputFolderButtonReleased()
 
 void MainWidget::onConsensusFileButtonReleased()
 {  
-  consensusFileDialog_->setDirectory(QDir::homePath());
-  consensusFileDialog_->setFileMode(QFileDialog::AnyFile);
-  fileDialog_->setNameFilter(tr("ms2 files *.mzML, *.ms2, *.mgf (*.mzML *.ms2 *.mgf)"));
+  QFileDialog *fileDialog = new QFileDialog(this);
+  fileDialog->setDirectory(QDir::homePath());
+  fileDialog->setFileMode(QFileDialog::AnyFile);
+  fileDialog->setNameFilter(tr("ms2 files *.mzML, *.ms2, *.mgf (*.mzML *.ms2 *.mgf)"));
   
   QStringList fileNames;
-  if (consensusFileDialog_->exec())
-    fileNames = consensusFileDialog_->selectedFiles();
+  if (fileDialog->exec())
+    fileNames = fileDialog->selectedFiles();
     if (fileNames.size() > 0)
       consensusFileInput_->setText(fileNames.front());
 }
@@ -220,77 +220,214 @@ void MainWidget::onRunButtonReleased()
     textBrowser_->ensureCursorVisible();
     process_.kill();
   } else {
-    if (fileListWidget_->count() == 0) {
-      textBrowser_->insertPlainText(tr("No input files detected.\n"));
-      textBrowser_->ensureCursorVisible();
-      return;
-    }
-    
-    QString outputFolder(outputFolderInput_->text());
-    if (outputFolder.size() == 0) {
-      textBrowser_->insertPlainText(tr("No output folder set.\n"));
-      textBrowser_->ensureCursorVisible();
-      return;
-    }
-    
-    QDir outputDir(outputFolder);
-    if (!outputDir.exists()) {
-      bool success = outputDir.mkpath(outputFolder);
-      if (!success) {
-        textBrowser_->insertPlainText(tr("Could not create output directory: ") + outputFolder + tr("\n"));
-        textBrowser_->ensureCursorVisible();
-        return;
-      }
-    }
-    
-    QFile file(outputFolder + QDir::separator() + "file_list.txt");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-      textBrowser_->insertPlainText(tr("Could not create output directory: ") + outputFolder + tr("\n"));
-      textBrowser_->ensureCursorVisible();
-      return;
-    }
-    
-    
-    QString consensusFileString(consensusFileInput_->text());
-    if (!consensusFileString.isEmpty()) {
-      QFile consensusFile(consensusFileString);
-      if (!consensusFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        textBrowser_->insertPlainText(tr("Could not create consensus file: ") + consensusFileString + tr("\n"));
-        textBrowser_->ensureCursorVisible();
-        return;
-      }
-      consensusFile.close();
-    }
-    
-    QTextStream out(&file);
-    for (int i = 0; i < fileListWidget_->count(); ++i)
-    {
-      QListWidgetItem* item = fileListWidget_->item(i);
-      out << item->text() << endl;
-    }
-    file.close();
-    
-    
-    process_.setProcessChannelMode(QProcess::MergedChannels);
-    
-    // Set up our process to write to stdout and run our command
-    process_.setCurrentWriteChannel(QProcess::StandardOutput); // Set the write channel
-    QString cmd;
-    cmd += "\"" + QCoreApplication::applicationDirPath() + "/maracluster\" batch --batch " + file.fileName();
-    cmd += " --output-folder " + outputFolder;
-    cmd += " --pvalThreshold " + QString::number(pvalThreshInput_->value());
-    cmd += " --precursorTolerance " + QString::number(precTolInput_->value());
-    if (!consensusFileString.isEmpty()) {
-      cmd += " --specOut " + consensusFileString;
-    }
-    cmd += " " + otherParamsInput_->text();
+    QString cmd = prepareCmd();
     
     textBrowser_->insertPlainText(tr("Command: ") + cmd + '\n');
     textBrowser_->ensureCursorVisible();
     
     runButton_->setText("Stop MaRaCluster");
     
+    process_.setProcessChannelMode(QProcess::MergedChannels);
+    
+    // Set up our process to write to stdout and run our command
+    process_.setCurrentWriteChannel(QProcess::StandardOutput); // Set the write channel
+    
+    cmd = "\"" + QCoreApplication::applicationDirPath() + "/maracluster\" batch" + cmd;
     process_.start(cmd); // Start a terminal command
+  }
+}
+
+QString MainWidget::prepareCmd() 
+{
+  QString cmd;
+  if (fileListWidget_->count() == 0) {
+    textBrowser_->insertPlainText(tr("No input files detected.\n"));
+    textBrowser_->ensureCursorVisible();
+    return cmd;
+  }
+  
+  QString outputFolder(outputFolderInput_->text());
+  if (outputFolder.size() == 0) {
+    textBrowser_->insertPlainText(tr("No output folder set.\n"));
+    textBrowser_->ensureCursorVisible();
+    return cmd;
+  }
+  
+  QDir outputDir(outputFolder);
+  if (!outputDir.exists()) {
+    bool success = outputDir.mkpath(outputFolder);
+    if (!success) {
+      textBrowser_->insertPlainText(tr("Could not create output directory: ") + outputFolder + tr("\n"));
+      textBrowser_->ensureCursorVisible();
+      return cmd;
+    }
+  }
+  
+  QFile file(outputFolder + QDir::separator() + "file_list.txt");
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    textBrowser_->insertPlainText(tr("Could not create output directory: ") + outputFolder + tr("\n"));
+    textBrowser_->ensureCursorVisible();
+    return cmd;
+  }
+  
+  QString consensusFileString(consensusFileInput_->text());
+  if (!consensusFileString.isEmpty()) {
+    QFile consensusFile(consensusFileString);
+    if (!consensusFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      textBrowser_->insertPlainText(tr("Could not create consensus file: ") + consensusFileString + tr("\n"));
+      textBrowser_->ensureCursorVisible();
+      return cmd;
+    }
+    consensusFile.close();
+  }
+  
+  QTextStream out(&file);
+  for (int i = 0; i < fileListWidget_->count(); ++i)
+  {
+    QListWidgetItem* item = fileListWidget_->item(i);
+    out << item->text() << endl;
+  }
+  file.close();
+  
+  cmd += " --batch " + file.fileName();
+  cmd += " --output-folder " + outputFolder;
+  cmd += " --pvalThreshold " + QString::number(pvalThreshInput_->value());
+  cmd += " --precursorTolerance " + QString::number(precTolInput_->value()) + precTolUnitInput_->currentText();
+  if (!consensusFileString.isEmpty()) {
+    cmd += " --specOut " + consensusFileString;
+  }
+  cmd += " " + otherParamsInput_->text();
+  
+  return cmd;
+}
+
+void MainWidget::saveProject()
+{
+  QString cmd = prepareCmd();
+  
+  QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                            "maracluster_params.txt");
+  if (fileName.size() > 0) {
+    QFile file(fileName);
+    
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      textBrowser_->insertPlainText(tr("Could not write to selected file\n."));
+      textBrowser_->ensureCursorVisible();
+      return;
+    }
+    
+    QTextStream out(&file);
+    out << cmd << endl;
+    file.close();
+    
+    textBrowser_->insertPlainText(tr("Written parameters to file: ") + file.fileName() + tr("\n"));
+    textBrowser_->ensureCursorVisible();
+  }
+}
+
+void MainWidget::loadProject()
+{  
+  QString fileName = QFileDialog::getOpenFileName(this, tr("Load File"),
+                            QDir::homePath());
+  if (fileName.size() > 0) {
+    QFile file(fileName);
+    
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      textBrowser_->insertPlainText(tr("Could not open the selected file\n."));
+      textBrowser_->ensureCursorVisible();
+      return;
+    }
+    
+    QTextStream in(&file);
+    QStringList argList;
+    while (!in.atEnd())
+    {
+      QString line = in.readLine();
+      if (line.size() == 0 || line.at(0) == "#") continue;
+      argList.append( line.split(" ") );
+    }
+    file.close();
+    
+    fileListWidget_->clear();
+    pvalThreshInput_->setValue(-10.00);
+    precTolInput_->setValue(20.0);
+    precTolUnitInput_->setCurrentIndex(0);
+    outputFolderInput_->setText("");
+    consensusFileInput_->setText("");
+    otherParamsInput_->setText("");
+        
+    size_t lstIdx = 0;
+    bool success = true;
+    while (lstIdx < argList.size()) {
+      QString arg = argList.at(lstIdx);
+      if (arg == "--batch") {
+        if (++lstIdx < argList.size()) {
+          QString val = argList.at(lstIdx);
+          QFile batchFile(val);
+          
+          if (!batchFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            textBrowser_->insertPlainText(tr("Could not open the batch file: ") + val + tr(".\n"));
+            textBrowser_->ensureCursorVisible();
+            success = false;
+          } else {
+            QTextStream batchIn(&batchFile);
+            while (!batchIn.atEnd()) {
+              QString line = batchIn.readLine();
+              new QListWidgetItem(line, fileListWidget_);
+            }
+          }
+        } else {
+          success = false;
+        }
+      } else if (arg == "--output-folder") {
+        if (++lstIdx < argList.size()) {
+          QString val = argList.at(lstIdx);
+          outputFolderInput_->setText(val);
+        } else {
+          success = false;
+        }
+      } else if (arg == "--pvalThreshold") {
+        if (++lstIdx < argList.size()) {
+          QString val = argList.at(lstIdx);
+          pvalThreshInput_->setValue(val.toDouble(&success));
+        } else {
+          success = false;
+        }
+      } else if (arg == "--precursorTolerance") {
+        if (++lstIdx < argList.size()) {
+          QString val = argList.at(lstIdx);
+          size_t unitIdx = val.indexOf("Da");
+          if (unitIdx != std::string::npos) {
+            precTolInput_->setValue(val.left(unitIdx).toDouble(&success));
+            precTolUnitInput_->setCurrentIndex(1);
+          } else {
+            unitIdx = val.indexOf("ppm");
+            precTolInput_->setValue(val.left(unitIdx).toDouble(&success));
+          }
+        } else {
+          success = false;
+        }
+      } else if (arg == "--specOut") {
+        if (++lstIdx < argList.size()) {
+          QString val = argList.at(lstIdx);
+          consensusFileInput_->setText(val);
+        } else {
+          success = false;
+        }
+      } else if (arg.size() > 0) {
+        otherParamsInput_->setText(otherParamsInput_->text() + arg + " ");
+      }
+      
+      if (!success) {
+        textBrowser_->insertPlainText(tr("Error parsing parameter file at argument \"") + arg + tr("\".\n"));
+        textBrowser_->ensureCursorVisible();
+        success = true;
+      }
+      ++lstIdx;
+    }
+    
+    textBrowser_->insertPlainText(tr("Loaded parameters from file: ") + file.fileName() + tr("\n"));
+    textBrowser_->ensureCursorVisible();
   }
 }
 
