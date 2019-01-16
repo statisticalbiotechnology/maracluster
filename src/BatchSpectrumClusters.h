@@ -61,7 +61,7 @@ class BatchSpectrumClusters {
     std::map<ScanId, std::vector<ScanId> >& clusters,
     SpectrumFileList& fileList, const std::string& resultFN);
   size_t writeSingletonClusters(std::set<ScanId>& seenScannrs,
-    SpectrumFileList& fileList, std::ofstream& resultStream);
+    SpectrumFileList& fileList, std::ofstream& resultStream, size_t clusterIdx);
   void writeClusterSummary(
     std::vector<std::pair<size_t, size_t> >& clusterSizeCounts);
 };

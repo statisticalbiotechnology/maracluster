@@ -153,6 +153,7 @@ void BatchSpectrumClusters::writeClusters(
   std::map<ScanId, std::vector<ScanId> >::const_iterator it;
   std::set<ScanId> seenScannrs;
   std::vector<std::pair<size_t, size_t> > clusterSizeCounts(10);
+  size_t clusterIdx = 1u;
   for (it = clusters.begin(); it != clusters.end(); ++it) {
     if (it->second.size() > 0) {
       size_t clusterSizeBin = 0u;
@@ -171,13 +172,15 @@ void BatchSpectrumClusters::writeClusters(
         std::string peptide = scanPeptideMap_[globalScannr].peptide;
         double qvalue = scanPeptideMap_[globalScannr].score;
         
-        resultStream << filePath << '\t' << localScannr 
+        resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx
                      << '\t' << peptide << '\t' << qvalue << '\n';
       }
+      clusterIdx++;
       resultStream << std::endl;
     }
   }
-  size_t addedSingletons = writeSingletonClusters(seenScannrs, fileList, resultStream);
+  size_t addedSingletons = writeSingletonClusters(seenScannrs, fileList, 
+                                                  resultStream, clusterIdx);
   clusterSizeCounts[0].first += addedSingletons;
   clusterSizeCounts[0].second += addedSingletons;
   
@@ -211,7 +214,7 @@ void BatchSpectrumClusters::writeClusterSummary(
   
 size_t BatchSpectrumClusters::writeSingletonClusters(
     std::set<ScanId>& seenScannrs, SpectrumFileList& fileList,
-    std::ofstream& resultStream) {
+    std::ofstream& resultStream, size_t clusterIdx) {
   size_t addedSingletonClusters = 0u;
   std::map<ScanId, ScanMergeInfo>::const_iterator spmIt;
   for (spmIt = scanPeptideMap_.begin(); spmIt != scanPeptideMap_.end(); ++spmIt) {
@@ -224,7 +227,7 @@ size_t BatchSpectrumClusters::writeSingletonClusters(
       std::string filePath = fileList.getFilePath(globalScannr);
       std::string peptide = spmIt->second.peptide;
       double qvalue = spmIt->second.score;
-      resultStream << filePath << '\t' << localScannr 
+      resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx++
                    << '\t' << peptide << '\t' << qvalue << '\n' << '\n';
     }
   }

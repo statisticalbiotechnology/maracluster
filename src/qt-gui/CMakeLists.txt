@@ -141,7 +141,8 @@ elseif (UNIX)
   file(COPY ${QtXcbPlugin_location} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   set(QtXcbPlugin_copied_location ${CMAKE_CURRENT_BINARY_DIR}/${QtXcbPlugin_filename}) # runs into permissions error
   find_program (PATCHELF_BINARY NAMES patchelf)
-  install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --remove-rpath ${QtXcbPlugin_copied_location})")
+  message( STATUS "Found patchelf binary: ${PATCHELF_BINARY}")
+  install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --remove-rpath ${QtXcbPlugin_copied_location})") # gives "stat: No such file or directory" error on earlier versions of patchelf. This can be ignored.
   install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --force-rpath --set-rpath '$ORIGIN/..' ${QtXcbPlugin_copied_location})")
   
   install(PROGRAMS ${QtXcbPlugin_copied_location} DESTINATION lib/maracluster/platforms)
