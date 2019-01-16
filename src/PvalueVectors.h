@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_BATCHPVALUEVECTORS_H_
-#define MARACLUSTER_BATCHPVALUEVECTORS_H_
+#ifndef MARACLUSTER_PVALUEVECTORS_H_
+#define MARACLUSTER_PVALUEVECTORS_H_
 
 #include <iostream>
 #include <fstream>
@@ -28,10 +28,10 @@
 #include <boost/foreach.hpp>
 
 #include "Globals.h"
-#include "BatchPvalueVector.h"
-#include "BatchPvalues.h"
-#include "BatchSpectrum.h"
-#include "BatchSpectrumFiles.h"
+#include "PvalueVector.h"
+#include "Pvalues.h"
+#include "Spectrum.h"
+#include "SpectrumFiles.h"
 
 #include "SpectrumHandler.h"
 #include "SpectrumFileList.h"
@@ -81,18 +81,18 @@ struct ClusterJob {
   std::vector<PvalueTriplet> poisonedPvals;
 };
 
-class BatchPvalueVectors {
+class PvalueVectors {
  public:
-  BatchPvalueVectors(const std::string& pvaluesFN, double precursorTolerance, 
+  PvalueVectors(const std::string& pvaluesFN, double precursorTolerance, 
     bool precursorToleranceDa, double dbPvalThreshold) : 
       pvalues_(pvaluesFN), precursorTolerance_(precursorTolerance), 
       precursorToleranceDa_(precursorToleranceDa), dbPvalThreshold_(dbPvalThreshold) {}
   
-  void calculatePvalueVectors(std::vector<BatchSpectrum>& spectra, 
+  void calculatePvalueVectors(std::vector<Spectrum>& spectra, 
       PeakCounts& peakCounts);
   
   void insertMassChargeCandidate(
-      MassChargeCandidate& mcc, BatchSpectrum& spec);
+      MassChargeCandidate& mcc, Spectrum& spec);
       
   void batchInsert(PeakCounts& peakCounts,
                    bool forceInsert);
@@ -119,7 +119,7 @@ class BatchPvalueVectors {
     std::vector<float>& prec_masses);
   void batchCalculatePvaluesJaccardFilter();
   void batchCalculatePvaluesLibrarySearch(
-    std::vector<BatchSpectrum>& querySpectra);
+    std::vector<Spectrum>& querySpectra);
   
   void batchCalculatePvaluesOverlap(
       std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
@@ -144,7 +144,7 @@ class BatchPvalueVectors {
   static void readPvalueVectorsFile(const std::string& pvalueVectorsFN,
       std::vector<PvalueVectorsDbRow>& pvalVecCollection);
  protected:
-  BatchPvalues pvalues_;
+  Pvalues pvalues_;
   double precursorTolerance_;
   bool precursorToleranceDa_;
   double dbPvalThreshold_;
@@ -156,19 +156,19 @@ class BatchPvalueVectors {
                            const int numQueryPeaks);                
   
   void initPvecRow(const MassChargeCandidate& mcc, 
-                          const BatchSpectrum& spec,
+                          const Spectrum& spec,
                           PvalueVectorsDbRow& pvecRow);
   
   void calculatePvalueVector(PvalueVectorsDbRow& pvecRow,
       PeakCounts& peakCounts);
   
   void insert(PvalueVectorsDbRow& pvecRow, 
-              std::vector<BatchPvalueVector>& pvecList);
+              std::vector<PvalueVector>& pvecList);
   void calculatePvalues(PvalueVectorsDbRow& pvecRow, 
                         PvalueVectorsDbRow& queryPvecRow,
                         std::vector<PvalueTriplet>& pvalBuffer);
   void calculatePvalue(PvalueVectorsDbRow& pvecRow, 
-                       BatchSpectrum& querySpectrum,
+                       Spectrum& querySpectrum,
                        std::vector<PvalueTriplet>& pvalBuffer);
   
   double calculateCosineDistance(std::vector<unsigned int>& peakBins,
@@ -241,4 +241,4 @@ class BatchPvalueVectors {
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_BATCHPVALUEVECTORS_H_ */
+#endif /* MARACLUSTER_PVALUEVECTORS_H_ */

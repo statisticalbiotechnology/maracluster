@@ -24,7 +24,6 @@ using pwiz::msdata::SpectrumListSimplePtr;
 using pwiz::msdata::SpectrumListSimple;
 using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
-using pwiz::msdata::Spectrum;
 using pwiz::msdata::SelectedIon;
 using pwiz::msdata::DataProcessingPtr;
 using pwiz::msdata::DataProcessing;
@@ -133,7 +132,7 @@ void MSFileHandler::addSpectrumWithMccs(SpectrumPtr consensusSpec,
     consensusSpec->precursors.at(0).selectedIons.clear();
     int i = 0;
     BOOST_FOREACH (const MassChargeCandidate& mcc, consensusMccs) {
-      SpectrumPtr consensusSpecCopy(new Spectrum(*consensusSpec));
+      SpectrumPtr consensusSpecCopy(new pwiz::msdata::Spectrum(*consensusSpec));
       SpectrumHandler::setScannr(consensusSpecCopy, scannr*100+(++i));
       
       std::vector<MassChargeCandidate> mccs;

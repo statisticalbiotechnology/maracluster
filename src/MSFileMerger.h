@@ -32,9 +32,6 @@
 #include "Globals.h"
 #include "MSFileHandler.h"
 #include "MSClusterMerge.h"
-#include "ClusterMerge.h"
-#include "InterpolationMerge.h"
-#include "RankMerge.h"
 #include "ScanId.h"
 
 namespace maracluster {

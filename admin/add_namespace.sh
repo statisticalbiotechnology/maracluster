@@ -1,7 +1,7 @@
 #!/bin/bash
 # script to enclose all source files in a namespace
 #
-# NB: this does not always work, i.e. it still failed for BatchPvalueVectors.h 
+# NB: this does not always work, i.e. it still failed for PvalueVectors.h 
 # because the last include was inside an if statement. However, in most cases 
 # it works, so the exceptions can always be fixed by hand...
 

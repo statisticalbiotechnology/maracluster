@@ -36,11 +36,11 @@
 
 #include "Globals.h"
 #include "Version.h"
-#include "BatchSpectrumFiles.h"
-#include "BatchSpectrumClusters.h"
-#include "BatchSpectra.h"
-#include "BatchPvalueVectors.h"
-#include "BatchPvalues.h"
+#include "SpectrumFiles.h"
+#include "SpectrumClusters.h"
+#include "Spectra.h"
+#include "PvalueVectors.h"
+#include "Pvalues.h"
 
 #include "MSFileExtractor.h"
 #include "MSFileMerger.h"

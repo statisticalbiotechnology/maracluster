@@ -1,3 +1,19 @@
+/******************************************************************************  
+  Copyright 2019 Matthew The <matthew.the@scilifelab.se>
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  
+ ******************************************************************************/
+ 
 #include <QtWidgets>
 #include "Version.h"
 #include "mainwidget.h"
@@ -49,7 +65,7 @@ MainWidget::MainWidget(QWidget *parent) :
   QPushButton* clearStdoutButton = new QPushButton(tr("Clear log"), this);
   QPushButton* saveStdoutButton = new QPushButton(tr("Save log file"), this);
   
-  QLabel* versionText = new QLabel(tr("v") + tr(VERSION) + tr("(Build Date ") + tr(__DATE__) + tr(" ") + tr(__TIME__) + tr(")"), this);
+  QLabel* versionText = new QLabel(tr("v") + tr(VERSION) + tr(" (Build Date ") + tr(__DATE__) + tr(" ") + tr(__TIME__) + tr(")"), this);
   QLabel* copyrightText = new QLabel(QChar(0x00A9) + tr(" 2018-19 Matthew The. All Rights Reserved."), this);
   QLabel* citeText = new QLabel(tr("Please cite: \"MaRaCluster: A Fragment Rarity Metric for Clustering Fragment Spectra"), this);
   QLabel* linkText = new QLabel(tr("in Shotgun Proteomics\", <a href=\"https://doi.org/10.1021/acs.jproteome.5b00749\">https://doi.org/10.1021/acs.jproteome.5b00749</a>"), this);
@@ -221,6 +237,11 @@ void MainWidget::onRunButtonReleased()
     process_.kill();
   } else {
     QString cmd = prepareCmd();
+    if (cmd.isEmpty()) {
+      textBrowser_->insertPlainText(tr("Could not start MaRaCluster, fix the issues and try again.\n"));
+      textBrowser_->ensureCursorVisible();
+      return;
+    }
     
     textBrowser_->insertPlainText(tr("Command: ") + cmd + '\n');
     textBrowser_->ensureCursorVisible();
@@ -263,13 +284,6 @@ QString MainWidget::prepareCmd()
     }
   }
   
-  QFile file(outputFolder + QDir::separator() + "file_list.txt");
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    textBrowser_->insertPlainText(tr("Could not create output directory: ") + outputFolder + tr("\n"));
-    textBrowser_->ensureCursorVisible();
-    return cmd;
-  }
-  
   QString consensusFileString(consensusFileInput_->text());
   if (!consensusFileString.isEmpty()) {
     QFile consensusFile(consensusFileString);
@@ -279,6 +293,13 @@ QString MainWidget::prepareCmd()
       return cmd;
     }
     consensusFile.close();
+  }
+  
+  QFile file(outputFolder + QDir::separator() + "file_list.txt");
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    textBrowser_->insertPlainText(tr("Could not create output directory: ") + outputFolder + tr("\n"));
+    textBrowser_->ensureCursorVisible();
+    return cmd;
   }
   
   QTextStream out(&file);
@@ -304,6 +325,11 @@ QString MainWidget::prepareCmd()
 void MainWidget::saveProject()
 {
   QString cmd = prepareCmd();
+  if (cmd.isEmpty()) {
+    textBrowser_->insertPlainText(tr("Could not write the parameter file, fix the issues and try again.\n"));
+    textBrowser_->ensureCursorVisible();
+    return;
+  }
   
   QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                             "maracluster_params.txt");

@@ -14,11 +14,11 @@
   
  ******************************************************************************/
  
-#include "BatchSpectrumClusters.h"
+#include "SpectrumClusters.h"
 
 namespace maracluster {
 
-void BatchSpectrumClusters::printClusters(
+void SpectrumClusters::printClusters(
     const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
     const std::string& scanInfoFN, const std::string& resultBaseFN) {
@@ -38,7 +38,7 @@ void BatchSpectrumClusters::printClusters(
   createClusterings(pvals, clusterThresholds, fileList, resultBaseFN);
 }
 
-void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
+void SpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals) {
   if (Globals::VERB > 1) {
     std::cerr << "Reading in p-value tree." << std::endl;
@@ -61,7 +61,7 @@ void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
   }
 }
 
-void BatchSpectrumClusters::createClusterings(
+void SpectrumClusters::createClusterings(
     std::vector<PvalueTriplet>& pvals, 
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList,
     const std::string& resultBaseFN) {
@@ -127,7 +127,7 @@ void BatchSpectrumClusters::createClusterings(
   }
 }
 
-std::string BatchSpectrumClusters::getClusterFN(
+std::string SpectrumClusters::getClusterFN(
     const std::string resultBaseFN, double threshold) {
   int negIntThreshold = -1*static_cast<int>(threshold);
   std::string resultFN = resultBaseFN + "p" +
@@ -135,7 +135,7 @@ std::string BatchSpectrumClusters::getClusterFN(
   return resultFN;
 }
 
-void BatchSpectrumClusters::writeClusters(
+void SpectrumClusters::writeClusters(
     std::map<ScanId, std::vector<ScanId> >& clusters,
     SpectrumFileList& fileList, const std::string& resultFN) {
   if (Globals::VERB > 2) {
@@ -179,7 +179,7 @@ void BatchSpectrumClusters::writeClusters(
   }
 }
 
-void BatchSpectrumClusters::writeClusterSummary(
+void SpectrumClusters::writeClusterSummary(
     std::vector<std::pair<size_t, size_t> >& clusterSizeCounts) {
   std::cerr << "clust_size\t#clusters\t#spectra" << std::endl;
   size_t totalClusters = 0u, totalSpectra = 0u;
@@ -202,7 +202,7 @@ void BatchSpectrumClusters::writeClusterSummary(
   std::cerr << std::endl;
 }
   
-size_t BatchSpectrumClusters::writeSingletonClusters(
+size_t SpectrumClusters::writeSingletonClusters(
     std::set<ScanId>& seenScannrs, SpectrumFileList& fileList,
     std::ofstream& resultStream, size_t clusterIdx) {
   size_t addedSingletonClusters = 0u;

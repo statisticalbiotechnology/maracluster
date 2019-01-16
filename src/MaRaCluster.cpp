@@ -330,7 +330,7 @@ int MaRaCluster::createIndex() {
   fileList.initFromFile(spectrumBatchFileFN_);
   
   if (!Globals::fileExists(datFNFile_) || !Globals::fileExists(scanInfoFN_)) {    
-    BatchSpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
+    SpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
     spectrumFiles.splitByPrecursorMz(fileList, datFNFile_, peakCountFN_, 
         scanInfoFN_, precursorTolerance_, precursorToleranceDa_);
   } else {
@@ -385,7 +385,7 @@ int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs,
   pvalTreeFNs.push_back(resultTreeFN_);
   
   // write clusters
-  BatchSpectrumClusters clustering;
+  SpectrumClusters clustering;
   clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, scanInfoFN_, clusterBaseFN);
   
   return EXIT_SUCCESS;
@@ -434,7 +434,7 @@ int MaRaCluster::run() {
       
       std::vector<std::string> datFNs;
       {
-        BatchSpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
+        SpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
         spectrumFiles.readDatFNsFromFile(datFNFile_, datFNs);
       }
       
@@ -467,9 +467,9 @@ int MaRaCluster::run() {
           std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
           
           if (!Globals::fileExists(pvalueTreeFN)) {
-            BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            PvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             {
-              BatchSpectra spectra;
+              Spectra spectra;
               spectra.readBatchSpectra(datFN);
               spectra.sortSpectraByPrecMz();
               
@@ -498,7 +498,7 @@ int MaRaCluster::run() {
         std::string pvaluesFN = outputFolder_ + "/overlap.pvalues.dat";
         if (overlapFNs.size() > 0) {
           if (!Globals::fileExists(pvaluesFN)) {
-            BatchPvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+            PvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
             pvecs.processOverlapFiles(overlapFNs);
           } else {
             std::cerr << "Using p-values from " << pvaluesFN << 
@@ -523,7 +523,7 @@ int MaRaCluster::run() {
       if (!spectrumOutFN_.empty()) {
         if (clusterFileFN_.empty()) {
           std::string clusterBaseFN(outputFolder_ + "/" + fnPrefix_ + ".clusters_");
-          clusterFileFN_ = BatchSpectrumClusters::getClusterFN(clusterBaseFN, dbPvalThreshold_);
+          clusterFileFN_ = SpectrumClusters::getClusterFN(clusterBaseFN, dbPvalThreshold_);
         }
         if (Globals::VERB > 1) {
           std::cerr << "Creating consensus spectra using clusters generated in "
@@ -558,7 +558,7 @@ int MaRaCluster::run() {
         // direct input of p-value vector file
         // maracluster pvalue -y /media/storage/mergespec/data/batchtest/1300.ms2.pvalue_vectors.tsv
         
-        BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+        PvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         pvecs.parsePvalueVectorFile(pvalVecInFileFN_);
         if (resultTreeFN_.size() > 0) {
           pvecs.batchCalculateAndClusterPvalues(resultTreeFN_, scanInfoFN_);
@@ -569,7 +569,7 @@ int MaRaCluster::run() {
       } else if (overlapBatchFileFN_.size() > 0) { 
         // calculate p-values in overlap between two windows
         // maracluster pvalue -w data/batchcluster/overlap_files.txt
-        BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+        PvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         std::vector< std::pair<std::string, std::string> > overlapFNs;
         pvecs.parseBatchOverlapFile(overlapBatchFileFN_, overlapFNs);
         pvecs.processOverlapFiles(overlapFNs);
@@ -583,7 +583,7 @@ int MaRaCluster::run() {
         std::string spectrumOutFN = "";
         MSFileExtractor fileExtractor(spectrumOutFN);
         
-        std::vector<BatchSpectrum> batchSpectra;
+        std::vector<Spectrum> batchSpectra;
         fileExtractor.parseClusterFileForExtract(clusterFileFN_);
         fileExtractor.extractToBatchSpectrumList(batchSpectra);
         
@@ -592,11 +592,11 @@ int MaRaCluster::run() {
         
         std::cerr << "Read " << batchSpectra.size() << " spectra." << std::endl;
         
-        BatchSpectra spectra;
+        Spectra spectra;
         spectra.setBatchSpectra(batchSpectra);
         spectra.sortSpectraByPrecMz();
         
-        BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+        PvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         pvecs.calculatePvalueVectors(spectra.getSpectra(), peakCounts);
         pvecs.batchCalculatePvalues();
         PvalueFilterAndSort::convertBinaryPvalToTsv(pvaluesFN_, pvaluesFN_);
@@ -621,9 +621,9 @@ int MaRaCluster::run() {
         }
         std::string pvalueVectorsBaseFN = outputFolder_ + "/" + fnPrefix_ + ".pvalue_vectors";
         
-        BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+        PvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         {
-          BatchSpectra spectra;
+          Spectra spectra;
           if (spectrumInFN_.substr(spectrumInFN_.size() - 3) == "dat") {
             spectra.readBatchSpectra(spectrumInFN_);
           } else {
@@ -691,7 +691,7 @@ int MaRaCluster::run() {
       
       if (!Globals::fileExists(pvaluesFN_)) {
         // read in the query spectra
-        BatchSpectra querySpectra;
+        Spectra querySpectra;
         SpectrumFileList fileList;
         if (spectrumInFN_.size() > 0) {
           querySpectra.convertToBatchSpectra(spectrumInFN_, fileList);
@@ -704,7 +704,7 @@ int MaRaCluster::run() {
         if (peakCountFN_.empty()) {
           peakCountFN_ = outputFolder_ + "/" + fnPrefix_ + ".peak_counts.dat";
           
-          BatchSpectrumFiles spectrumFiles(outputFolder_);
+          SpectrumFiles spectrumFiles(outputFolder_);
           std::vector<double> precMzsAccumulated;
           spectrumFiles.getPeakCountsAndPrecursorMzs(fileList, precMzsAccumulated, peakCountFN_);
         }
@@ -716,11 +716,11 @@ int MaRaCluster::run() {
         
         // read in the library spectra
         PvalueCalculator::kMinScoringPeaks = 5u;
-        BatchSpectra librarySpectra;
+        Spectra librarySpectra;
         librarySpectra.convertToBatchSpectra(spectrumLibraryFN_, fileList);
         librarySpectra.sortSpectraByPrecMz();
         
-        BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+        PvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         pvecs.calculatePvalueVectors(librarySpectra.getSpectra(), peakCounts);
         if (pvalueVectorsBaseFN_.size() > 0) {
           writeAll_ = true;
@@ -777,7 +777,7 @@ int MaRaCluster::run() {
         std::cerr << "Finished reading peak counts" << std::endl;
         
         // read in the query spectra
-        BatchSpectra querySpectra;
+        Spectra querySpectra;
         SpectrumFileList fileList;
         if (spectrumInFN_.size() > 0) {
           querySpectra.convertToBatchSpectra(spectrumInFN_, fileList);
@@ -789,11 +789,11 @@ int MaRaCluster::run() {
         
         // read in the library spectra
         PvalueCalculator::kMinScoringPeaks = 5u;
-        BatchSpectra librarySpectra;
+        Spectra librarySpectra;
         librarySpectra.convertToBatchSpectra(spectrumLibraryFN_, fileList);
         librarySpectra.sortSpectraByPrecMz();
         
-        BatchPvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+        PvalueVectors pvecs(pvaluesFN_, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
         pvecs.calculatePvalueVectors(librarySpectra.getSpectra(), peakCounts);
         pvecs.batchCalculatePvaluesLibrarySearch(querySpectra.getSpectra());
       } else {
@@ -864,10 +864,10 @@ int MaRaCluster::run() {
       }
       */
       /*
-      if (BatchSpectrumFiles::limitsUnitTest()) {
-        std::cerr << "BatchSpectrumFiles limits unit tests succeeded" << std::endl;
+      if (SpectrumFiles::limitsUnitTest()) {
+        std::cerr << "SpectrumFiles limits unit tests succeeded" << std::endl;
       } else {
-        std::cerr << "BatchSpectrumFiles limits unit tests failed" << std::endl;
+        std::cerr << "SpectrumFiles limits unit tests failed" << std::endl;
         ++failures;
       }
       */

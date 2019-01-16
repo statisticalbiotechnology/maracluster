@@ -24,7 +24,6 @@ using pwiz::msdata::SpectrumListSimplePtr;
 using pwiz::msdata::SpectrumListSimple;
 using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
-using pwiz::msdata::Spectrum;
 using pwiz::msdata::SelectedIon;
 
 void MSFileExtractor::parseClusterFileForExtract(const std::string& clusterFile) {
@@ -116,7 +115,7 @@ void MSFileExtractor::extractSpectra() {
 }
 
 void MSFileExtractor::extractToBatchSpectrumList(
-    std::vector<BatchSpectrum>& batchSpectra) {
+    std::vector<Spectrum>& batchSpectra) {
   std::cerr << "Extracting spectra!\n";
   
   std::vector< std::vector<ScanId> > scanIdsByFile;
@@ -151,7 +150,7 @@ void MSFileExtractor::extractToBatchSpectrumList(
         int maxCharge = mcc.charge + chargeErrorTolerance_;
         float precMz = SpectrumHandler::calcPrecMz(mcc.mass, mcc.charge);
         for (int charge = minCharge; charge <= maxCharge; ++charge) {
-          BatchSpectrum bs;
+          Spectrum bs;
           bs.precMz = precMz;
           bs.retentionTime = retentionTime;
           bs.charge = charge;

@@ -14,8 +14,8 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_BATCHSPECTRUMCLUSTERS_H_
-#define MARACLUSTER_BATCHSPECTRUMCLUSTERS_H_
+#ifndef MARACLUSTER_SPECTRUMCLUSTERS_H_
+#define MARACLUSTER_SPECTRUMCLUSTERS_H_
 
 #include <string>
 #include <iostream>
@@ -31,14 +31,14 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include "Globals.h"
-#include "BatchSpectrumFiles.h"
+#include "SpectrumFiles.h"
 #include "SpectrumFileList.h"
 #include "PvalueTriplet.h"
 #include "BinaryInterface.h"
 
 namespace maracluster {
 
-class BatchSpectrumClusters {
+class SpectrumClusters {
  public:
   void printClusters(const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
@@ -67,4 +67,4 @@ class BatchSpectrumClusters {
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_BATCHSPECTRUMCLUSTERS_H_ */
+#endif /* MARACLUSTER_SPECTRUMCLUSTERS_H_ */

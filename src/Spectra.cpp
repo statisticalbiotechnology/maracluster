@@ -14,11 +14,11 @@
   
  ******************************************************************************/
  
-#include "BatchSpectra.h"
+#include "Spectra.h"
 
 namespace maracluster {
 
-void BatchSpectra::convertToBatchSpectra(SpectrumFileList& fileList) {
+void Spectra::convertToBatchSpectra(SpectrumFileList& fileList) {
   std::vector<std::string> spectrumFNs = fileList.getFilePaths();
 #pragma omp parallel for schedule(dynamic, 1)                
   for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
@@ -27,14 +27,14 @@ void BatchSpectra::convertToBatchSpectra(SpectrumFileList& fileList) {
   }
 }
 
-void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN, 
+void Spectra::convertToBatchSpectra(std::string& spectrumFN, 
     SpectrumFileList& fileList) {
   if (Globals::VERB > 1) {
     std::cerr << "Reading in spectra from " << spectrumFN << std::endl;
   }
   
-  BatchSpectrumFiles specFiles;
-  std::vector<BatchSpectrum> localSpectra;
+  SpectrumFiles specFiles;
+  std::vector<Spectrum> localSpectra;
   std::vector<ScanInfo> localScanInfos;
   specFiles.getBatchSpectra(spectrumFN, fileList, localSpectra, localScanInfos);
   
@@ -48,7 +48,7 @@ void BatchSpectra::convertToBatchSpectra(std::string& spectrumFN,
   }
 }
 
-void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
+void Spectra::readBatchSpectra(std::string& batchSpectraFN) {
   if (Globals::VERB > 1) {
     std::cerr << "Reading in spectra from " << batchSpectraFN << std::endl;
   }
@@ -58,19 +58,19 @@ void BatchSpectra::readBatchSpectra(std::string& batchSpectraFN) {
     return;
   } 
   
-  BinaryInterface::read<BatchSpectrum>(batchSpectraFN, spectra_);
+  BinaryInterface::read<Spectrum>(batchSpectraFN, spectra_);
   
   if (Globals::VERB > 1) {
     std::cerr << "Read " << spectra_.size() << " mass charge states." << std::endl;
   }
 }
 
-void BatchSpectra::sortSpectraByPrecMz() {
+void Spectra::sortSpectraByPrecMz() {
   std::sort(spectra_.begin(), spectra_.end(), lessPrecMz);
 }
 
 #ifdef FINGERPRINT_FILTER
-bool BatchSpectra::readFingerprints(std::string& input_file, 
+bool Spectra::readFingerprints(std::string& input_file, 
     std::vector<std::vector<unsigned short> >& mol_features, 
     std::vector<ScanId>& mol_identifiers, 
     std::vector<float>& prec_masses) {  
@@ -79,7 +79,7 @@ bool BatchSpectra::readFingerprints(std::string& input_file,
   return 1;
 }
 
-bool BatchSpectra::readFingerprints(
+bool Spectra::readFingerprints(
     std::vector<std::vector<unsigned short> >& mol_features, 
     std::vector<ScanId>& mol_identifiers, 
     std::vector<float>& prec_masses) {
@@ -90,7 +90,7 @@ bool BatchSpectra::readFingerprints(
   
   unsigned int mol_count = 0;
   for (size_t i = 0; i < numSpectra; ++i) {
-    BatchSpectrum s = spectra_[i];
+    Spectrum s = spectra_[i];
     
     float precMass = SpectrumHandler::calcMass(s.precMz, s.charge);
     unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(precMass);

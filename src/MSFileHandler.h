@@ -37,7 +37,7 @@
 #include "ScanMergeInfoSet.h"
 #include "PvalueCalculator.h"
 
-#include "BatchSpectrum.h"
+#include "Spectrum.h"
 
 namespace maracluster {
 

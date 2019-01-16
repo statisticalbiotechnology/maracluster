@@ -26,9 +26,9 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include "Globals.h"
-#include "BatchPvalues.h"
-#include "BatchPvalueVectors.h"
-#include "BatchSpectrum.h"
+#include "Pvalues.h"
+#include "PvalueVectors.h"
+#include "Spectrum.h"
 
 #include "ScanId.h"
 #include "PeakCounts.h"
@@ -61,12 +61,12 @@ struct ScanInfo {
   }
 };
 
-class BatchSpectrumFiles {
+class SpectrumFiles {
  public:
-  BatchSpectrumFiles() : precMzFileFolder_(""), chargeUncertainty_(0) {}
-  BatchSpectrumFiles(const std::string& precMzFileFolder) : 
+  SpectrumFiles() : precMzFileFolder_(""), chargeUncertainty_(0) {}
+  SpectrumFiles(const std::string& precMzFileFolder) : 
       precMzFileFolder_(precMzFileFolder), chargeUncertainty_(0) {}
-  BatchSpectrumFiles(const std::string& precMzFileFolder, 
+  SpectrumFiles(const std::string& precMzFileFolder, 
                      const int chargeUncertainty) : 
       precMzFileFolder_(precMzFileFolder), 
       chargeUncertainty_(chargeUncertainty) {}
@@ -92,7 +92,7 @@ class BatchSpectrumFiles {
     std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
   void getBatchSpectra(const std::string& spectrumFN, 
-    SpectrumFileList& fileList, std::vector<BatchSpectrum>& localSpectra,
+    SpectrumFileList& fileList, std::vector<Spectrum>& localSpectra,
     std::vector<ScanInfo>& localScanInfos);
   
   static bool limitsUnitTest();
@@ -118,7 +118,7 @@ class BatchSpectrumFiles {
     const std::string& scanInfoFN);
   
   void appendBatchSpectra(
-    std::vector< std::vector<BatchSpectrum> >& batchSpectra,
+    std::vector< std::vector<Spectrum> >& batchSpectra,
     std::vector<std::string>& datFNs);
   void writePeakCounts(PeakCounts& peakCountsAccumulated, const std::string& peakCountFN);
   

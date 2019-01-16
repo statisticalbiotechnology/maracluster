@@ -14,16 +14,16 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_BATCHSPECTRA_H_
-#define MARACLUSTER_BATCHSPECTRA_H_
+#ifndef MARACLUSTER_SPECTRA_H_
+#define MARACLUSTER_SPECTRA_H_
 
 #include <iostream>
 #include <vector>
 #include <string>
 
 #include "Globals.h"
-#include "BatchSpectrumFiles.h"
-#include "BatchSpectrum.h"
+#include "SpectrumFiles.h"
+#include "Spectrum.h"
 
 #include "SpectrumHandler.h"
 #include "SpectrumFileList.h"
@@ -32,12 +32,12 @@
 
 namespace maracluster {
 
-class BatchSpectra {
+class Spectra {
  public:
-  BatchSpectra() {}
+  Spectra() {}
   
   // methods to import spectra
-  void setBatchSpectra(std::vector<BatchSpectrum>& spectra) {
+  void setBatchSpectra(std::vector<Spectrum>& spectra) {
     spectra_ = spectra;
   }
   void convertToBatchSpectra(std::string& spectrumFN, 
@@ -48,7 +48,7 @@ class BatchSpectra {
   void sortSpectraByPrecMass();
   void sortSpectraByPrecMz();
   
-  inline std::vector<BatchSpectrum>& getSpectra() { return spectra_; }
+  inline std::vector<Spectrum>& getSpectra() { return spectra_; }
   
   // Reading a batchspectrum inputfile for fingerprint similarities
   bool readFingerprints(std::string& input_file, 
@@ -60,12 +60,12 @@ class BatchSpectra {
       std::vector<ScanId>& mol_identifiers, 
       std::vector<float>& prec_masses);
   
-  inline static bool lessPrecMz(const BatchSpectrum& a, 
-    const BatchSpectrum& b) { return (a.precMz < b.precMz) || (a.precMz == b.precMz && a.scannr < b.scannr); }
+  inline static bool lessPrecMz(const Spectrum& a, 
+    const Spectrum& b) { return (a.precMz < b.precMz) || (a.precMz == b.precMz && a.scannr < b.scannr); }
  protected:
-  std::vector<BatchSpectrum> spectra_;
+  std::vector<Spectrum> spectra_;
 };
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_BATCHSPECTRA_H_ */
+#endif /* MARACLUSTER_SPECTRA_H_ */

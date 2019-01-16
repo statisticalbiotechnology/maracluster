@@ -14,32 +14,23 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_CLUSTERMERGE_H_
-#define MARACLUSTER_CLUSTERMERGE_H_
+#ifndef MARACLUSTER_PVALUEVECTOR_H_
+#define MARACLUSTER_PVALUEVECTOR_H_
 
-#include <vector>
-#include <iterator>
-#include <algorithm>
-#include <iostream>
-#include <cmath>
-
-#include <boost/foreach.hpp>
-
-#include "SpectrumHandler.h"
-#include "MZIntensityPair.h"
+#include "PvalueCalculator.h"
+#include "ScanId.h"
 
 namespace maracluster {
 
-class ClusterMerge {
-  public:
-    static void merge(std::vector<MZIntensityPair>& mziPairsIn, std::vector<MZIntensityPair>& mziPairsFrom, double weight = 1.0);
-  protected:
-    static double mzWeight, intWeight;
-    static double peakDistance(MZIntensityPair mzi1, MZIntensityPair mzi2);
-    static MZIntensityPair mergePeaks(MZIntensityPair mzi1, MZIntensityPair mzi2);
-    static MZIntensityPair findNN(MZIntensityPair mzi1, const std::vector<MZIntensityPair>& mziPairsFrom);
+struct PvalueVector {
+  double precMass, precMz, retentionTime;
+  double polyfit[PvalueCalculator::kPolyfitDegree + 1];
+  short peakBins[PvalueCalculator::kMaxScoringPeaks];
+  short peakScores[PvalueCalculator::kMaxScoringPeaks];
+  int charge, queryCharge;
+  ScanId scannr;
 };
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_CLUSTERMERGE_H_ */
+#endif /* MARACLUSTER_BATCHPVALUEVECTOR_H_ */

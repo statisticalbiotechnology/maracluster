@@ -14,26 +14,26 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_BATCHSPECTRUM_H_
-#define MARACLUSTER_BATCHSPECTRUM_H_
+#ifndef MARACLUSTER_SPECTRUM_H_
+#define MARACLUSTER_SPECTRUM_H_
 
 #ifdef FINGERPRINT_FILTER
-  #define BATCH_SPECTRUM_NUM_STORED_PEAKS 80
+  #define SPECTRUM_NUM_STORED_PEAKS 80
 #else
-  #define BATCH_SPECTRUM_NUM_STORED_PEAKS 40
+  #define SPECTRUM_NUM_STORED_PEAKS 40
 #endif
 
 #include "ScanId.h"
 
 namespace maracluster {
 
-struct BatchSpectrum {
+struct Spectrum {
   ScanId scannr;
   unsigned int charge;
   float precMz, retentionTime;
-  short fragBins[BATCH_SPECTRUM_NUM_STORED_PEAKS];
+  short fragBins[SPECTRUM_NUM_STORED_PEAKS];
 };
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_BATCHSPECTRUM_H_ */
+#endif /* MARACLUSTER_SPECTRUM_H_ */

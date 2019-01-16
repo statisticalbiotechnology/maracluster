@@ -27,7 +27,6 @@ using pwiz::msdata::SpectrumListSimplePtr;
 using pwiz::msdata::SpectrumListSimple;
 using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::SpectrumPtr;
-using pwiz::msdata::Spectrum;
 
 using pwiz::msdata::Software;
 using pwiz::msdata::SoftwarePtr;
@@ -119,7 +118,7 @@ void MSFileMerger::mergeSpectraSetMSCluster(
   SpectrumPtr consensusSpec;
   BOOST_FOREACH(SpectrumPtr s, spectra) {
     if (first) {
-      consensusSpec = SpectrumPtr(new Spectrum(*s));
+      consensusSpec = SpectrumPtr(new pwiz::msdata::Spectrum(*s));
       first = false;
     }
 
@@ -492,112 +491,6 @@ void MSFileMerger::writeClusterBins(unsigned int batchIdx,
           boost::lexical_cast<std::string>(batchIdx));
 
     writeMSData(msdMerged, partSpecOutFN);
-  }
-}
-
-/**************************************
- ** These functions are obsolete now **
- **************************************/
-
-void MSFileMerger::mergeSpectraSet(std::vector<SpectrumPtr>& spectra,
-                                    SpectrumPtr& consensusSpec) {
-  std::vector<MZIntensityPair> mziPairsIn;
-  bool first = true;
-  BOOST_FOREACH(SpectrumPtr s, spectra) {
-    if (first) {
-      consensusSpec = SpectrumPtr(new Spectrum(*s));
-      SpectrumHandler::getMZIntensityPairs(consensusSpec, mziPairsIn);
-
-      if (normalize_) SpectrumHandler::normalizeIntensitiesMSCluster(mziPairsIn);
-      first = false;
-    } else {
-      std::vector<MZIntensityPair> mziPairsFrom;
-      SpectrumHandler::getMZIntensityPairs(s, mziPairsFrom);
-
-      if (normalize_) SpectrumHandler::normalizeIntensitiesMSCluster(mziPairsFrom);
-      double weight = 1.0;
-      mergeTwoSpectra(mziPairsIn, mziPairsFrom, weight);
-    }
-  }
-
-  if (mergeMethod_ == 11) {
-    mziPairsIn.resize((std::min)(100u,
-        static_cast<unsigned int>(mziPairsIn.size())));
-  }
-
-  std::sort(mziPairsIn.begin(), mziPairsIn.end(), SpectrumHandler::lessMZ);
-  SpectrumHandler::setMZIntensityPairs(consensusSpec, mziPairsIn);
-}
-
-void MSFileMerger::mergeTwoSpectra(std::vector<MZIntensityPair>& mziPairsIn,
-                                    std::vector<MZIntensityPair>& mziPairsFrom,
-                                    double weight) {
-  bool useWeights = false;
-
-  if (!useWeights) weight = 1.0;
-  switch (mergeMethod_) {
-    /* simply concatenate the data points of the second spectra into the
-       first one */
-    case 1: {
-      SpectrumHandler::scaleIntensities(mziPairsFrom, weight);
-      mziPairsIn.reserve( mziPairsIn.size() + mziPairsFrom.size() );
-      mziPairsIn.insert( mziPairsIn.end(), mziPairsFrom.begin(),
-                         mziPairsFrom.end() );
-      break;
-    }
-    /* linearly interpolate the intensity of the second spectrum at the nodes
-       of the first spectrum and add them to the first spectrum, optionally
-       shift and scale the spectra to align them better (did not produce
-       better results in tests */
-    case 2: {
-      double winningShift = 0.0, winningScaling = 0.0;
-      InterpolationMerge::findBestAffineTransform(mziPairsIn, mziPairsFrom,
-          weight, winningShift, winningScaling);
-      //std::cerr << "Winning shift = " << winningShift <<
-      //             " winning scaling = " << winningScaling << std::endl;
-      InterpolationMerge::merge(mziPairsIn, mziPairsFrom, weight,
-          InterpolationMerge::AVGM, winningShift, winningScaling);
-      break;
-    }
-    /* linearly interpolate both ways (s1->s2 and s2->s1) and concatenate */
-    case 5: {
-      InterpolationMerge::mergeViceVersa(mziPairsIn, mziPairsFrom, weight);
-      break;
-    }
-    /* linearly interpolate (s2->s1) and take minimum intensity */
-    case 6: {
-      InterpolationMerge::merge(mziPairsIn, mziPairsFrom, weight,
-                                InterpolationMerge::MINM);
-      break;
-    }
-    /* linearly interpolate (s2->s1) and take maximum intensity */
-    case 7: {
-      InterpolationMerge::merge(mziPairsIn, mziPairsFrom, weight,
-                                InterpolationMerge::MAXM);
-      break;
-    }
-    /* linearly interpolate (s2->s1) and merge peaks with similar peak rank */
-    case 9: {
-      bool useRegionRank = false;
-      RankMerge::mergeMinMax(mziPairsIn, mziPairsFrom, weight, useRegionRank);
-      break;
-    }
-    /* linearly interpolate (s2->s1) and merge peaks with similar local
-       (to 1 of the 10 XCorr regions) peak rank */
-    case 10: {
-      bool useRegionRank = true;
-      RankMerge::mergeMinMax(mziPairsIn, mziPairsFrom, weight, useRegionRank);
-      break;
-    }
-    /* cluster peaks and take center of gravity as new peak. N.B. this only
-       works for peak picked spectra. */
-    case 11: {
-      ClusterMerge::merge(mziPairsIn, mziPairsFrom, weight);
-      break;
-    }
-    default: {
-      throw std::runtime_error("Method not found");
-    }
   }
 }
 

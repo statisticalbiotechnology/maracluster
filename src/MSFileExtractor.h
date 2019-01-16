@@ -43,7 +43,7 @@ class MSFileExtractor : public MSFileHandler {
     const std::string& filePathOrig, const std::string& filePathMerged);
   
   void extractSpectra();  
-  void extractToBatchSpectrumList(std::vector<BatchSpectrum>& batchSpectra);
+  void extractToBatchSpectrumList(std::vector<Spectrum>& batchSpectra);
   
  protected:  
   void getScanIdsByFile(std::vector< std::vector<ScanId> >& scanIdsByFile);

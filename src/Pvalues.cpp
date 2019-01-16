@@ -14,31 +14,21 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_BATCHPVALUES_H_
-#define MARACLUSTER_BATCHPVALUES_H_
-
-#include <iostream>
-#include <vector>
-#include <string>
-
-#include "Globals.h"
-#include "BinaryInterface.h"
-#include "PvalueTriplet.h"
+#include "Pvalues.h"
 
 namespace maracluster {
 
-class BatchPvalues {
- public:
-  BatchPvalues() : pvaluesFN_("") { }
-  BatchPvalues(const std::string& pvaluesFN) : pvaluesFN_(pvaluesFN) { }
+void Pvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer) {
+  if (Globals::VERB > 4) {
+    std::cerr << "Writing " << pvalBuffer.size() << " pvalues." << std::endl;
+  }
   
-  void batchWrite(std::vector<PvalueTriplet>& pvalBuffer);
-  
-  inline std::string getPvaluesFN() const { return pvaluesFN_; }
- protected:
-  std::string pvaluesFN_;
-};
+  if (pvalBuffer.size() > 0)
+#pragma omp critical (batch_write_pval)
+  {  
+    bool append = true;
+    BinaryInterface::write<PvalueTriplet>(pvalBuffer, pvaluesFN_, append);
+  }
+}
 
 } /* namespace maracluster */
-
-#endif /* MARACLUSTER_BATCHPVALUES_H_ */

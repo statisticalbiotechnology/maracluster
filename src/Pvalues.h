@@ -14,23 +14,31 @@
   
  ******************************************************************************/
  
-#ifndef MARACLUSTER_BATCHPVALUEVECTOR_H_
-#define MARACLUSTER_BATCHPVALUEVECTOR_H_
+#ifndef MARACLUSTER_BATCHPVALUES_H_
+#define MARACLUSTER_BATCHPVALUES_H_
 
-#include "PvalueCalculator.h"
-#include "ScanId.h"
+#include <iostream>
+#include <vector>
+#include <string>
+
+#include "Globals.h"
+#include "BinaryInterface.h"
+#include "PvalueTriplet.h"
 
 namespace maracluster {
 
-struct BatchPvalueVector {
-  double precMass, precMz, retentionTime;
-  double polyfit[PvalueCalculator::kPolyfitDegree + 1];
-  short peakBins[PvalueCalculator::kMaxScoringPeaks];
-  short peakScores[PvalueCalculator::kMaxScoringPeaks];
-  int charge, queryCharge;
-  ScanId scannr;
+class Pvalues {
+ public:
+  Pvalues() : pvaluesFN_("") { }
+  Pvalues(const std::string& pvaluesFN) : pvaluesFN_(pvaluesFN) { }
+  
+  void batchWrite(std::vector<PvalueTriplet>& pvalBuffer);
+  
+  inline std::string getPvaluesFN() const { return pvaluesFN_; }
+ protected:
+  std::string pvaluesFN_;
 };
 
 } /* namespace maracluster */
 
-#endif /* MARACLUSTER_BATCHPVALUEVECTOR_H_ */
+#endif /* MARACLUSTER_BATCHPVALUES_H_ */
