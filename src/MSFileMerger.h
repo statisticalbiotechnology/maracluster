@@ -59,10 +59,6 @@ class MSFileMerger : public MSFileHandler {
   void parseClusterFileForMerge(const std::string& clusterFile,
       const size_t minClusterSize);
 
-  void parseClusterFileForSingleFileMerge(
-      const std::string& clusterFN, const std::string& spectrumInFN,
-      const std::string& scanWeightsFN);
-
   void mergeSpectra();
 
   void mergeAllSpectra(const std::string& spectrumInFN);

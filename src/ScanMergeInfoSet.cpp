@@ -14,14 +14,14 @@
   
  ******************************************************************************/
  
-#include "ScanMergeInfo.h"
+#include "ScanMergeInfoSet.h"
 
 namespace maracluster {
 
 std::ostream& operator<<(std::ostream& os, const ScanMergeInfoSet& sms) {
-  os << sms.mergedScanId << '\t' << sms.peptide;
-  BOOST_FOREACH(const ScanMergeInfo scanMergeInfo, sms.scans) {
-    os << '\t' << scanMergeInfo.scannr.fileIdx << '\t' << scanMergeInfo.scannr.scannr << '\t' << std::setprecision(3) << scanMergeInfo.weight;
+  os << sms.mergedScanId;
+  BOOST_FOREACH(const ScanId scannr, sms.scans) {
+    os << '\t' << scannr.fileIdx << '\t' << scannr.scannr;
   }
   os << std::endl;
   return os;

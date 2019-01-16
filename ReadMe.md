@@ -18,7 +18,7 @@ To run `maracluster batch`, a flat text file with the absolute/relative path to 
 ```
 maracluster batch -b files.txt
 ```
-This will create several files called `MaRaCluster.clusters_p<x>.tsv` in a subdirectory called `maracluster_output`, for a range of p-value thresholds `10e-<x>`. These output files contain one spectrum per line, with different clusters separated by an empty line. The spectrum is listed with the path to the spectrum file in the first column and the scannr (or scan idx if no scannr is available) in the second column, separated by a tab.
+This will create several files called `MaRaCluster.clusters_p<x>.tsv` in a subdirectory called `maracluster_output`, for a range of p-value thresholds `10e-<x>`. These output files contain one spectrum per line, with different clusters separated by an empty line. The spectrum is listed with the path to the spectrum file in the first column, the unmerged scannr (or scan index if no scannr is available) in the second column and the cluster index in the third column, all separated by tabs.
 
 To run `maracluster consensus`, we take one of the cluster files as input, e.g.:
 ```

@@ -47,6 +47,18 @@ struct ScanInfo {
   
   ScanId scanId;
   float minPrecMz, maxPrecMz;
+  
+  bool operator<(const ScanInfo& si) const {
+    return (scanId < si.scanId);
+  }
+  
+  bool operator==(const ScanInfo& si) const {
+    return (scanId == si.scanId);
+  }
+  
+  bool operator!=(const ScanInfo& si) const {
+    return (scanId != si.scanId);
+  }
 };
 
 class BatchSpectrumFiles {

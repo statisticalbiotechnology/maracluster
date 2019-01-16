@@ -34,7 +34,6 @@
 #include "BatchSpectrumFiles.h"
 #include "SpectrumFileList.h"
 #include "PvalueTriplet.h"
-#include "ScanMergeInfo.h"
 #include "BinaryInterface.h"
 
 namespace maracluster {
@@ -48,7 +47,7 @@ class BatchSpectrumClusters {
   static std::string getClusterFN(const std::string resultBaseFN, double threshold);
   
  private:
-  ScanPeptideMap scanPeptideMap_;
+  std::vector<ScanInfo> scanInfos_;
   
   void readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals);

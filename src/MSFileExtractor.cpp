@@ -40,7 +40,7 @@ void MSFileExtractor::parseClusterFileForExtract(const std::string& clusterFile)
       iss >> filepath >> scannr;
       if (iss.good()) {
         ScanId globalIdx = fileList_.getScanId(filepath, scannr);
-        combineSets_.back().push_back(ScanMergeInfo(globalIdx));
+        combineSets_.back().push_back(globalIdx);
       }
     }
   }
@@ -60,20 +60,20 @@ void MSFileExtractor::parseScannrStringForExtract(
   while (std::getline(ss, token, ',')) {
     unsigned int scannr = atoi(token.c_str());
     ScanId tmp = fileList_.getScanId(filePathOrig, scannr);
-    combineSets_.back().push_back(ScanMergeInfo(tmp));
+    combineSets_.back().push_back(tmp);
   }
 }
 
 void MSFileExtractor::getScanIdsByFile(
     std::vector< std::vector<ScanId> >& scanIdsByFile) {
   std::sort(combineSets_.front().scans.begin(), 
-            combineSets_.front().scans.end(), ScanMergeInfo::lowerScannr);
+            combineSets_.front().scans.end());
   
   scanIdsByFile.resize(fileList_.getFilePaths().size());        
-  BOOST_FOREACH (const ScanMergeInfo& scanMergeInfo, 
+  BOOST_FOREACH (const ScanId& scannr, 
                  combineSets_.front().scans) {
-    unsigned int fileIdx = fileList_.getFileIdx(scanMergeInfo.scannr);
-    scanIdsByFile[fileIdx].push_back(scanMergeInfo.scannr);
+    unsigned int fileIdx = fileList_.getFileIdx(scannr);
+    scanIdsByFile[fileIdx].push_back(scannr);
   }
 }
 

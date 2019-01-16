@@ -53,9 +53,8 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile,
     size_t mergeCount = 0;
     while (getline(clusterStream, line)) {
       std::istringstream iss(line);
-      std::string peptide, filepath;
+      std::string filepath;
       unsigned int scannr = 0;
-      double qvalue = 0.0;
 
       iss >> filepath >> scannr;
 
@@ -66,7 +65,6 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile,
         if (newCluster) {
           ScanMergeInfoSet s;
           s.mergedScanId = fileList_.getScanId(spectrumOutFN_, ++mergeCount);
-          s.peptide = peptide;
           if (combineSets_.size() > 0 && combineSets_.back().size() < minClusterSize) {
             combineSets_.pop_back();
           }
@@ -74,65 +72,13 @@ void MSFileMerger::parseClusterFileForMerge(const std::string& clusterFile,
           newCluster = false;
         }
 
-        bool isDecoy = false;
-        int charge = 0;
         ScanId globalIdx = fileList_.getScanId(filepath, scannr);
-        combineSets_.back().push_back(
-            ScanMergeInfo(globalIdx, qvalue, isDecoy, charge, peptide));
+        combineSets_.back().push_back(globalIdx);
       }
     }
 
     if (combineSets_.size() > 0 && combineSets_.back().size() < minClusterSize) {
       combineSets_.pop_back();
-    }
-  }
-}
-
-/* Reads in clusters in the format (can only handle single file merges):
-     scannr <tab> peptide <tab> charge <tab> qvalue */
-void MSFileMerger::parseClusterFileForSingleFileMerge(
-    const std::string& clusterFN, const std::string& spectrumInFN,
-    const std::string& scanWeightsFN) {
-  std::ifstream clusterStream(clusterFN.c_str());
-  std::string line, tmp, id, peptide;
-
-  // decide if we write the merger list to a file or not at all
-  std::ofstream scanWeightsStream;
-  bool writeMergeInfo = false;
-  if (scanWeightsFN.size() > 0) {
-    scanWeightsStream.open(scanWeightsFN.c_str());
-    writeMergeInfo = true;
-  }
-
-  double qvalue;
-  if (clusterStream.is_open()) {
-    getline(clusterStream, line); // remove header line
-    size_t mergeCount = 0;
-    bool newCluster = true;
-    while (getline(clusterStream, line)) {
-      std::istringstream iss(line);
-      unsigned int scannr, charge;
-      std::string peptide;
-      iss >> scannr >> peptide >> charge >> qvalue;
-
-      if (iss.fail()) {
-        newCluster = true;
-        if (writeMergeInfo) scanWeightsStream << combineSets_.back();
-      } else {
-        ScanId globalIdx = fileList_.getScanId(spectrumInFN, scannr);
-        unsigned int mergedIdx = ++mergeCount;
-        if (newCluster) {
-          ScanMergeInfoSet s;
-          s.mergedScanId = fileList_.getScanId(spectrumOutFN_, mergedIdx);
-          s.peptide = peptide;
-          combineSets_.push_back(s);
-          newCluster = false;
-        }
-        bool isDecoy = false;
-        combineSets_.back().push_back(
-            ScanMergeInfo(globalIdx, qvalue, isDecoy, charge, peptide));
-        combineSets_.back().sortByScore();
-      }
     }
   }
 }
@@ -241,9 +187,9 @@ void MSFileMerger::mergeSpectraSmall() {
 
   BOOST_FOREACH (ScanMergeInfoSet& mergeSet, combineSets_) {
     std::vector<SpectrumPtr> spectra;
-    BOOST_FOREACH (ScanMergeInfo scanMergeInfo, mergeSet.scans) {
-      std::string filepath = fileList_.getFilePath(scanMergeInfo.scannr);
-      unsigned int scannr = fileList_.getScannr(scanMergeInfo.scannr);
+    BOOST_FOREACH (ScanId scanId, mergeSet.scans) {
+      std::string filepath = fileList_.getFilePath(scanId);
+      unsigned int scannr = fileList_.getScannr(scanId);
 
       if (msDataPtrs.find(filepath) == msDataPtrs.end()) {
         MSDataPtr msd(new MSDataFile(filepath));
@@ -315,8 +261,8 @@ void MSFileMerger::mergeSpectraScalable() {
 void MSFileMerger::createScannrToMergedScannrMap(
     std::map<ScanId, ScanId>& scannrToMergedScannr) {
   BOOST_FOREACH (ScanMergeInfoSet& mergeSet, combineSets_) {
-    BOOST_FOREACH (ScanMergeInfo scanMergeInfo, mergeSet.scans) {
-      scannrToMergedScannr[scanMergeInfo.scannr] = mergeSet.mergedScanId;
+    BOOST_FOREACH (ScanId scannr, mergeSet.scans) {
+      scannrToMergedScannr[scannr] = mergeSet.mergedScanId;
     }
   }
 }
@@ -473,8 +419,7 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin, std::vector<MSDataPtr>& ms
     for (unsigned int i = 0; i < combineSets_.size(); ++i) {
       if (getClusterBin(combineSets_[i].mergedScanId) == clusterBin) {
         unsigned int posInCluster = 0;
-        BOOST_FOREACH (ScanMergeInfo scanMergeInfo, combineSets_[i].scans) {
-          ScanId scannr = scanMergeInfo.scannr;
+        BOOST_FOREACH (ScanId scannr, combineSets_[i].scans) {
           unsigned int fileIdx = fileList_.getFileIdx(scannr);
           //std::cerr << scannr << " " << i << " " << fileIdx << std::endl;
           SpectrumListPtr sl = msdVector[fileIdx / numMSFilePtrsPerBatch_]->run.spectrumListPtr;

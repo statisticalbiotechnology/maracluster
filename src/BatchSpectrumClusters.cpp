@@ -28,7 +28,12 @@ void BatchSpectrumClusters::printClusters(
   }
   std::sort(pvals.begin(), pvals.end());
   
-  readScanNrs(scanInfoFN);
+  if (Globals::fileExists(scanInfoFN)) {
+    BinaryInterface::read<ScanInfo>(scanInfoFN, scanInfos_);
+    std::sort(scanInfos_.begin(), scanInfos_.end());
+  } else if (Globals::VERB > 1) {
+    std::cerr << "WARNING: Could not find scanInfo file." << std::endl;
+  }
   
   createClusterings(pvals, clusterThresholds, fileList, resultBaseFN);
 }
@@ -53,19 +58,6 @@ void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
     }
   } else {
     std::cerr << "WARNING: Empty pvalue tree file " << pvalTreeFN << std::endl;
-  }
-}
-
-void BatchSpectrumClusters::readScanNrs(const std::string& scanInfoFN) {
-  if (Globals::fileExists(scanInfoFN)) {
-    std::vector<ScanInfo> scanInfos;
-    BinaryInterface::read<ScanInfo>(scanInfoFN, scanInfos);
-    
-    BOOST_FOREACH (const ScanInfo& si, scanInfos) {
-      scanPeptideMap_[si.scanId] = ScanMergeInfo(si.scanId);
-    }
-  } else {
-    std::cerr << "WARNING: Could not find scanInfo file." << std::endl;
   }
 }
 
@@ -169,11 +161,9 @@ void BatchSpectrumClusters::writeClusters(
         
         unsigned int localScannr = fileList.getScannr(globalScannr);
         std::string filePath = fileList.getFilePath(globalScannr);
-        std::string peptide = scanPeptideMap_[globalScannr].peptide;
-        double qvalue = scanPeptideMap_[globalScannr].score;
         
         resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx
-                     << '\t' << peptide << '\t' << qvalue << '\n';
+                     << '\n';
       }
       clusterIdx++;
       resultStream << std::endl;
@@ -216,19 +206,17 @@ size_t BatchSpectrumClusters::writeSingletonClusters(
     std::set<ScanId>& seenScannrs, SpectrumFileList& fileList,
     std::ofstream& resultStream, size_t clusterIdx) {
   size_t addedSingletonClusters = 0u;
-  std::map<ScanId, ScanMergeInfo>::const_iterator spmIt;
-  for (spmIt = scanPeptideMap_.begin(); spmIt != scanPeptideMap_.end(); ++spmIt) {
-    if (seenScannrs.find(spmIt->first) == seenScannrs.end()) {
-      ScanId globalScannr = spmIt->first;
+  std::vector<ScanInfo>::const_iterator spmIt;
+  for (spmIt = scanInfos_.begin(); spmIt != scanInfos_.end(); ++spmIt) {
+    if (seenScannrs.find(spmIt->scanId) == seenScannrs.end()) {
+      ScanId globalScannr = spmIt->scanId;
       
       addedSingletonClusters += 1;
       
       unsigned int localScannr = fileList.getScannr(globalScannr);
       std::string filePath = fileList.getFilePath(globalScannr);
-      std::string peptide = spmIt->second.peptide;
-      double qvalue = spmIt->second.score;
       resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx++
-                   << '\t' << peptide << '\t' << qvalue << '\n' << '\n';
+                   << '\n' << '\n';
     }
   }
   return addedSingletonClusters;

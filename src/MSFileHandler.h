@@ -34,7 +34,7 @@
 #include "BinSpectra.h"
 #include "PeakCounts.h"
 #include "SpectrumFileList.h"
-#include "ScanMergeInfo.h"
+#include "ScanMergeInfoSet.h"
 #include "PvalueCalculator.h"
 
 #include "BatchSpectrum.h"
