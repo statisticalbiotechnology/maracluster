@@ -21,15 +21,14 @@ namespace maracluster {
 void BatchSpectrumClusters::printClusters(
     const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
-    const std::string& scanInfoFN, const std::string& scanDescFN,
-    const std::string& resultBaseFN) {
+    const std::string& scanInfoFN, const std::string& resultBaseFN) {
   std::vector<PvalueTriplet> pvals;
   BOOST_FOREACH (const std::string& pvalTreeFN, pvalTreeFNs) {
     readPvalTree(pvalTreeFN, pvals);
   }
   std::sort(pvals.begin(), pvals.end());
   
-  createScanDescriptionMap(scanInfoFN, scanDescFN, fileList);
+  readScanNrs(scanInfoFN);
   
   createClusterings(pvals, clusterThresholds, fileList, resultBaseFN);
 }
@@ -54,57 +53,6 @@ void BatchSpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
     }
   } else {
     std::cerr << "WARNING: Empty pvalue tree file " << pvalTreeFN << std::endl;
-  }
-}
-
-void BatchSpectrumClusters::createScanDescriptionMap(
-    const std::string& scanInfoFN, const std::string& scanDescFN,
-    SpectrumFileList& fileList) {
-  readScanNrs(scanInfoFN);
-  readScanDescs(scanDescFN, fileList);
-}
-
-void BatchSpectrumClusters::readScanDescs(const std::string& scanDescFN,
-    SpectrumFileList& fileList) {
-  if (Globals::VERB > 1) {
-    std::cerr << "Reading in scan descriptions." << std::endl;
-  }
-  if (!Globals::fileIsEmpty(scanDescFN)) {
-    boost::iostreams::mapped_file mmap(scanDescFN, 
-              boost::iostreams::mapped_file::readonly);
-    const char* f = mmap.const_data();
-    const char* l = f + mmap.size();
-    
-    errno = 0;
-    char* next = NULL;
-    const char* nextConst = NULL;
-    unsigned int globalScannrTmp, localScannr;
-    ScanId globalScannr;
-    std::string filePath, peptide;
-    double qval;
-    
-    bool hasScannrs = false;
-    if (scanPeptideMap_.size() > 0) hasScannrs = true;
-    
-    while (errno == 0 && f && f<(l-12) ) {
-      // we cannot trust this global scannr, calculate the correct one later
-      globalScannrTmp = strtoul(f, &next, 0); f = next; 
-      nextConst = strchr(f+1, '\t'); 
-      filePath = std::string(f+1,nextConst); f = nextConst;
-      localScannr = strtoul(f, &next, 0); f = next;
-      nextConst = strchr(f+1, '\t'); 
-      peptide = std::string(f+1,nextConst); f = nextConst;
-      qval = strtod(f, &next); f = next;
-      
-      globalScannr = fileList.getScanId(filePath, localScannr);
-      
-      if (hasScannrs && scanPeptideMap_.find(globalScannr) != scanPeptideMap_.end()) {
-        scanPeptideMap_[globalScannr] = 
-            ScanMergeInfo(globalScannr, qval, false, 0, peptide);
-      }
-    }
-  } else {
-    std::cerr << "WARNING: Could not find scan desc file." << std::endl;
   }
 }
 
@@ -281,28 +229,6 @@ size_t BatchSpectrumClusters::writeSingletonClusters(
     }
   }
   return addedSingletonClusters;
-}
-
-bool BatchSpectrumClusters::scanDescReadUnitTest() {
-  std::string scanInfoFN = "";
-  std::string scanDescFN = "/media/storage/mergespec/data/103111-Yeast-2hr/percolator_no_tdc/scandesc/103111-Yeast-2hr.scannr_list.tsv";
-  
-  BatchSpectrumClusters clustering;
-  SpectrumFileList fileList;
-  clustering.scanPeptideMap_[ScanId(0,11)] = ScanMergeInfo(ScanId(0,11));
-  clustering.scanPeptideMap_[ScanId(2,39214)] = ScanMergeInfo(ScanId(2,39214));
-  clustering.createScanDescriptionMap(scanInfoFN, scanDescFN, fileList);
-  if (clustering.scanPeptideMap_[ScanId(0,11)].peptide != "R.SIVPSGASTGVHEALEMR.D") {
-    std::cerr << clustering.scanPeptideMap_[ScanId(0,11)].peptide << " != " 
-              << "R.SIVPSGASTGVHEALEMR.D" << std::endl;
-    return false;
-  } else if (clustering.scanPeptideMap_[ScanId(2,39214)].peptide != "R.HSEFVAYPIQLLVTK.E") {
-    std::cerr << clustering.scanPeptideMap_[ScanId(2,39214)].peptide << " != " 
-              << "R.HSEFVAYPIQLLVTK.E" << std::endl;
-    return false;
-  } else {
-    return true;
-  } 
 }
 
 } /* namespace maracluster */

@@ -43,22 +43,16 @@ class BatchSpectrumClusters {
  public:
   void printClusters(const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
-    const std::string& scanInfoFN, const std::string& scanDescFN,
-    const std::string& resultBaseFN);
+    const std::string& scanInfoFN, const std::string& resultBaseFN);
   
   static std::string getClusterFN(const std::string resultBaseFN, double threshold);
   
-  static bool scanDescReadUnitTest();
  private:
   ScanPeptideMap scanPeptideMap_;
   
   void readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals);
-  void createScanDescriptionMap(
-    const std::string& scanInfoFN, const std::string& scanDescFN,
-    SpectrumFileList& fileList);
   void readScanNrs(const std::string& scanInfoFN);
-  void readScanDescs(const std::string& scanDescFN, SpectrumFileList& fileList);
   
   void createClusterings(std::vector<PvalueTriplet>& pvals, 
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList,

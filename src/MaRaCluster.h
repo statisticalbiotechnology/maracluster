@@ -76,7 +76,6 @@ class MaRaCluster {
   std::string call_;
   std::string percOutFN_;
   std::string fnPrefix_;
-  std::string scanDescFN_;
   std::string peakCountFN_;
   std::string datFNFile_;
   std::string scanInfoFN_;

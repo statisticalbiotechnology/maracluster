@@ -20,7 +20,7 @@ namespace maracluster {
 
 MaRaCluster::MaRaCluster() :
     mode_(NONE), call_(""), percOutFN_(""), fnPrefix_("MaRaCluster"), 
-    scanDescFN_(""), peakCountFN_(""), datFNFile_(""), 
+    peakCountFN_(""), datFNFile_(""), 
     scanInfoFN_(""), pvaluesFN_(""), clusterFileFN_(""),
     pvalVecInFileFN_(""), pvalueVectorsBaseFN_(""), overlapBatchFileFN_(""), 
     spectrumBatchFileFN_(""), spectrumInFN_(""), spectrumOutFN_(""),
@@ -231,7 +231,6 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   if (cmd.optionSet("clusteringMatrix")) matrixFN_ = cmd.options["clusteringMatrix"];
   if (cmd.optionSet("clusteringTree")) resultTreeFN_ = cmd.options["clusteringTree"];
   if (cmd.optionSet("skipFilterAndSort")) skipFilterAndSort_ = true;
-  if (cmd.optionSet("percOut")) scanDescFN_ = cmd.options["percOut"];
   
   // file output option for maracluster consensus
   if (cmd.optionSet("specOut")) spectrumOutFN_ = cmd.options["specOut"];
@@ -387,7 +386,7 @@ int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs,
   
   // write clusters
   BatchSpectrumClusters clustering;
-  clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, scanInfoFN_, scanDescFN_, clusterBaseFN);
+  clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, scanInfoFN_, clusterBaseFN);
   
   return EXIT_SUCCESS;
 }
@@ -876,13 +875,6 @@ int MaRaCluster::run() {
         std::cerr << "Consensus spectra unit tests succeeded" << std::endl;
       } else {
         std::cerr << "Consensus spectra unit tests failed" << std::endl;
-        ++failures;
-      }
-      
-      if (BatchSpectrumClusters::scanDescReadUnitTest()) {
-        std::cerr << "Scan desc reading unit tests succeeded" << std::endl;
-      } else {
-        std::cerr << "Scan desc reading unit tests failed" << std::endl;
         ++failures;
       }
       
