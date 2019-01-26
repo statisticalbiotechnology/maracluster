@@ -253,8 +253,8 @@ void SpectrumHandler::fixMetaData(pwiz::msdata::SpectrumPtr s) {
   if (!mzArray.get() || !intensityArray.get())
       return;
 
-  std::vector<double>& mzs = mzArray->data;
-  std::vector<double>& intensities = intensityArray->data;
+  const std::vector<double>& mzs = mzArray->data;
+  const std::vector<double>& intensities = intensityArray->data;
 
   double tic = 0;
   if (!mzs.empty()) {
