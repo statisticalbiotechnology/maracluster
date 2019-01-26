@@ -141,20 +141,24 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include/zlib
 fi
 
-if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
-  cd ${build_dir}/tools
+#-----MaRaCluster-GUI dependencies-------
 
-  if [ ! -f qtbase-everywhere-src-5.11.2.tar.xz ]; then
-    wget http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/qtbase-everywhere-src-5.11.2.tar.xz
+if [ "$no_gui" != true ] ; then
+  if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
+    cd ${build_dir}/tools
+
+    if [ ! -f qtbase-everywhere-src-5.11.2.tar.xz ]; then
+      wget http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/qtbase-everywhere-src-5.11.2.tar.xz
+    fi
+
+    tar xf qtbase-everywhere-src-5.11.2.tar.xz
+    cd qtbase-everywhere-src-5.11.2
+
+    ./configure -prefix ../build/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
+
+    make -j4
+    make install -j4
   fi
-
-  tar xf qtbase-everywhere-src-5.11.2.tar.xz
-  cd qtbase-everywhere-src-5.11.2
-
-  ./configure -prefix ../build/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
-
-  make -j4
-  make install -j4
 fi
 
 #-------------------------------------------

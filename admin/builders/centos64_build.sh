@@ -34,54 +34,15 @@ mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  echo "Download source code for ProteoWizard from their SVN repository"
   sudo yum install -y subversion
-  rev=9393
-  svn co -r ${rev} --depth immediates svn://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
-  svn update -r ${rev} --set-depth infinity ./proteowizard/pwiz
-  svn update -r ${rev} --set-depth infinity ./proteowizard/libraries
+  ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
+fi
 
-  # install and keep libraries in the libs folder of this project for linking
-  cd proteowizard
+#-----MaRaCluster-GUI dependencies-------
 
-  ./clean.sh
-
-  echo "Building ProteoWizard and Boost, this may take some time.."
-
-  ./quickbuild.sh --without-binary-msdata \
-                  pwiz/data/common//pwiz_data_common \
-                  pwiz/data/identdata//pwiz_data_identdata \
-                  pwiz/data/identdata//pwiz_data_identdata_version \
-                  pwiz/data/msdata//pwiz_data_msdata \
-                  pwiz/data/msdata//pwiz_data_msdata_version \
-                  pwiz/data/proteome//pwiz_data_proteome \
-                  pwiz/utility/chemistry//pwiz_utility_chemistry \
-                  pwiz/utility/minimxml//pwiz_utility_minimxml \
-                  pwiz/utility/misc//SHA1 \
-                  pwiz/utility/misc//pwiz_utility_misc \
-                  /ext/zlib//z \
-                  /ext/boost//system \
-                  /ext/boost//thread \
-                  /ext/boost//chrono \
-                  /ext/boost//regex \
-                  /ext/boost//filesystem \
-                  /ext/boost//iostreams \
-                  /ext/boost//program_options \
-                  /ext/boost//serialization \
-                  > ../pwiz_installation.log 2>&1
-
-  # for revision 7692 the "libraries" target does not work, so we have to copy everything manually
-  mkdir -p ../lib
-  find build-linux-x86_64/ -type f | grep -i .a$ | xargs -i cp {} ../lib
-
-  mkdir -p ../include
-  find pwiz/ -type f | grep -i '.h$\|.hpp$' | xargs -i cp --parents {} ../include/
-
-  cd libraries/boost_1_56_0/
-  find boost/ -type f | grep -i '.h$\|.hpp$' | xargs -i cp --parents {} ../../../include/
-  
-  cd ../zlib-1.2.3
-  find ./ -type f | grep -i '.h$\|.hpp$' | xargs -i cp --parents {} ../../../include/
+if [ "$no_gui" != true ] ; then
+  sudo yum install -y patchelf  
+  ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 
 mkdir -p $build_dir/maracluster
@@ -97,4 +58,22 @@ sudo make install;
 
 mkdir -p $release_dir
 cp -v $build_dir/maracluster/mar*.rpm $release_dir
+
+if [ "$no_gui" != true ] ; then
+  #######maracluster-gui########
+  mkdir -p $build_dir/maracluster-gui
+  cd $build_dir/maracluster-gui
+  #-----cmake-----
+  echo -n "cmake maracluster-gui.....";
+  cmake -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH="$build_dir/tools/;$build_dir/tools/Qt-dynamic/" $src_dir/maracluster/src/qt-gui;
+
+  #-----make------
+  echo -n "make maracluster-gui (this will take few minutes).....";
+
+  make -j 4;
+  make -j 4 package;
+  sudo make install
+  
+  cp -v $build_dir/maracluster-gui/mar*.deb $release_dir
+fi
 
