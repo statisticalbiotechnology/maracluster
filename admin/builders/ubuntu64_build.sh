@@ -37,7 +37,8 @@ mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  sudo apt-get -y install subversion
+  #sudo apt-get -y install subversion
+  sudo apt-get -y install git;
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 

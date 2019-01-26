@@ -1,16 +1,15 @@
 # change directory to the build directory
 cd $1
 
-echo "Download source code for ProteoWizard from their SVN repository"
-rev=11906
-svn co -r ${rev} --depth immediates svn://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
-svn update -r ${rev} --set-depth infinity ./proteowizard/pwiz
-svn update -r ${rev} --set-depth infinity ./proteowizard/libraries
+echo "Download source code for ProteoWizard from their TeamCity server"
+linux_pwiz=pwiz-src-without-tv-3_0_19025_7f0e41d
+# https://teamcity.labkey.org/viewType.html?buildTypeId=bt81
+# without-tv: without tests and vendor readers
+#wget https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/${linux_pwiz}.tar.bz2
 
-# install and keep libraries in the libs folder of this project for linking
+mkdir proteowizard
+tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
 cd proteowizard
-
-./clean.sh
 
 echo "Building ProteoWizard and Boost, this may take some time.."
 
@@ -37,6 +36,7 @@ echo "Building ProteoWizard and Boost, this may take some time.."
                 /ext/boost//serialization \
                 > ../pwiz_installation.log 2>&1
 
+# install and keep libraries in the libs folder of this project for linking
 # for revision 7692 the "libraries" target does not work, so we have to copy everything manually
 mkdir -p ../lib
 find build-linux-x86_64/ -type f | grep -i .a$ | xargs -i cp {} ../lib
