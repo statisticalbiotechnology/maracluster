@@ -1,7 +1,7 @@
 #############################################################################
 # NAME AND VERSION
 ###############################################################################
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 project(MARACLUSTER)
 if (NOT DEFINED MARACLUSTER_SOURCE_DIR)
   set(MARACLUSTER_SOURCE_DIR ${CMAKE_SOURCE_DIR})

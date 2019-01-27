@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 2.8)
 project(MARACLUSTER_GUI)
 set(MARACLUSTER_GUI_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
