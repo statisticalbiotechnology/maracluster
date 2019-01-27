@@ -42,7 +42,7 @@ fi
 
 if [ "$no_gui" != true ] ; then
   sudo dnf install -y patchelf libicu-devel freetype-devel
-  ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
+  source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 
 mkdir -p $build_dir/maracluster

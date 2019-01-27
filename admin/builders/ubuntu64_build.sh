@@ -61,7 +61,7 @@ if [ "$no_gui" != true ] ; then
   
   sudo apt -y install libgl1-mesa-dev libicu-dev libfreetype6-dev
   
-  ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
+  source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 
 mkdir -p $build_dir/maracluster

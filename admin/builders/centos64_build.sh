@@ -42,7 +42,7 @@ fi
 
 if [ "$no_gui" != true ] ; then
   sudo yum install -y patchelf mesa-libGL-devel libicu-devel freetype-devel
-  ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
+  source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 
 mkdir -p $build_dir/maracluster
