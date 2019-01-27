@@ -29,7 +29,7 @@
 #include <fstream>
 
 #include <boost/foreach.hpp>
-#include <boost/unordered_map.hpp>
+#include <boost/unordered/unordered_map.hpp>
 
 #include "MatrixLoader.h"
 #include "PvalueTriplet.h"

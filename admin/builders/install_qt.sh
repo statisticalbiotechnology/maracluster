@@ -1,5 +1,7 @@
-# change directory to the build directory
-cd $1
+tools_dir=$1
+
+# change directory to the build director
+cd ${tools_dir}
 
 linux_qt=qtbase-everywhere-src-5.11.2
 if [ ! -d Qt-dynamic ]; then
@@ -11,7 +13,7 @@ if [ ! -d Qt-dynamic ]; then
   tar xf ${linux_qt}.tar.xz
   cd ${linux_qt}
 
-  ./configure -prefix ${build_dir}/tools/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
+  ./configure -prefix ${tools_dir}/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
   
   echo "Building Qt base, this may take some time.."
   

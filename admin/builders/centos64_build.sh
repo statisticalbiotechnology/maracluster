@@ -34,14 +34,13 @@ mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  sudo yum install -y subversion
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then
-  sudo yum install -y patchelf  
+  sudo yum install -y patchelf mesa-libGL-devel
   ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 

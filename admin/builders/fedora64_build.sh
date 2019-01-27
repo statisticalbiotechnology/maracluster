@@ -34,7 +34,6 @@ mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  sudo dnf install -y subversion
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 

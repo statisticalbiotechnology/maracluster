@@ -21,7 +21,7 @@
 #include <vector>
 #include <utility>
 
-#include <boost/unordered_map.hpp>
+#include <boost/unordered/unordered_map.hpp>
 
 #include "ScanId.h"
 #include "SparseEdge.h"
