@@ -10,7 +10,7 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 @echo off
-call setup_env.bat 32bit
+call %~dp0\setup_env.bat 32bit
 
 set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
 set SRC_DIR=%~dp0..\..\..\
@@ -62,8 +62,11 @@ set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
   if not exist "%PWIZ_DIR%" (
-    call :downloadfile %PWIZ_URL% %INSTALL_DIR%\pwiz.zip
-    %ZIP_EXE% x "%INSTALL_DIR%\pwiz.zip" -o"%PWIZ_DIR%" -aoa > NUL
+    call :downloadfile %PWIZ_URL% %INSTALL_DIR%\pwiz.tar.bz2
+    if not exist "%INSTALL_DIR%\pwiz.tar" (
+      %ZIP_EXE% x "%INSTALL_DIR%\pwiz.tar.bz2" -o"%INSTALL_DIR%" -aoa > NUL
+    )
+    %ZIP_EXE% x "%INSTALL_DIR%\pwiz.tar" -o"%PWIZ_DIR%" -aoa > NUL
   )
   cd /D "%PWIZ_DIR%"
   
@@ -136,9 +139,10 @@ if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
     echo Downloading Qt base
     call :downloadfile %QT_URL% %INSTALL_DIR%\qt.zip
-    %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa > NUL
+    %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa
     
-    cd "%QT_DIR%"
+    echo %QT_DIR%
+    cd /D "%QT_DIR%"
 
     ./configure -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests
     

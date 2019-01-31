@@ -14,7 +14,7 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 @echo off
-call setup_env.bat 64bit
+call %~dp0\setup_env.bat 64bit
 
 set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
 set SRC_DIR=%~dp0..\..\..\
@@ -61,13 +61,16 @@ set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
 ::: https://teamcity.labkey.org/viewType.html?buildTypeId=bt81 :::
 ::: without-t = without tests :::
 set PWIZ_BASE=pwiz-src-without-t-3_0_19025_7f0e41d
-set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.zip
+set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.tar.bz2
 set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
   if not exist "%PWIZ_DIR%" (
-    call :downloadfile %PWIZ_URL% %INSTALL_DIR%\pwiz.zip
-    %ZIP_EXE% x "%INSTALL_DIR%\pwiz.zip" -o"%PWIZ_DIR%" -aoa > NUL
+    call :downloadfile %PWIZ_URL% %INSTALL_DIR%\pwiz.tar.bz2
+    if not exist "%INSTALL_DIR%\pwiz.tar" (
+      %ZIP_EXE% x "%INSTALL_DIR%\pwiz.tar.bz2" -o"%INSTALL_DIR%" -aoa > NUL
+    )
+    %ZIP_EXE% x "%INSTALL_DIR%\pwiz.tar" -o"%PWIZ_DIR%" -aoa > NUL
   )
   
   cd /D "%PWIZ_DIR%"
