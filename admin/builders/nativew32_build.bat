@@ -17,6 +17,7 @@ set SRC_DIR=%~dp0..\..\..\
 set BUILD_DIR=%SRC_DIR%\build\win32
 set RELEASE_DIR=%SRC_DIR%\release\win32
 set BUILD_TYPE=Release
+set NO_GUI="false"
 
 :parse
 IF "%~1"=="" GOTO endparse
@@ -135,16 +136,16 @@ if not exist "%PWIZ_DIR%\lib" (
 set QT_BASE=qtbase-everywhere-src-5.11.2
 set QT_URL=http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
+set PATH=%PATH%;%QT_DIR%\bin
 if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
     echo Downloading Qt base
     call :downloadfile %QT_URL% %INSTALL_DIR%\qt.zip
     %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa
     
-    echo %QT_DIR%
     cd /D "%QT_DIR%"
 
-    ./configure -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests
+    configure -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests
     
     echo Building Qt base, this may take some time..
     
