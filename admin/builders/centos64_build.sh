@@ -74,6 +74,6 @@ if [ "$no_gui" != true ] ; then
   make -j 4 package;
   sudo make install
   
-  cp -v $build_dir/maracluster-gui/mar*.deb $release_dir
+  cp -v $build_dir/maracluster-gui/mar*.rpm $release_dir
 fi
 

@@ -41,7 +41,7 @@ fi
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then
-  sudo dnf install -y patchelf libicu-devel freetype-devel
+  sudo dnf install -y patchelf mesa-libGL-devel libicu-devel freetype-devel
   source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 
@@ -74,6 +74,6 @@ if [ "$no_gui" != true ] ; then
   make -j 4 package;
   sudo make install
   
-  cp -v $build_dir/maracluster-gui/mar*.deb $release_dir
+  cp -v $build_dir/maracluster-gui/mar*.rpm $release_dir
 fi
 
