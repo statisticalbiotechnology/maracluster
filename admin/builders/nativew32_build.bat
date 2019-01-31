@@ -10,9 +10,7 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 @echo off
-call %~dp0\setup_env.bat 32bit
 
-set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
 set SRC_DIR=%~dp0..\..\..\
 set BUILD_DIR=%SRC_DIR%\build\win32
 set RELEASE_DIR=%SRC_DIR%\release\win32
@@ -28,6 +26,10 @@ IF "%~1"=="-g" (set NO_GUI="true")
 SHIFT
 GOTO parse
 :endparse
+
+call %SRC_DIR%\admin\builders\setup_env.bat 32bit
+
+set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::::: START INSTALL DEPENDENCIES ::::::::::::::::
