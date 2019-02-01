@@ -7,7 +7,7 @@ echo "Download source code for ProteoWizard from their TeamCity server"
 linux_pwiz=pwiz-src-without-tv-3_0_19025_7f0e41d
 # https://teamcity.labkey.org/viewType.html?buildTypeId=bt81
 # without-tv: without tests and vendor readers
-wget https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/${linux_pwiz}.tar.bz2
+wget https://teamcity.labkey.org/repository/download/bt81/691783:id/${linux_pwiz}.tar.bz2
 
 mkdir proteowizard
 tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
