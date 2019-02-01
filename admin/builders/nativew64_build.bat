@@ -64,7 +64,7 @@ set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
 ::: https://teamcity.labkey.org/viewType.html?buildTypeId=bt81 :::
 ::: without-t = without tests :::
 set PWIZ_BASE=pwiz-src-without-t-3_0_19025_7f0e41d
-set PWIZ_URL=https://teamcity.labkey.org/repository/download/bt81/691783:id/%PWIZ_BASE%.tar.bz2
+set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/691783:id/%PWIZ_BASE%.tar.bz2
 set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
