@@ -196,6 +196,7 @@ Vagrant.configure("2") do |config|
 
   # Port forward WinRM and RDP
   config.vm.communicator = "winrm"
+  # config.vm.network "forwarded_port" , host: 33390 , guest: 3389 # allows remote desktop with "vagrant rdp"
   
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--memory", "8192", "--cpus", "4"]
@@ -204,7 +205,8 @@ Vagrant.configure("2") do |config|
   
   config.vm.provision :shell do |shell|
     shell.path = "${tmp_dir}/${builder}"
-    shell.args = '-s "C:\vagrant\src" -b "C:\vagrant\build" -r "C:\vagrant"'
+    #shell.args = '-s "C:\vagrant\src" -b "C:\vagrant\build" -r "C:\vagrant"'
+    shell.args = '-s "C:\vagrant\src" -b "C:\build" -r "C:\vagrant"' # Qt install currently fails on a shared drive
   end
 end
 EOF

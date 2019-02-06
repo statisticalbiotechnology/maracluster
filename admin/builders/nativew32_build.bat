@@ -138,7 +138,10 @@ if not exist "%PWIZ_DIR%\lib" (
 set QT_BASE=qtbase-everywhere-src-5.11.2
 set QT_URL=http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
+setlocal
 set PATH=%PATH%;%QT_DIR%\bin
+::: use multiple cores for nmake :::
+set CL=/MP
 if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
     echo Downloading Qt base
@@ -151,8 +154,9 @@ if not "%NO_GUI%" == "true" (
     
     echo Building Qt base, this may take some time..
     
-    ::: use multiple cores for nmake :::
-    set CL=/MP 
+    cd /D "%QT_DIR%"
+    call :downloadfile http://code.qt.io/cgit/qt/qt5.git/plain/gnuwin32/bin/flex.exe %QT_DIR%\bin\flex.exe
+    
     nmake
     nmake install
   )
@@ -160,13 +164,12 @@ if not "%NO_GUI%" == "true" (
 
 ::: Needed for CPack :::
 set NSIS_DIR=%INSTALL_DIR%\nsis
-set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS 3 Pre-release/3.0rc1/nsis-3.0rc1-setup.exe/download
+set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS%203/3.04/nsis-3.04-setup.exe/download
 if not exist "%NSIS_DIR%" (
   echo Downloading and installing NSIS installer
   call :downloadfile %NSIS_URL% %INSTALL_DIR%\nsis.exe
   "%INSTALL_DIR%\nsis.exe" /S /D=%INSTALL_DIR%\nsis
 )
-setlocal
 set PATH=%PATH%;%INSTALL_DIR%\nsis
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::

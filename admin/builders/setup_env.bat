@@ -1,4 +1,4 @@
-set BUILD_TARGET="%~1"
+set BUILD_TARGET=%~1
 set MSVC_VER=0
 
 :: use VS2015 if available
@@ -46,18 +46,18 @@ if not defined DevEnvDir (
   call "%PROGRAM_FILES_DIR%\Microsoft Visual Studio %MSVC_VER%.0\Common7\Tools\VsDevCmd.bat"
   if "%BUILD_TARGET%" == "64bit" (
     if "%BUILD_PLATFORM%" == "64bit" (
-      echo Setting variables for 64-bit
+      echo Setting variables for build platform 64-bit and target 64-bit
       call "%PROGRAM_FILES_DIR%\Microsoft Visual Studio %MSVC_VER%.0\VC\vcvarsall.bat" amd64
     ) else (
-      echo Setting variables for 32-bit
+      echo Setting variables for build platform 32-bit and target 64-bit
       call "%PROGRAM_FILES_DIR%\Microsoft Visual Studio %MSVC_VER%.0\VC\vcvarsall.bat" x86_amd64
     )
   ) else (
     if "%BUILD_PLATFORM%" == "64bit" (
-      echo Setting variables for 64-bit
+      echo Setting variables for build platform 64-bit and target 32-bit
       call "%PROGRAM_FILES_DIR%\Microsoft Visual Studio %MSVC_VER%.0\VC\vcvarsall.bat" amd64_x86
     ) else (
-      echo Setting variables for 32-bit
+      echo Setting variables for build platform 32-bit and target 32-bit
       call "%PROGRAM_FILES_DIR%\Microsoft Visual Studio %MSVC_VER%.0\VC\vcvarsall.bat" x86
     )
   ) 
