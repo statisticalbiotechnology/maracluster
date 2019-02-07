@@ -184,6 +184,11 @@ EOF
 #-----------------end of Vagrantfile content--------
 #  config.vm.provision :shell, :inline => "su vagrant -c 'bash /vagrant/${builder} /vagrant/src /vagrant/build_${post}'"
 else
+#-----------------mount_vagrant_drive.bat content---------------
+
+# Qt build currently fails on a shared drive, but works on a mapped network drive
+sed -i '1i net use z: \\\\vboxsrv\\vagrant' ${tmp_dir}/${builder}  
+
 cat <<EOF > Vagrantfile
 Vagrant.configure("2") do |config|
 
@@ -206,7 +211,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell do |shell|
     shell.path = "${tmp_dir}/${builder}"
     #shell.args = '-s "C:\vagrant\src" -b "C:\vagrant\build" -r "C:\vagrant"'
-    shell.args = '-s "C:\vagrant\src" -b "C:\build" -r "C:\vagrant"' # Qt install currently fails on a shared drive
+    shell.args = '-s "C:\vagrant\src" -b "Z:\build" -r "C:\vagrant"'
   end
 end
 EOF

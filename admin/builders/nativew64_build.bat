@@ -122,7 +122,7 @@ if not exist "%PWIZ_DIR%\lib" (
                 /ext/boost//serialization > pwiz_installation.log 2>&1
     
   mkdir lib
-  for /r build-nt-x86_64 %%x in (*.lib) do copy "%%x" lib\ /Y
+  for /r build-nt-x86_64 %%x in (*.lib) do copy "%%x" lib\ /Y > NUL
   cd lib
   PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace '-vc%MSVC_VER%0-mt','' })"
   PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace 'libpwiz_','pwiz_' })"
@@ -133,19 +133,17 @@ if not exist "%PWIZ_DIR%\lib" (
   Ren libsqlite3pp.lib sqlite3pp.lib
   Ren libsqlite3.lib sqlite3.lib
   ::: these DLLs might not work, as they are for VS2013 :::
-  COPY ..\pwiz_aux\msrc\utility\vendor_api\Waters\vc12_x64\* .
-  COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x64\baf2sql_c.* .
+  COPY ..\pwiz_aux\msrc\utility\vendor_api\Waters\vc12_x64\* . > NUL
+  COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x64\baf2sql_c.* . > NUL
   cd ..
 
   mkdir include
-  for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y
+  for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y > NUL
 )
 
 set QT_BASE=qtbase-everywhere-src-5.11.2
 set QT_URL=http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
-setlocal
-set PATH=%PATH%;%QT_DIR%\bin
 ::: use multiple cores for nmake :::
 set CL=/MP 
 if not "%NO_GUI%" == "true" (
@@ -156,26 +154,29 @@ if not "%NO_GUI%" == "true" (
     
     cd /D "%QT_DIR%"
 
-    configure -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests
+    configure -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests -debug-and-release off
     
     echo Building Qt base, this may take some time..
     
     cd /D "%QT_DIR%"
-    call :downloadfile http://code.qt.io/cgit/qt/qt5.git/plain/gnuwin32/bin/flex.exe %QT_DIR%\bin\flex.exe
     
-    nmake
+    setlocal
+    set "PATH=%PATH%;%QT_DIR%\bin;%SRC_DIR%\maracluster\admin\gnuwin32_bin"
+    nmake > qt_installation.log 2>&1
     nmake install
+    endlocal
   )
 )
 
 ::: Needed for CPack :::
 set NSIS_DIR=%INSTALL_DIR%\nsis
-set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS%203/3.04/nsis-3.04-setup.exe/download
+set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS 3/3.04/nsis-3.04-setup.exe/download
 if not exist "%NSIS_DIR%" (
   echo Downloading and installing NSIS installer
-  call :downloadfile %NSIS_URL% %INSTALL_DIR%\nsis.exe
+  call :downloadfile "%NSIS_URL%" %INSTALL_DIR%\nsis.exe
   "%INSTALL_DIR%\nsis.exe" /S /D=%INSTALL_DIR%\nsis
 )
+setlocal
 set PATH=%PATH%;%INSTALL_DIR%\nsis
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::
