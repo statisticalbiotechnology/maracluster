@@ -74,7 +74,13 @@ while getopts “hab:s:r:p:” OPTION; do
                     vagbox_name="win10vs15"
                     vagbox_url="~/VagrantWin7/win10vs15.box"
                     package_ext="exe"
-                      ;;
+                    ;;
+                osx)
+                    post="osx64"
+                    package_ext="{dmg,app}"
+                    vagbox_name="osx-sierra-0.3.1"
+                    vagbox_url="https://vagrant-osx.nyc3.digitaloceanspaces.com/osx-sierra-0.3.1.box"
+                    ;;
                 *)
                     if [[ $OPTARG == *,* ]]; then
                       arr=$(echo $OPTARG | tr "," "\n");
@@ -154,7 +160,58 @@ cp ${builder_adr}${builder} ${tmp_dir};
 cd ${tmp_dir};
 touch Vagrantfile;
 
-if [[ -z $batfile ]]; then
+if [[ "$post" == "osx64" ]]; then
+
+#-----------------Vagrantfile content---------------
+cat <<EOF > Vagrantfile
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# sudo apt-get install nfs-common nfs-kernel-server
+
+# hdiutil attach /vagrant/xcode44auxtools6938114a.dmg
+# cp -r /Volumes/Auxiliary\ Tools/PackageMaker.app /Applications/
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "${vagbox_name}"
+  config.vm.box_url = "${vagbox_url}"
+  config.ssh.insert_key = false
+  config.ssh.password = "vagrant" # private key authentication does not work on this box
+  config.vm.boot_timeout = 600
+  config.vm.network "private_network", ip: "192.168.56.10"
+  
+  # Synced folder are not supported under Mac OS X
+  # config.vm.synced_folder ".", "/vagrant", :disabled => true
+  # Use NFS for the shared folder
+  config.vm.synced_folder ".", "/vagrant",
+    id: "vagrant-root",
+    :nfs => true,
+    :mount_options => ['nolock,vers=3,udp,noatime,actimeo=1,resvport'],
+    :export_options => ['async,insecure,no_subtree_check,no_acl,no_root_squash']
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "4096", "--cpus", "4"]
+    # vb.gui = true # turn on for trouble shooting, e.g. if boot times out repeatedly
+    # Fix "hfs mounted macintosh hd on device root_device" issue
+    vb.customize ["modifyvm", :id, "--cpuidset", "1","000206a7","02100800","1fbae3bf","bfebfbff"]
+
+    # Some more hacks for device recognition
+    vb.customize ["setextradata", :id, "VBoxInternal/Devices/efi/0/Config/DmiSystemProduct", "MacBookPro11,3"]
+    vb.customize ["setextradata", :id, "VBoxInternal/Devices/efi/0/Config/DmiSystemVersion", "1.0"]
+    vb.customize ["setextradata", :id, "VBoxInternal/Devices/efi/0/Config/DmiBoardProduct", "Iloveapple"]
+    vb.customize ["setextradata", :id, "VBoxInternal/Devices/smc/0/Config/DeviceKey", "ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc"]
+    #vb.customize ["setextradata", :id, "VBoxInternal/Devices/smc/0/Config/GetKeyFromRealSMC", "1"]
+  end
+  
+  config.vm.provision :shell do |shell|
+    shell.privileged = false
+    shell.path = "${tmp_dir}/${builder}"
+    shell.args = "-s /vagrant/src -b /vagrant/build -r /vagrant/"
+  end
+end
+EOF
+
+elif [[ -z $batfile ]]; then
 
 vagbox_url_line=""
 if [[ -n ${vagbox_url} ]]; then

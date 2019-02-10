@@ -48,8 +48,8 @@ if not exist "%INSTALL_DIR%\7zip" (
 )
 set ZIP_EXE="%INSTALL_DIR%\7zip\7z.exe"
 
-set CMAKE_BASE=cmake-3.5.2-win32-x86
-set CMAKE_URL=https://cmake.org/files/v3.5/%CMAKE_BASE%.zip
+set CMAKE_BASE=cmake-3.13.4-win32-x86
+set CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.13.4/%CMAKE_BASE%.zip
 if not exist "%INSTALL_DIR%\%CMAKE_BASE%" (
   echo Downloading and installing CMake
   call :downloadfile %CMAKE_URL% %INSTALL_DIR%\cmake.zip
@@ -92,6 +92,8 @@ if not exist "%PWIZ_DIR%\lib" (
                 pwiz_aux/msrc/utility/vendor_api/Shimadzu//pwiz_vendor_api_shimadzu ^
                 pwiz/data/vendor_readers/UIMF//pwiz_reader_uimf ^
                 pwiz_aux/msrc/utility/vendor_api/UIMF//pwiz_vendor_api_uimf ^
+                pwiz/data/vendor_readers/UNIFI//pwiz_reader_unifi ^
+                pwiz_aux/msrc/utility/vendor_api/UNIFI//pwiz_vendor_api_unifi ^
                 pwiz/data/vendor_readers/Agilent//pwiz_reader_agilent ^
                 pwiz_aux/msrc/utility/vendor_api/Agilent//pwiz_vendor_api_agilent ^
                 pwiz/data/vendor_readers/Waters//pwiz_reader_waters ^
@@ -129,7 +131,18 @@ if not exist "%PWIZ_DIR%\lib" (
   Ren libsqlite3.lib sqlite3.lib
   COPY ..\pwiz_aux\msrc\utility\vendor_api\Waters\vc12_x86\* . > NUL
   COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x86\baf2sql_c.* . > NUL
+  COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x86\timsdata.* . > NUL
   cd ..
+  
+  ::: Generate lib from dll for cdt.dll
+  setlocal enableDelayedExpansion
+  set DLL_BASE=cdt
+  set DEF_FILE=!DLL_BASE!.def
+  set write=0
+  echo EXPORTS> "!DEF_FILE!"
+  for /f "usebackq tokens=4" %%i in (`dumpbin /exports "!DLL_BASE!.dll"`) do if "!write!"=="1" (echo %%i >> "!DEF_FILE!") else (if %%i==name set write=1)
+  lib /DEF:"!DEF_FILE!" /MACHINE:x86
+  endlocal
 
   mkdir include
   for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y > NUL
@@ -138,27 +151,29 @@ if not exist "%PWIZ_DIR%\lib" (
 set QT_BASE=qtbase-everywhere-src-5.11.2
 set QT_URL=http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
-setlocal
-set PATH=%PATH%;%QT_DIR%\bin;%SRC_DIR%\maracluster\admin\gnuwin32_bin
-::: use multiple cores for nmake :::
-set CL=/MP
+::: use multiple cores with jom instead of single-core nmake :::
+set JOM_URL=http://download.qt.io/official_releases/jom/jom_1_1_3.zip
 if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
+    echo Downloading Jom
+    call :downloadfile %JOM_URL% %INSTALL_DIR%\jom.zip
+    %ZIP_EXE% x "%INSTALL_DIR%\jom.zip" -o"%INSTALL_DIR%\jom" -aoa > NUL
+    
     echo Downloading Qt base
     call :downloadfile %QT_URL% %INSTALL_DIR%\qt.zip
-    %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa
+    %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa > NUL
     
     cd /D "%QT_DIR%"
 
-    configure -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests -debug-and-release off
+    call configure.bat -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests -release > qt_config.log 2>&1
     
     echo Building Qt base, this may take some time..
     
     cd /D "%QT_DIR%"
     setlocal
-    set "PATH=%PATH%;%QT_DIR%\bin;%SRC_DIR%\maracluster\admin\gnuwin32_bin"
-    nmake > qt_installation.log 2>&1
-    nmake install
+    set "PATH=%PATH%;%INSTALL_DIR%\jom;%QT_DIR%\bin;%SRC_DIR%\maracluster\admin\gnuwin32_bin"
+    jom > qt_installation.log 2>&1
+    jom install
     endlocal
   )
 )
@@ -192,7 +207,7 @@ cd /D "%BUILD_DIR%\maracluster....."
 echo cmake maracluster.....
 %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%\maracluster"
 
-echo build maracluster (this will take a few minutes).....
+echo build maracluster.....
 msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 
 ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
@@ -204,7 +219,7 @@ cd /D "%BUILD_DIR%\maracluster-vendor-support"
 echo cmake maracluster with vendor support.....
 %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%\maracluster"
 
-echo build maracluster with vendor support (this will take a few minutes).....
+echo build maracluster with vendor support.....
 msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 
 ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
@@ -215,9 +230,9 @@ if not "%NO_GUI%" == "true" (
   if not exist "%BUILD_DIR%\maracluster-gui" (md "%BUILD_DIR%\maracluster-gui")
   cd /D "%BUILD_DIR%\maracluster-gui"
   echo cmake maracluster gui.....
-  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
+  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
 
-  echo build maracluster gui (this will take a few minutes).....
+  echo build maracluster gui.....
   msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 
   ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m

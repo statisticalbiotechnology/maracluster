@@ -5,11 +5,11 @@ set(MARACLUSTER_GUI_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 if (UNIX)
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
   set(MARACLUSTER_BIN_DESTINATION lib/maracluster)
-endif (UNIX)
-
-if (APPLE)
+elseif (APPLE)
   set(MARACLUSTER_BIN_DESTINATION maracluster-gui.app/Contents/MacOS)
-endif (APPLE)
+elseif (MSVC)
+  set(MARACLUSTER_BIN_DESTINATION bin)
+endif (UNIX)
 
 # get the maracluster executable
 set(SKIP_MAIN_CPACK ON)
@@ -61,7 +61,7 @@ add_executable(maracluster-gui MACOSX_BUNDLE WIN32 ${ICON_CONFIG} ${maraclusterg
 
 target_link_libraries(maracluster-gui ${Qt_libs})
 
-install(TARGETS maracluster-gui EXPORT MARACLUSTER BUNDLE DESTINATION . RUNTIME DESTINATION lib/maracluster) # Important to use relative path here (used by CPack)!
+install(TARGETS maracluster-gui EXPORT MARACLUSTER BUNDLE DESTINATION . RUNTIME DESTINATION ${MARACLUSTER_BIN_DESTINATION}) # Important to use relative path here (used by CPack)!
 
 ### INSTALL DEPENDENCIES (PLATFORM DEPENDENT) ###
 
@@ -81,6 +81,7 @@ if (APPLE)
   get_target_property(QtPrintSupport_location Qt5::PrintSupport LOCATION)
   get_filename_component(QtPrintSupport_path ${QtPrintSupport_location} PATH)
   
+  # platform plugins
   get_target_property(QtCocoaPlugin_location Qt5::QCocoaIntegrationPlugin LOCATION)
   get_filename_component(QtCocoaPlugin_name ${QtCocoaPlugin_location} NAME)
   install(PROGRAMS ${QtCocoaPlugin_location} DESTINATION maracluster-gui.app/Contents/plugins/platforms)
@@ -137,7 +138,7 @@ elseif (UNIX)
   # the libqxcb.so shared library has to be located in a folder named "platforms" relative to the executable
   get_target_property(QtXcbPlugin_location Qt5::QXcbIntegrationPlugin LOCATION)
   get_filename_component(QtXcbPlugin_filename ${QtXcbPlugin_location} NAME)
-  
+  # make a copy of the shared library that updates the rpath
   file(COPY ${QtXcbPlugin_location} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   set(QtXcbPlugin_copied_location ${CMAKE_CURRENT_BINARY_DIR}/${QtXcbPlugin_filename}) # runs into permissions error
   find_program (PATCHELF_BINARY NAMES patchelf)
@@ -155,6 +156,10 @@ elseif (MSVC)
   get_target_property(QtGui_location Qt5::Gui LOCATION)
   
   set(DLL_LIBRARIES ${QtCore_location} ${QtGui_location} ${QtWidgets_location})
+  
+  # the qwindows.dll shared library has to be located in a folder named "platforms" relative to the executable
+  get_target_property(QtQWindowsPlugin_location Qt5::QWindowsIntegrationPlugin LOCATION)
+  install(PROGRAMS ${QtQWindowsPlugin_location} DESTINATION bin/platforms)
   
   message( STATUS "    Win32 DLLs ${DLL_LIBRARIES}." )  
   set( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${DLL_LIBRARIES} )

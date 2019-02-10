@@ -45,12 +45,17 @@ if [[ -d /opt/local/var/macports ]]
   then
     echo "[ Package manager ] : MacPorts "
     package_manager="sudo port"
-    other_packages="cmake gnutar"
+    other_packages="cmake gnutar wget"
 elif [[ -f ${HOME}/bin/brew ]]
   then
     echo "[ Package manager ] : Homebrew "
     package_manager=$HOME/bin/brew
-    other_packages="cmake gnutar"
+    other_packages="cmake gnu-tar wget"
+elif [[ -f /usr/local/bin/brew ]]
+  then
+    echo "[ Package manager ] : Homebrew "
+    package_manager="brew"
+    other_packages="cmake gnu-tar wget"
 else
     package_manager_installed=false
 fi
@@ -95,13 +100,15 @@ mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  echo "Download source code for ProteoWizard from their SVN repository"
-  $package_manager install subversion
-  rev=9393
-  svn co -r ${rev} --depth immediates svn://svn.code.sf.net/p/proteowizard/code/trunk/pwiz ./proteowizard
-  svn update -r ${rev} --set-depth infinity ./proteowizard/pwiz
-  svn update -r ${rev} --set-depth infinity ./proteowizard/libraries
+  echo "Download source code for ProteoWizard from their TeamCity server"
+  linux_pwiz=pwiz-src-without-tv-3_0_19025_7f0e41d
+  # https://teamcity.labkey.org/viewType.html?buildTypeId=bt81
+  # without-tv: without tests and vendor readers
+  wget https://teamcity.labkey.org/guestAuth/repository/download/bt81/691783:id/${linux_pwiz}.tar.bz2
 
+  mkdir proteowizard
+  tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
+  
   # install and keep libraries in the libs folder of this project for linking
   cd proteowizard
 
@@ -136,8 +143,18 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   mkdir -p ../lib
   find build-macosx-x86_64/ -type f | grep -i .a$ | xargs -I{} cp {} ../lib
   
+  # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
+  ln -s -f ../lib/libboost_system-*.a ../lib/libboost_system.a
+  ln -s -f ../lib/libboost_thread-*.a ../lib/libboost_thread.a
+  ln -s -f ../lib/libboost_chrono-*.a ../lib/libboost_chrono.a
+  ln -s -f ../lib/libboost_regex-*.a ../lib/libboost_regex.a
+  ln -s -f ../lib/libboost_filesystem-*.a ../lib/libboost_filesystem.a
+  ln -s -f ../lib/libboost_iostreams-*.a ../lib/libboost_iostreams.a
+  ln -s -f ../lib/libboost_program_options-*.a ../lib/libboost_program_options.a
+  ln -s -f ../lib/libboost_serialization-*.a ../lib/libboost_serialization.a
+  
   mkdir -p ../include
-  rsync -ap --include "*/" --include "*.h" --include "*.hpp" --include "*.ipp" --exclude "*" pwiz libraries/boost_1_56_0/boost libraries/boost_aux/boost ../include/
+  rsync -ap --include "*/" --include "*.h" --include "*.hpp" --include "*.ipp" --exclude "*" pwiz libraries/boost_1_67_0/boost libraries/boost_aux/boost ../include/
   rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include/zlib
 fi
 
@@ -153,11 +170,13 @@ if [ "$no_gui" != true ] ; then
 
     tar xf qtbase-everywhere-src-5.11.2.tar.xz
     cd qtbase-everywhere-src-5.11.2
+    
+    echo "Building Qt, this may take some time.."
+    
+    ./configure -prefix ${build_dir}/tools/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests -release > ../qt_config.log 2>&1
 
-    ./configure -prefix ../build/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests
-
-    make -j4
-    make install -j4
+    make -j4 > ../qt_make.log 2>&1
+    make install -j4 > ../qt_install.log 2>&1
   fi
 fi
 
@@ -168,9 +187,10 @@ mkdir -p $build_dir/maracluster
 # we need to install to /usr/local instead of /usr: https://github.com/Benjamin-Dobell/Heimdall/issues/291
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_56_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
+cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
+
 #-----make------
-echo -n "make maracluster (this will take few minutes).....";
+echo -n "make maracluster.....";
 make -j 4;
 make -j 4 package;
 #sudo make install;
@@ -185,7 +205,9 @@ if [ "$no_gui" != true ] ; then
   mkdir -p $build_dir/maracluster-gui
   cd $build_dir/maracluster-gui
   
-  cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_56_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
+  cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
+  
+  echo -n "make maracluster-gui.....";
   make -j4
   make -j4 package
   
