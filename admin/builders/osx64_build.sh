@@ -55,6 +55,7 @@ elif [[ -f /usr/local/bin/brew ]]
   then
     echo "[ Package manager ] : Homebrew "
     package_manager="brew"
+    ${package_manager} update || true # brew.rb raises an error on the vagrant box, just ignore it
     other_packages="cmake gnu-tar wget"
 else
     package_manager_installed=false
@@ -187,13 +188,12 @@ mkdir -p $build_dir/maracluster
 # we need to install to /usr/local instead of /usr: https://github.com/Benjamin-Dobell/Heimdall/issues/291
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
+cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
 
 #-----make------
 echo -n "make maracluster.....";
 make -j 4;
 make -j 4 package;
-#sudo make install;
 
 echo "build directory was : ${build_dir}";
 
@@ -205,11 +205,11 @@ if [ "$no_gui" != true ] ; then
   mkdir -p $build_dir/maracluster-gui
   cd $build_dir/maracluster-gui
   
-  cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DBoost_COMPILER=-xgcc42 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
+  cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
   
   echo -n "make maracluster-gui.....";
   make -j4
-  make -j4 package
+  make -j4 package;
   
   cp -v $build_dir/maracluster-gui/mar*.dmg $release_dir
 fi

@@ -77,7 +77,7 @@ while getopts “hab:s:r:p:” OPTION; do
                     ;;
                 osx)
                     post="osx64"
-                    package_ext="{dmg,app}"
+                    package_ext="dmg"
                     vagbox_name="osx-sierra-0.3.1"
                     vagbox_url="https://vagrant-osx.nyc3.digitaloceanspaces.com/osx-sierra-0.3.1.box"
                     ;;
@@ -146,8 +146,6 @@ fi
 echo "Executing build procedure using:"
 echo "tmp_dir=${tmp_dir}" 
 echo "post=${post}" 
-echo "tmp_dir=${tmp_dir}" 
-
 
 #--------------------------------------------------------
 #########################################################
@@ -162,15 +160,22 @@ touch Vagrantfile;
 
 if [[ "$post" == "osx64" ]]; then
 
+# run this on the ubuntu host to support nfs shares:
+# sudo apt-get install nfs-common nfs-kernel-server
+
+# copy the PackageMaker app
+wget https://github.com/erdnuesse/build-tools/blob/master/xcode44auxtools6938114a.dmg?raw=true -P ${tmp_dir}
+# install the PackageMaker app on the host
+sed -i '1i sudo hdiutil attach /vagrant/xcode44auxtools6938114a.dmg; sudo cp -r /Volumes/Auxiliary\\ Tools/PackageMaker.app /Applications/' ${tmp_dir}/${builder}
+# the nfs share is owned by the user on the client which blocks access by the vagrant user on the host machine
+# currently, there does not seem to be a way to map the user ids for the nfs share...
+# instead, force hdiutil to use sudo to force access to the nfs share
+sed -i '1i sudo printf "#!/bin/bash\\nsudo /usr/bin/hdiutil \\\"\\$@\\\"" > /usr/local/bin/hdiutil; sudo chmod +x /usr/local/bin/hdiutil' ${tmp_dir}/${builder}
+
 #-----------------Vagrantfile content---------------
 cat <<EOF > Vagrantfile
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
-# sudo apt-get install nfs-common nfs-kernel-server
-
-# hdiutil attach /vagrant/xcode44auxtools6938114a.dmg
-# cp -r /Volumes/Auxiliary\ Tools/PackageMaker.app /Applications/
 
 Vagrant.configure("2") do |config|
   config.vm.box = "${vagbox_name}"
