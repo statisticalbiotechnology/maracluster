@@ -26,7 +26,7 @@ if [[ -z ${release_dir} ]]; then
   release_dir=${HOME}/release
 fi
 
-rm $build_dir/maracluster/mar*.rpm
+rm -f $build_dir/{maracluster,maracluster-gui}/mar*.rpm
 
 sudo yum install -y gcc gcc-c++ rpm-build cmake
 CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is needed

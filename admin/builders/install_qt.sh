@@ -24,7 +24,7 @@ fi
 cd ${tools_dir}
 
 # Qt5 requires CMake >= 3.5
-function version_lt() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" != "$1"; }
+function version_lt() { test "$(echo "$@" | tr " " "\n" | (sort -rV || gsort -rV | head -n 1)" != "$1"; }
 
 if version_lt $(cmake --version | head -n1 | cut -f3 -d ' ') "3.5"; then
   wget https://github.com/Kitware/CMake/releases/download/v3.13.3/cmake-3.13.3-Linux-x86_64.sh

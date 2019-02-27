@@ -31,6 +31,10 @@ SHIFT
 GOTO parse
 :endparse
 
+del "%BUILD_DIR%\maracluster\mar*.exe" >nul 2>&1
+del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" >nul 2>&1
+del "%BUILD_DIR%\maracluster-gui\mar*.exe" >nul 2>&1
+
 call %SRC_DIR%\maracluster\admin\builders\setup_env.bat 64bit
 
 set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
@@ -63,8 +67,11 @@ set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
 
 ::: https://teamcity.labkey.org/viewType.html?buildTypeId=bt81 :::
 ::: without-t = without tests :::
-set PWIZ_BASE=pwiz-src-without-t-3_0_19025_7f0e41d
-set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/691783:id/%PWIZ_BASE%.tar.bz2
+set PWIZ_VERSION_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
+call :downloadfile %PWIZ_VERSION_URL% %INSTALL_DIR%\VERSION
+set /p PWIZ_VERSION_STRING=<%INSTALL_DIR%\VERSION
+set PWIZ_BASE=pwiz-src-without-t-%PWIZ_VERSION_STRING: =_%
+set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.tar.bz2
 set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
@@ -172,13 +179,14 @@ if not "%NO_GUI%" == "true" (
     
     cd /D "%QT_DIR%"
 
-    call configure.bat -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests -no-debug > qt_config.log 2>&1
+    call configure.bat -prefix "%INSTALL_DIR%\Qt-dynamic" -opensource -confirm-license -nomake tools -nomake examples -nomake tests -release > qt_config.log 2>&1
     
     echo Building Qt base, this may take some time..
     
     cd /D "%QT_DIR%"
+    %ZIP_EXE% x "%SRC_DIR%\maracluster\admin\gnuwin32_bin.zip" -o"%INSTALL_DIR%" -aoa > NUL
     setlocal
-    set "PATH=%PATH%;%INSTALL_DIR%\jom;%QT_DIR%\bin;%SRC_DIR%\maracluster\admin\gnuwin32_bin"
+    set "PATH=%PATH%;%INSTALL_DIR%\jom;%QT_DIR%\bin;%INSTALL_DIR%\gnuwin32_bin"
     jom > qt_installation.log 2>&1
     jom install
     endlocal
@@ -239,7 +247,7 @@ if not "%NO_GUI%" == "true" (
   echo cmake maracluster gui.....
   %CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
 
-  echo build maracluster gui).....
+  echo build maracluster gui.....
   msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
   
   ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
@@ -257,7 +265,7 @@ copy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
 
 echo Finished buildscript execution in build directory %BUILD_DIR%
 
-cd "%SRC_DIR%"
+cd /D "%SRC_DIR%"
 
 EXIT /B %errorlevel%
 

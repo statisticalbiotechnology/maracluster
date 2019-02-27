@@ -45,18 +45,18 @@ if [[ -d /opt/local/var/macports ]]
   then
     echo "[ Package manager ] : MacPorts "
     package_manager="sudo port"
-    other_packages="cmake gnutar wget"
+    other_packages="cmake gnutar wget coreutils"
 elif [[ -f ${HOME}/bin/brew ]]
   then
     echo "[ Package manager ] : Homebrew "
     package_manager=$HOME/bin/brew
-    other_packages="cmake gnu-tar wget"
+    other_packages="cmake gnu-tar wget coreutils"
 elif [[ -f /usr/local/bin/brew ]]
   then
     echo "[ Package manager ] : Homebrew "
     package_manager="brew"
     ${package_manager} update || true # brew.rb raises an error on the vagrant box, just ignore it
-    other_packages="cmake gnu-tar wget"
+    other_packages="cmake gnu-tar wget coreutils"
 else
     package_manager_installed=false
 fi
@@ -89,7 +89,7 @@ if [[ -z ${release_dir} ]]; then
   release_dir=${HOME}/release
 fi
 
-rm $build_dir/maracluster/mar*.dmg
+rm -f $build_dir/{maracluster,maracluster-gui}/mar*.dmg
 
 echo "The Builder $0 is building the MaRaCluster packages with src=${src_dir} an\
 d build=${build_dir} for user" `whoami`
@@ -108,9 +108,7 @@ fi
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then
-  if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
-    source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
-  fi
+  source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 
 #-------------------------------------------
@@ -120,7 +118,7 @@ mkdir -p $build_dir/maracluster
 # we need to install to /usr/local instead of /usr: https://github.com/Benjamin-Dobell/Heimdall/issues/291
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-${CMAKE_BINARY} -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
+${CMAKE_BINARY} -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
 
 #-----make------
 echo -n "make maracluster.....";
@@ -137,7 +135,7 @@ if [ "$no_gui" != true ] ; then
   mkdir -p $build_dir/maracluster-gui
   cd $build_dir/maracluster-gui
   
-  ${CMAKE_BINARY} -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
+  ${CMAKE_BINARY} -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
   
   echo -n "make maracluster-gui.....";
   make -j4

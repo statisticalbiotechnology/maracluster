@@ -27,6 +27,10 @@ SHIFT
 GOTO parse
 :endparse
 
+del "%BUILD_DIR%\maracluster\mar*.exe" >nul 2>&1
+del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" >nul 2>&1
+del "%BUILD_DIR%\maracluster-gui\mar*.exe" >nul 2>&1
+
 call %SRC_DIR%\maracluster\admin\builders\setup_env.bat 32bit
 
 set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
@@ -59,8 +63,11 @@ set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
 
 ::: https://teamcity.labkey.org/viewType.html?buildTypeId=bt81 :::
 ::: without-t = without tests :::
-set PWIZ_BASE=pwiz-src-without-t-3_0_19025_7f0e41d
-set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/691783:id/%PWIZ_BASE%.zip
+set PWIZ_VERSION_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
+call :downloadfile %PWIZ_VERSION_URL% %INSTALL_DIR%\VERSION
+set /p PWIZ_VERSION_STRING=<%INSTALL_DIR%\VERSION
+set PWIZ_BASE=pwiz-src-without-t-%PWIZ_VERSION_STRING: =_%
+set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.tar.bz2
 set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
@@ -170,8 +177,9 @@ if not "%NO_GUI%" == "true" (
     echo Building Qt base, this may take some time..
     
     cd /D "%QT_DIR%"
+    %ZIP_EXE% x "%SRC_DIR%\maracluster\admin\gnuwin32_bin.zip" -o"%INSTALL_DIR%" -aoa > NUL
     setlocal
-    set "PATH=%PATH%;%INSTALL_DIR%\jom;%QT_DIR%\bin;%SRC_DIR%\maracluster\admin\gnuwin32_bin"
+    set "PATH=%PATH%;%INSTALL_DIR%\jom;%QT_DIR%\bin;%INSTALL_DIR%\gnuwin32_bin"
     jom > qt_installation.log 2>&1
     jom install
     endlocal
@@ -250,10 +258,9 @@ copy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
 
 echo Finished buildscript execution in build directory %BUILD_DIR%
 
-cd "%SRC_DIR%"
+cd /D "%SRC_DIR%"
 
 EXIT /B %errorlevel%
-
 
 :downloadfile
 PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"

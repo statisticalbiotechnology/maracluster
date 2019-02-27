@@ -1,3 +1,11 @@
+v1.00
+* Added GUI packages using the Qt framework
+* Changed output format to include cluster identifier and removed columns for peptide identifications
+* Added support for producing consensus spectra directly using the 'maracluster batch' command
+* Fixed issues for large precursor window clustering
+* Improved logging and input arguments
+* Updated ProteoWizard installation to use last successful build on TeamCity
+
 v0.05
 * Fixed several minor issues with race conditions resulting in differing consensus outputs
 * Fixed problem with high memory usage in poisoned p-value clustering
