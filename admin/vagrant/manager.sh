@@ -164,9 +164,9 @@ if [[ "$post" == "osx64" ]]; then
 # sudo apt-get install nfs-common nfs-kernel-server
 
 # copy the PackageMaker app
-wget https://github.com/erdnuesse/build-tools/blob/master/xcode44auxtools6938114a.dmg?raw=true -P ${tmp_dir}
+git clone https://github.com/erdnuesse/build-tools.git ${tmp_dir}/build-tools
 # install the PackageMaker app on the host
-sed -i '1i sudo hdiutil attach /vagrant/xcode44auxtools6938114a.dmg; sudo cp -r /Volumes/Auxiliary\\ Tools/PackageMaker.app /Applications/' ${tmp_dir}/${builder}
+sed -i '1i sudo hdiutil attach /vagrant/build-tools/xcode44auxtools6938114a.dmg; sudo cp -r /Volumes/Auxiliary\\ Tools/PackageMaker.app /Applications/' ${tmp_dir}/${builder}
 # the nfs share is owned by the user on the client which blocks access by the vagrant user on the host machine
 # currently, there does not seem to be a way to map the user ids for the nfs share...
 # instead, force hdiutil to use sudo to force access to the nfs share

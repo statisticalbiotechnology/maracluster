@@ -94,6 +94,7 @@ rm $build_dir/maracluster/mar*.dmg
 echo "The Builder $0 is building the MaRaCluster packages with src=${src_dir} an\
 d build=${build_dir} for user" `whoami`
 $package_manager install $other_packages
+CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is needed
 
 #----------------------------------------
 
@@ -101,83 +102,14 @@ mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  echo "Download source code for ProteoWizard from their TeamCity server"
-  linux_pwiz=pwiz-src-without-tv-3_0_19025_7f0e41d
-  # https://teamcity.labkey.org/viewType.html?buildTypeId=bt81
-  # without-tv: without tests and vendor readers
-  wget https://teamcity.labkey.org/guestAuth/repository/download/bt81/691783:id/${linux_pwiz}.tar.bz2
-
-  mkdir proteowizard
-  tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
-  
-  # install and keep libraries in the libs folder of this project for linking
-  cd proteowizard
-
-  ./clean.sh
-
-  echo "Building ProteoWizard and Boost, this may take some time.."
-  
-  # if you have more than 4GB of memory available, you could try to use more than 2 cores to speed things up
-  ./quickbuild.sh -j4 --without-binary-msdata \
-                  pwiz/data/common//pwiz_data_common \
-                  pwiz/data/identdata//pwiz_data_identdata \
-                  pwiz/data/identdata//pwiz_data_identdata_version \
-                  pwiz/data/msdata//pwiz_data_msdata \
-                  pwiz/data/msdata//pwiz_data_msdata_version \
-                  pwiz/data/proteome//pwiz_data_proteome \
-                  pwiz/utility/chemistry//pwiz_utility_chemistry \
-                  pwiz/utility/minimxml//pwiz_utility_minimxml \
-                  pwiz/utility/misc//SHA1 \
-                  pwiz/utility/misc//pwiz_utility_misc \
-                  /ext/zlib//z \
-                  /ext/boost//system \
-                  /ext/boost//thread \
-                  /ext/boost//chrono \
-                  /ext/boost//regex \
-                  /ext/boost//filesystem \
-                  /ext/boost//iostreams \
-                  /ext/boost//program_options \
-                  /ext/boost//serialization \
-                  > ../pwiz_installation.log 2>&1
-
-  # for revision 7692 the "libraries" target does not work, so we have to copy everything manually
-  mkdir -p ../lib
-  find build-macosx-x86_64/ -type f | grep -i .a$ | xargs -I{} cp {} ../lib
-  
-  # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
-  ln -s -f ../lib/libboost_system-*.a ../lib/libboost_system.a
-  ln -s -f ../lib/libboost_thread-*.a ../lib/libboost_thread.a
-  ln -s -f ../lib/libboost_chrono-*.a ../lib/libboost_chrono.a
-  ln -s -f ../lib/libboost_regex-*.a ../lib/libboost_regex.a
-  ln -s -f ../lib/libboost_filesystem-*.a ../lib/libboost_filesystem.a
-  ln -s -f ../lib/libboost_iostreams-*.a ../lib/libboost_iostreams.a
-  ln -s -f ../lib/libboost_program_options-*.a ../lib/libboost_program_options.a
-  ln -s -f ../lib/libboost_serialization-*.a ../lib/libboost_serialization.a
-  
-  mkdir -p ../include
-  rsync -ap --include "*/" --include "*.h" --include "*.hpp" --include "*.ipp" --exclude "*" pwiz libraries/boost_1_67_0/boost libraries/boost_aux/boost ../include/
-  rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include/zlib
+  ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then
   if [ ! -d ${build_dir}/tools/Qt-dynamic ]; then
-    cd ${build_dir}/tools
-
-    if [ ! -f qtbase-everywhere-src-5.11.2.tar.xz ]; then
-      wget http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/qtbase-everywhere-src-5.11.2.tar.xz
-    fi
-
-    tar xf qtbase-everywhere-src-5.11.2.tar.xz
-    cd qtbase-everywhere-src-5.11.2
-    
-    echo "Building Qt, this may take some time.."
-    
-    ./configure -prefix ${build_dir}/tools/Qt-dynamic -opensource -confirm-license -nomake tools -nomake examples -nomake tests -release > ../qt_config.log 2>&1
-
-    make -j4 > ../qt_make.log 2>&1
-    make install -j4 > ../qt_install.log 2>&1
+    source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
   fi
 fi
 
@@ -188,7 +120,7 @@ mkdir -p $build_dir/maracluster
 # we need to install to /usr/local instead of /usr: https://github.com/Benjamin-Dobell/Heimdall/issues/291
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
+${CMAKE_BINARY} -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/" $src_dir/maracluster;
 
 #-----make------
 echo -n "make maracluster.....";
@@ -205,7 +137,7 @@ if [ "$no_gui" != true ] ; then
   mkdir -p $build_dir/maracluster-gui
   cd $build_dir/maracluster-gui
   
-  cmake -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
+  ${CMAKE_BINARY} -DCMAKE_CXX_COMPILER="/usr/bin/clang++" -DTARGET_ARCH="x86_64" -DBOOST_ROOT="${build_dir}/tools/proteowizard/libraries/boost_1_67_0" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH="${build_dir}/tools/;${build_dir}/tools/Qt-dynamic" $src_dir/maracluster/src/qt-gui/
   
   echo -n "make maracluster-gui.....";
   make -j4
