@@ -13,7 +13,7 @@ usage: $0
                   [[-h]] [[-a]]
                   [[-b branch]]|[[-s source_directory]]
                   [[-r release_directory]]
-                  -p ubuntu|centos|fedora|nw32|nw64
+                  -p ubuntu|centos|fedora|win32|win64|osx
 
 If no branch and source_directory is provided, the source
 code from which the sourcecode is checked out from will be used.
@@ -61,14 +61,14 @@ while getopts “hab:s:r:p:” OPTION; do
                     vagbox_url=""
                     package_ext="rpm"
                     ;;
-                nw32) 
+                win32) 
                     post="nativew32"
                     batfile=true
                     vagbox_name="win10vs15"
                     vagbox_url="~/VagrantWin7/win10vs15.box"
                     package_ext="exe"
                     ;;
-                nw64) 
+                win64) 
                     post="nativew64"
                     batfile=true
                     vagbox_name="win10vs15"
@@ -181,7 +181,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "${vagbox_name}"
   config.vm.box_url = "${vagbox_url}"
   config.ssh.insert_key = false
-  config.ssh.password = "vagrant" # private key authentication does not work on this box
+  #config.ssh.password = "vagrant" # private key authentication does not work on this box
   config.vm.boot_timeout = 600
   config.vm.network "private_network", ip: "192.168.56.10"
   
@@ -239,7 +239,7 @@ Vagrant.configure("2") do |config|
   end
   config.vm.provision :shell do |shell|
     shell.path = "${tmp_dir}/${builder}"
-    shell.args = "-s /vagrant/src -r /vagrant/"
+    shell.args = "-s /vagrant/src -b /vagrant/build -r /vagrant/"
   end
 end
 EOF
@@ -295,6 +295,7 @@ if [[ $? -eq 0 ]] && [[ -z ${alive} ]]; then
   vagrant destroy -f
 else
   echo "-a option set or encountered error: keeping the VM alive, remember to close and delete the VM manually."
+  exit 1
 fi
 
 #---------------------------------------------------------------------------------------

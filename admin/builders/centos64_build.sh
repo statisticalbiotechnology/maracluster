@@ -28,7 +28,7 @@ fi
 
 rm -f $build_dir/{maracluster,maracluster-gui}/mar*.rpm
 
-sudo yum install -y gcc gcc-c++ rpm-build cmake
+sudo yum install -y gcc gcc-c++ rpm-build cmake rsync
 CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is needed
 
 mkdir -p ${build_dir}/tools

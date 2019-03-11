@@ -4,13 +4,21 @@ This repository holds the source code for clustering and merging of fragment spe
 
 ### Installation
 
-Installers for several operating systems can be found on the [Release page](https://github.com/statisticalbiotechnology/maracluster/releases).
+Installers for several operating systems can be found on the [Release page](https://github.com/statisticalbiotechnology/maracluster/releases). Both a command line as well as a graphical user interface are available for all platforms.
 
 If you prefer to compile from source, or are running on a different operating system, [click here](#installation-from-source).
 
-### Interface
+### Example
 
 An example, including spectrum files and a shell script, can be downloaded from http://kaell.org/files/maracluster_sample.zip.
+
+### Graphical User Interface (GUI)
+
+To run the example, simply select the spectrum files after clicking the `Add ms2 files` button, select an output folder and click the `Run MaRaCluster` button.
+
+A more elaborate guide for using the GUI can be found from the Help menu in the menu bar of the GUI.
+
+### Command Line Interface (CLI)
 
 The main functionality of MaRaCluster is provided by the `maracluster` command. This command has several sub-commands to execute different parts of the clustering and merging. The most important ones are `maracluster batch` and `maracluster consensus`. The first takes a list of ms2 spectra as input and outputs a list of clusters, the second takes one of these outputs and creates consensus spectra for each cluster.
 

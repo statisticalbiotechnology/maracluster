@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 3.5)
 project(MARACLUSTER_GUI)
 set(MARACLUSTER_GUI_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (UNIX)
+if (APPLE)
+  set(MARACLUSTER_BIN_DESTINATION maracluster-gui.app/Contents/MacOS)
+elseif (UNIX)
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
   set(MARACLUSTER_BIN_DESTINATION lib/maracluster)
-elseif (APPLE)
-  set(MARACLUSTER_BIN_DESTINATION maracluster-gui.app/Contents/MacOS)
 elseif (MSVC)
   set(MARACLUSTER_BIN_DESTINATION bin)
-endif (UNIX)
+endif (APPLE)
 
 # get the maracluster executable
 set(SKIP_MAIN_CPACK ON)

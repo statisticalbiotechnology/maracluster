@@ -44,11 +44,9 @@ echo "Building ProteoWizard and Boost, this may take some time.."
 find build-*-x86_64/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
 find build-*-x86_64/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -I{} cp {} ../lib
 
-cd libraries/zlib-1.2.3
-find ./ -type f | grep -i '.h$\|.hpp$' | xargs -I{} cp --parents {} ../../../include/
-cd ../../
-rsync -ap libraries/boost_aux/boost/ ../include/boost
-rsync -ap --include '*.ipp' --exclude '*' libraries/boost_1_67_0/boost/ ../include/boost
+rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include/zlib
+rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
+rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_67_0/boost/ ../include/boost
 
 # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
 ln -s -f ../lib/libboost_system-*.a ../lib/libboost_system.a
