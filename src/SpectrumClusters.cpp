@@ -150,7 +150,7 @@ void SpectrumClusters::writeClusters(
     if (it->second.size() > 0) {
       size_t clusterSizeBin = 0u;
       size_t clusterSize = it->second.size();
-      while (clusterSize >>= 1 && clusterSizeBin < 9) ++clusterSizeBin;
+      while ((clusterSize >>= 1) && clusterSizeBin < 9) ++clusterSizeBin;
       ++clusterSizeCounts[clusterSizeBin].first;
       clusterSizeCounts[clusterSizeBin].second += it->second.size();
       
