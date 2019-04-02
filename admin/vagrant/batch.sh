@@ -6,12 +6,12 @@ trap 'echo "Batch script killed"; exit 1' INT TERM
 release_dir=${HOME}/release
 
 platforms=()
-platforms+=(osx)
+#platforms+=(osx)
 #platforms+=(win64)
 #platforms+=(win32)
 #platforms+=(centos)
-#platforms+=(fedora)
-#platforms+=(ubuntu)
+platforms+=(fedora)
+platforms+=(ubuntu)
 
 for platform in ${platforms[@]}; do
   echo "Building $platform binaries"

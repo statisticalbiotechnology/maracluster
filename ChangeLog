@@ -1,3 +1,6 @@
+v1.00.1
+* Fixes infinite loop issue in counting cluster sizes (#17)
+
 v1.00
 * Added GUI packages using the Qt framework
 * Changed output format to include cluster identifier and removed columns for peptide identifications
