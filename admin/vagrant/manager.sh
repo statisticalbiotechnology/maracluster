@@ -24,10 +24,16 @@ EOF
 }
 
 #--------------------------------------------------------
-#input options management
+# input options management
 #--------------------------------------------------------
-#Default values:
 
+# Project specific variables
+tmp_src_dir=src/maracluster
+git_url=https://github.com/statisticalbiotechnology/maracluster.git
+package_prefixes=()
+package_prefixes+=(maracluster)
+
+# Default values:
 current_path=$PWD;
 script_dir=$(dirname ${BASH_SOURCE});
 cd ${script_dir};
@@ -124,18 +130,18 @@ echo "------------------------------------------------------------------------";
 
 
 tmp_dir="$(mktemp -d --tmpdir tmp_${post}_XXXX)"
-mkdir -p ${tmp_dir}/src/maracluster
+mkdir -p ${tmp_dir}/${tmp_src_dir}
 if [[ -z $src ]]; then
   if [[ -z $branch ]]; then
-    echo "Copying source code from ${script_dir} to ${tmp_dir}/src/maracluster/"
-    cp -R ${script_dir}/../../* ${tmp_dir}/src/maracluster/
+    echo "Copying source code from ${script_dir} to ${tmp_dir}/${tmp_src_dir}/"
+    cp -R ${script_dir}/../../* ${tmp_dir}/${tmp_src_dir}/
   else
     echo "Cloning source code using the branch ${branch}"
-    git clone --branch ${branch} https://github.com/statisticalbiotechnology/maracluster.git ${tmp_dir}/src/maracluster
+    git clone --branch ${branch} ${git_url} ${tmp_dir}/${tmp_src_dir}
   fi
 else
   echo "Copying source code from user specified path ${src}"
-  cp -R ${src}/* ${tmp_dir}/src/maracluster
+  cp -R ${src}/* ${tmp_dir}/${tmp_src_dir}
 fi
 ######
 if [[ -z $release ]]; then
@@ -287,11 +293,19 @@ vagrant up
 echo "Copying ready made packages from ${tmp_dir} to ${release}" 
 
 mkdir -p ${release};
-cp -v ${tmp_dir}/mara*.${package_ext} ${release};
+for package_prefix in ${package_prefixes[@]}; do
+  cp -v ${tmp_dir}/${package_prefix}*.${package_ext} ${release};
+  if [[ $? -eq 0 ]]; then
+    echo "Building of ${package_prefix} binaries succeeded"
+  else
+    echo "Building of ${package_prefix} binaries failed"
+    alive="1"
+  fi
+done
 
 #---------------------------------------------------------------------------------------
 
-if [[ $? -eq 0 ]] && [[ -z ${alive} ]]; then
+if [[ -z ${alive} ]]; then
   vagrant destroy -f
 else
   echo "-a option set or encountered error: keeping the VM alive, remember to close and delete the VM manually."
