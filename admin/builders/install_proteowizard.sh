@@ -44,7 +44,7 @@ echo "Building ProteoWizard and Boost, this may take some time.."
 find build-*-x86_64/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
 find build-*-x86_64/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -I{} cp {} ../lib
 
-rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include/zlib
+rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
 rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_67_0/boost/ ../include/boost
 
