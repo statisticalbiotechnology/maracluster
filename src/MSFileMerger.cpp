@@ -407,7 +407,7 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin, std::vector<MSDataPtr>& ms
     for (unsigned int i = 0; i < numBatches_; ++i) {
       std::string partSpecOutFN = getPartFN(spectrumOutFN_, "part" +
             boost::lexical_cast<std::string>(clusterBin) + "_" +
-            boost::lexical_cast<std::string>(i));
+            boost::lexical_cast<std::string>(i) + "_tmpfile");
       MSDataPtr msd(new MSDataFile(partSpecOutFN));
       msdVector.push_back(msd);
     }
@@ -458,7 +458,7 @@ void MSFileMerger::mergeSpectraBin(size_t clusterBin, std::vector<MSDataPtr>& ms
   for (unsigned int i = 0; i < numBatches_; ++i) {
     std::string partSpecOutFN = getPartFN(spectrumOutFN_, "part" +
           boost::lexical_cast<std::string>(clusterBin) + "_" +
-          boost::lexical_cast<std::string>(i));
+          boost::lexical_cast<std::string>(i) + "_tmpfile");
     if (remove(partSpecOutFN.c_str()) != 0) {
       std::cerr << "Warning: Can't remove " << partSpecOutFN << ": "
                 << strerror(errno) << std::endl;
@@ -488,7 +488,7 @@ void MSFileMerger::writeClusterBins(unsigned int batchIdx,
 
     std::string partSpecOutFN = getPartFN(spectrumOutFN_, "part" +
           boost::lexical_cast<std::string>(i) + "_" +
-          boost::lexical_cast<std::string>(batchIdx));
+          boost::lexical_cast<std::string>(batchIdx) + "_tmpfile");
 
     writeMSData(msdMerged, partSpecOutFN);
   }
