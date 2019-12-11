@@ -15,6 +15,11 @@ include("CommonCMake.txt")
 my_set(CMAKE_BUILD_TYPE "Debug" "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 #my_set(CMAKE_PREFIX_PATH "../" "Default path to packages")
 
+option(TARBALL_BUILD "Create a tarball instead of an installer package." OFF)
+if(TARBALL_BUILD)
+  add_definitions(-DTARBALL_BUILD) # triggers ifdef statements in the C++ code
+endif(TARBALL_BUILD)
+
 option(FINGERPRINT_FILTER "Use pre-filtering of spectrum pairs by their fragment fingerprints." OFF)
 if(FINGERPRINT_FILTER)
   add_definitions(-DFINGERPRINT_FILTER) # triggers ifdef statements in the C++ code

@@ -25,7 +25,7 @@ EOF
 }
 
 skip_gui=""
-while getopts “hs:b:r:p:” OPTION; do
+while getopts “hs:b:r:p:g” OPTION; do
     case $OPTION in
         h)  usage;exit 1;;
         s)  src_dir=$OPTARG;;
@@ -33,6 +33,9 @@ while getopts “hs:b:r:p:” OPTION; do
         r)  release_dir=$OPTARG;;
         g)  skip_gui="-g";;
         p)  case $OPTARG in
+               	tarball)
+               	    post="tarball64"
+               	    ;;
                	ubuntu)
                     post="ubuntu64"
                     ;;

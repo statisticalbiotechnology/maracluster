@@ -108,6 +108,8 @@ elseif (UNIX)
   find_package(ICU REQUIRED COMPONENTS uc i18n data)
   find_package(Freetype REQUIRED)
   find_library(STDCPP_LIBRARY NAMES libstdc++.so.6 )
+  find_library(PCRE2_16_LIBRARY NAMES libpcre2-16.so )
+  find_library(PNG_12_LIBRARY NAMES libpng12.so.0 )
   
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_BACKUP})  
   
@@ -124,7 +126,7 @@ elseif (UNIX)
   _qt5_get_shared_library(Gui)
   _qt5_get_shared_library(DBus)
   
-  foreach (LIBRARY ${ICU_LIBRARIES} ${FREETYPE_LIBRARIES} ${QtXcbQpa_LIBRARY_FULL} ${STDCPP_LIBRARY})
+  foreach (LIBRARY ${ICU_LIBRARIES} ${FREETYPE_LIBRARIES} ${QtXcbQpa_LIBRARY_FULL} ${STDCPP_LIBRARY} ${PCRE2_16_LIBRARY} ${PNG_12_LIBRARY})
     get_filename_component(LIBRARY_RESOLVED ${LIBRARY} REALPATH)
     list(APPEND LIBRARIES_RESOLVED ${LIBRARY_RESOLVED})
     string(REGEX REPLACE "(.*\\.so.[0-9]+).*" "\\1" LIBRARY_MAIN_VERSION "${LIBRARY_RESOLVED}")
@@ -144,7 +146,7 @@ elseif (UNIX)
   find_program (PATCHELF_BINARY NAMES patchelf)
   message( STATUS "Found patchelf binary: ${PATCHELF_BINARY}")
   install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --remove-rpath ${QtXcbPlugin_copied_location})") # gives "stat: No such file or directory" error on earlier versions of patchelf. This can be ignored.
-  install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --force-rpath --set-rpath '$ORIGIN/..' ${QtXcbPlugin_copied_location})")
+  install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --force-rpath --set-rpath $ORIGIN/.. ${QtXcbPlugin_copied_location})")
   
   install(PROGRAMS ${QtXcbPlugin_copied_location} DESTINATION lib/maracluster/platforms)
   

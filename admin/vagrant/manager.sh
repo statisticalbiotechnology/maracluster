@@ -44,6 +44,12 @@ while getopts “hab:s:r:p:” OPTION; do
         s)  src=$OPTARG;;
         r)  release=$OPTARG;;
         p)  case $OPTARG in
+               	tarball)
+               	    post="tarball64"
+                    vagbox_name="ubuntu/trusty64"
+                    vagbox_url=""
+                    package_ext="tar.gz"
+                    ;;
                	ubuntu)
                     post="ubuntu64"
                     vagbox_name="ubuntu/trusty64"
