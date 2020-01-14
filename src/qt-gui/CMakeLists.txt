@@ -105,11 +105,13 @@ elseif (UNIX)
   find_library(QtXcbQpa_LIBRARY_FULL NAMES libQt5XcbQpa.so )
   
   # the c++ standard, freetype and ICU libraries are often not compatible with older versions
+  find_library(STDCPP_LIBRARY NAMES libstdc++.so.6 )
   find_package(ICU REQUIRED COMPONENTS uc i18n data)
   find_package(Freetype REQUIRED)
-  find_library(STDCPP_LIBRARY NAMES libstdc++.so.6 )
-  find_library(PCRE2_16_LIBRARY NAMES libpcre2-16.so )
-  find_library(PNG_12_LIBRARY NAMES libpng12.so.0 )
+  
+  # needed for 5.13.2 but not for 5.11.2
+  #find_library(PCRE2_16_LIBRARY NAMES libpcre2-16.so )
+  #find_library(PNG_12_LIBRARY NAMES libpng12.so.0 )
   
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_BACKUP})  
   

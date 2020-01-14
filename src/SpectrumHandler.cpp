@@ -119,14 +119,18 @@ void SpectrumHandler::printIntensities(std::vector<MZIntensityPair>& mziPairs) {
 void SpectrumHandler::convertMSDataMZIntensityPairs(std::vector<pwiz::msdata::MZIntensityPair>& MSDataMziPairs, std::vector<MZIntensityPair>& mziPairs) {
   mziPairs.clear();
   BOOST_FOREACH(pwiz::msdata::MZIntensityPair MSDataMziPair, MSDataMziPairs) {
-    mziPairs.push_back(MZIntensityPair(MSDataMziPair));
+    if (MSDataMziPair.intensity > 0) {
+      mziPairs.push_back(MZIntensityPair(MSDataMziPair));
+    }
   }
 }
 
 void SpectrumHandler::convertMSDataMZIntensityPairs(std::vector<MZIntensityPair>& mziPairs, std::vector<pwiz::msdata::MZIntensityPair>& MSDataMziPairs) {
   MSDataMziPairs.clear();
   BOOST_FOREACH(MZIntensityPair mziPair, mziPairs) {
-    MSDataMziPairs.push_back(pwiz::msdata::MZIntensityPair(mziPair.mz, mziPair.intensity));
+    if (mziPair.intensity > 0) {
+      MSDataMziPairs.push_back(pwiz::msdata::MZIntensityPair(mziPair.mz, mziPair.intensity));
+    }
   }
 }
 

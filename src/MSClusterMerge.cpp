@@ -129,58 +129,58 @@ void MSClusterMerge::mergeMccs(std::vector<MassChargeCandidate>& allMccs,
 void MSClusterMerge::merge(
     std::vector< std::vector<BinnedMZIntensityPair> >& cluster,
     std::vector<BinnedMZIntensityPair>& mergedSpectrum) {
-  const size_t peakAreaSize = 160;
+  const size_t maxPeaks = 160;
   //const size_t peakAreaSize = 1000;
-  std::vector<BinnedMZIntensityPair> allPeaks;
-  std::vector<int> peakCounts;
-  
-  int totalPeaks = 0;
+  std::vector<std::pair<BinnedMZIntensityPair, size_t> > allPeaks;
   for (size_t i = 0; i < cluster.size(); ++i) {
     int numPeaks = 0;
     for (size_t j = 0; j < cluster[i].size(); ++j) {
       if (cluster[i][j].intensity > 0) {
-        allPeaks.push_back(cluster[i][j]);
-        peakCounts.push_back(1);
+        allPeaks.push_back(std::make_pair(cluster[i][j], i));
         ++numPeaks;
       }
     }
-    totalPeaks += numPeaks;
   }
   
   // sort by mass
-  sort(allPeaks.begin(), allPeaks.end(), SpectrumHandler::lessMZ);
+  sort(allPeaks.begin(), allPeaks.end(), lessMZ);
 
   // merge peaks
   mergedSpectrum.clear();
   if (allPeaks.size() == 0) return;
   
-  mergedSpectrum.push_back(allPeaks.at(0));
+  std::set<size_t> mergedPeakFileIdxs;
+  mergedPeakFileIdxs.insert(allPeaks.at(0).second);
+  mergedSpectrum.push_back(allPeaks.at(0).first);
+  
+  std::vector<int> peakCounts;
   const int maxIntProximity = convertMassToInt(isoTolerance_);
-  int prev = 0;
-  for (int i = 1; i < totalPeaks; i++) {
-    if (static_cast<int>(allPeaks.at(i).binIdx - mergedSpectrum.at(prev).binIdx) < maxIntProximity ) {
+  for (int i = 1; i < allPeaks.size(); i++) {
+    if (static_cast<int>(allPeaks.at(i).first.binIdx - mergedSpectrum.back().binIdx) < maxIntProximity ) {
       // join peaks with proportion to their intensities
       const double intensitySum = 
-          (mergedSpectrum.at(prev).intensity + allPeaks.at(i).intensity);
-      const double ratio = mergedSpectrum.at(prev).intensity/intensitySum;
-      const double newMass = ratio * mergedSpectrum.at(prev).mz + 
-                             (1.0-ratio) * allPeaks.at(i).mz;
+          (mergedSpectrum.back().intensity + allPeaks.at(i).first.intensity);
+      const double ratio = mergedSpectrum.back().intensity/intensitySum;
+      const double newMass = ratio * mergedSpectrum.back().mz + 
+                             (1.0-ratio) * allPeaks.at(i).first.mz;
       
-      mergedSpectrum.at(prev).mz = newMass;
-      mergedSpectrum.at(prev).binIdx = convertMassToInt(newMass);
-      mergedSpectrum.at(prev).intensity = intensitySum;
-      peakCounts.at(prev) += peakCounts.at(i);
+      mergedSpectrum.back().mz = newMass;
+      mergedSpectrum.back().binIdx = convertMassToInt(newMass);
+      mergedSpectrum.back().intensity = intensitySum;
     } else {
-      mergedSpectrum.push_back(allPeaks.at(i));
-      peakCounts.at(++prev) = peakCounts.at(i);
+      peakCounts.push_back(mergedPeakFileIdxs.size());
+      mergedPeakFileIdxs.clear();
+      
+      mergedSpectrum.push_back(allPeaks.at(i).first);
     }
+    mergedPeakFileIdxs.insert(allPeaks.at(i).second);
   }
-  totalPeaks = prev + 1;
+  peakCounts.push_back(mergedPeakFileIdxs.size());
   
   // modify the intensity according to the peakWeightTable_
   // that is discount the weight of peaks that have only a few copies
-  for (int i = 0; i < totalPeaks; i++) {
-    //std::cerr << mergedSpectrum[i].mz << " " <<  mergedSpectrum[i].intensity << " " << peakCounts[i] << " " << peakWeightTable_.getWeight(static_cast<int>(peakCounts[i]), static_cast<int>(cluster.size())) << std::endl;
+  for (int i = 0; i < peakCounts.size(); i++) {
+    //std::cerr << mergedSpectrum[i].mz << " " <<  mergedSpectrum[i].intensity << " " << peakCounts[i] << " " << cluster.size() << " " <<  peakWeightTable_.getWeight(static_cast<int>(peakCounts[i]), static_cast<int>(cluster.size())) << std::endl;
     mergedSpectrum.at(i).intensity *=
         peakWeightTable_.getWeight(static_cast<int>(peakCounts.at(i)),
                                    static_cast<int>(cluster.size()));
@@ -189,7 +189,7 @@ void MSClusterMerge::merge(
   sort(mergedSpectrum.begin(), mergedSpectrum.end(),
        SpectrumHandler::greaterIntensity);
 
-  mergedSpectrum.resize((std::min)(peakAreaSize, mergedSpectrum.size()));
+  mergedSpectrum.resize((std::min)(maxPeaks, mergedSpectrum.size()));
   
   // sort according to mass
   sort(mergedSpectrum.begin(), mergedSpectrum.end(), SpectrumHandler::lessMZ);

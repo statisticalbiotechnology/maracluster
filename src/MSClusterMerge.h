@@ -122,6 +122,11 @@ class MSClusterMerge {
 	  return (static_cast<float>(m)/MASS_TO_INT_RATIO);
   }
   
+  inline static bool lessMZ(const std::pair<BinnedMZIntensityPair, size_t>& a, 
+                            const std::pair<BinnedMZIntensityPair, size_t>& b) { 
+    return SpectrumHandler::lessMZ(a.first, b.first); 
+  }
+  
   // used for unit tests
   static inline bool isEqual(double a, double b) { return (std::abs(a - b) < 1e-5); }
 };
