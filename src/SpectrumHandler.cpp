@@ -46,9 +46,27 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
   return s->index;
 }
 
-// TODO: this could be made a bit nicer by retaining other attributes and only replacing the scan attribute
 void SpectrumHandler::setScannr(pwiz::msdata::SpectrumPtr s, unsigned int scanNr) {
-  std::string id = "scan=" + boost::lexical_cast<std::string>(scanNr);
+  std::string id = "";
+  bool addedScanNr = false;
+  std::stringstream ss(s->id);
+  while (ss.good()) {
+    std::string tmp;
+    ss >> tmp;
+    if (tmp.substr(0,5) == "scan=") {
+      addedScanNr = true;
+      id += "scan=" + boost::lexical_cast<std::string>(scanNr);
+    } else {
+      id += tmp;
+    }
+    if (ss.good()) {
+      id += " ";
+    }
+  }
+  if (!addedScanNr) {
+    if (id.size() > 0) id += " ";
+    id += "scan=" + boost::lexical_cast<std::string>(scanNr);
+  }
   s->id = id;
   s->set(pwiz::msdata::MS_spectrum_title, id + "\nSCANS=" + boost::lexical_cast<std::string>(scanNr)); // sets the TITLE attribute in mgf files, HACK for SCANS field since ProteoWizard does not seem to have support for it
 }
