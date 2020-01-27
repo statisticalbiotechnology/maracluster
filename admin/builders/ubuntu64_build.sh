@@ -54,9 +54,6 @@ if [ "$no_gui" != true ] ; then
       ./configure --prefix="${build_dir}/tools"
       make install
     fi
-    patchelf_binary=${build_dir}/tools/bin/patchelf
-  else
-    patchelf_binary=patchelf
   fi
   
   sudo apt -y install libgl1-mesa-dev libicu-dev libfreetype6-dev

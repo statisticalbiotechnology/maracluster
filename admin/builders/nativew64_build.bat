@@ -163,7 +163,7 @@ if not exist "%PWIZ_DIR%\lib" (
 )
 
 set QT_BASE=qtbase-everywhere-src-5.11.2
-set QT_URL=http://download.qt.io/official_releases/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
+set QT_URL=https://download.qt.io/archive/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
 ::: use multiple cores with jom instead of single-core nmake :::
 set JOM_URL=http://download.qt.io/official_releases/jom/jom_1_1_3.zip

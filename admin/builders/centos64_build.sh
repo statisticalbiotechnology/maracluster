@@ -41,7 +41,19 @@ fi
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then
-  sudo yum install -y patchelf mesa-libGL-devel libicu-devel freetype-devel
+  # patchelf is available from Ubuntu 16.04, install from source otherwise
+  sudo yum install -y patchelf || missing_patchelf=true
+  if [ "$missing_patchelf" == true ] ; then
+    if [ ! -d ${build_dir}/tools/patchelf-0.8 ]; then
+      wget http://nixos.org/releases/patchelf/patchelf-0.8/patchelf-0.8.tar.bz2
+      tar xf patchelf-0.8.tar.bz2
+      cd patchelf-0.8/
+      ./configure --prefix="${build_dir}/tools"
+      make install
+    fi
+  fi
+  
+  sudo yum install -y mesa-libGL-devel libicu-devel freetype-devel
   source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
 fi
 

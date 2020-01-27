@@ -71,21 +71,21 @@ while getopts “hab:s:r:p:” OPTION; do
                     post="nativew32"
                     batfile=true
                     vagbox_name="win10vs15"
-                    vagbox_url="~/VagrantWin7/win10vs15.box"
+                    vagbox_url="~/vagrant_boxes/win10vs15.box"
                     package_ext="exe"
                     ;;
                 win64) 
                     post="nativew64"
                     batfile=true
                     vagbox_name="win10vs15"
-                    vagbox_url="~/VagrantWin7/win10vs15.box"
+                    vagbox_url="~/vagrant_boxes/win10vs15.box"
                     package_ext="exe"
                     ;;
                 osx)
                     post="osx64"
                     package_ext="dmg"
                     vagbox_name="osx-sierra-0.3.1"
-                    vagbox_url="https://vagrant-osx.nyc3.digitaloceanspaces.com/osx-sierra-0.3.1.box"
+                    vagbox_url="~/vagrant_boxes/osx-sierra-0.3.1.box"
                     ;;
                 *)
                     if [[ $OPTARG == *,* ]]; then

@@ -103,15 +103,27 @@ elseif (UNIX)
   # these two packages (DBus and XcbQpa) are required by the Xcb Plugin
   find_package(Qt5DBus CONFIG REQUIRED)
   find_library(QtXcbQpa_LIBRARY_FULL NAMES libQt5XcbQpa.so )
+  if(NOT QtXcbQpa_LIBRARY_FULL)
+    message(FATAL_ERROR "QtXcbQpa library not found")
+  endif(NOT QtXcbQpa_LIBRARY_FULL)
   
   # the c++ standard, freetype and ICU libraries are often not compatible with older versions
   find_library(STDCPP_LIBRARY NAMES libstdc++.so.6 )
+  if(NOT STDCPP_LIBRARY)
+    message(FATAL_ERROR "stdc++ library not found")
+  endif(NOT STDCPP_LIBRARY)
   find_package(ICU REQUIRED COMPONENTS uc i18n data)
   find_package(Freetype REQUIRED)
   
   # needed for 5.13.2 but not for 5.11.2
   #find_library(PCRE2_16_LIBRARY NAMES libpcre2-16.so )
+  #if(NOT PCRE2_16_LIBRARY)
+  #  message(FATAL_ERROR "pcre2-16 library not found")
+  #endif(NOT PCRE2_16_LIBRARY)
   #find_library(PNG_12_LIBRARY NAMES libpng12.so.0 )
+  #if(NOT PNG_12_LIBRARY)
+  #  message(FATAL_ERROR "png-12 library not found")
+  #endif(NOT PNG_12_LIBRARY)
   
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_BACKUP})  
   
@@ -128,7 +140,7 @@ elseif (UNIX)
   _qt5_get_shared_library(Gui)
   _qt5_get_shared_library(DBus)
   
-  foreach (LIBRARY ${ICU_LIBRARIES} ${FREETYPE_LIBRARIES} ${QtXcbQpa_LIBRARY_FULL} ${STDCPP_LIBRARY} ${PCRE2_16_LIBRARY} ${PNG_12_LIBRARY})
+  foreach (LIBRARY ${ICU_LIBRARIES} ${FREETYPE_LIBRARIES} ${QtXcbQpa_LIBRARY_FULL} ${STDCPP_LIBRARY}) # ${PCRE2_16_LIBRARY} ${PNG_12_LIBRARY}, see above
     get_filename_component(LIBRARY_RESOLVED ${LIBRARY} REALPATH)
     list(APPEND LIBRARIES_RESOLVED ${LIBRARY_RESOLVED})
     string(REGEX REPLACE "(.*\\.so.[0-9]+).*" "\\1" LIBRARY_MAIN_VERSION "${LIBRARY_RESOLVED}")
@@ -145,8 +157,14 @@ elseif (UNIX)
   # make a copy of the shared library that updates the rpath
   file(COPY ${QtXcbPlugin_location} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   set(QtXcbPlugin_copied_location ${CMAKE_CURRENT_BINARY_DIR}/${QtXcbPlugin_filename}) # runs into permissions error
-  find_program (PATCHELF_BINARY NAMES patchelf)
-  message( STATUS "Found patchelf binary: ${PATCHELF_BINARY}")
+  
+  find_program(PATCHELF_BINARY NAMES patchelf)
+  if(PATCHELF_BINARY)
+    message(STATUS "PatchELF found at: ${PATCHELF_BINARY}")
+  else(PATCHELF_BINARY)
+    message(FATAL_ERROR "The package PatchELF has not been found")
+  endif(PATCHELF_BINARY)
+  
   install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --remove-rpath ${QtXcbPlugin_copied_location})") # gives "stat: No such file or directory" error on earlier versions of patchelf. This can be ignored.
   install(CODE "execute_process(COMMAND ${PATCHELF_BINARY} --force-rpath --set-rpath $ORIGIN/.. ${QtXcbPlugin_copied_location})")
   

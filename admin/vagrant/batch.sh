@@ -9,10 +9,10 @@ platforms=()
 #platforms+=(osx)
 #platforms+=(win64)
 #platforms+=(win32)
-#platforms+=(centos)
+platforms+=(centos)
 #platforms+=(fedora)
 #platforms+=(ubuntu)
-platforms+=(tarball)
+#platforms+=(tarball)
 
 for platform in ${platforms[@]}; do
   echo "Building $platform binaries"
