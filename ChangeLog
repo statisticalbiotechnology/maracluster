@@ -1,3 +1,11 @@
+v1.01
+* Fixing several build issues
+* Fixed nativeId issue with new ProteoWizard version for MS2 format
+* Consensus spectra for MS1 profile data (#9)
+* Added tarball release as package option (#8, #18)
+* Clarified names of temporary spectrum files
+* Fixed bug with creation of output file in current dir.
+
 v1.00.1
 * Fixes infinite loop issue in counting cluster sizes (#17)
 
