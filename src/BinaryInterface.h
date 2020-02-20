@@ -58,6 +58,7 @@ class BinaryInterface {
       
       errno = 0;
       Type tmp;
+      vec.reserve(mmap.size() / sizeof(tmp));
       while (errno == 0 && f && f<=(l-sizeof(tmp)) ) {
         memcpy(&tmp, f, sizeof(tmp));
         f += sizeof(tmp);
