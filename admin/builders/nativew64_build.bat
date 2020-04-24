@@ -10,7 +10,6 @@
 :::                                                                           :::
 ::: To support reading Waters RAW Files, Visual C++ runtime is necessary to   :::
 ::: run http://www.microsoft.com/en-us/download/details.aspx?id=30679         :::
-:::                                                                           :::
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 @echo off
@@ -19,16 +18,16 @@ set SRC_DIR=%~dp0..\..\..\
 set BUILD_DIR=%SRC_DIR%\build\win64
 set RELEASE_DIR=%SRC_DIR%\release\win64
 set BUILD_TYPE=Release
-set NO_GUI="false"
-set VENDOR="false"
+set NO_GUI=false
+set VENDOR=false
 
 :parse
 IF "%~1"=="" GOTO endparse
 IF "%~1"=="-s" (set SRC_DIR=%~2)
 IF "%~1"=="-b" (set BUILD_DIR=%~2)
 IF "%~1"=="-r" (set RELEASE_DIR=%~2)
-IF "%~1"=="-g" (set NO_GUI="true")
-IF "%~1"=="-d" (set VENDOR="true")
+IF "%~1"=="-g" (set NO_GUI=true)
+IF "%~1"=="-e" (set VENDOR=true)
 SHIFT
 GOTO parse
 :endparse
@@ -38,7 +37,9 @@ del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" >nul 2>&1
 del "%BUILD_DIR%\maracluster-gui\mar*.exe" >nul 2>&1
 
 call %SRC_DIR%\maracluster\admin\builders\_init_msvc_.bat 64bit
-echo VS install dir %InstallDir%
+if %ERRORLEVEL% NEQ 0 (
+  EXIT /B %ERRORLEVEL%
+)
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::::: START INSTALL DEPENDENCIES ::::::::::::::::
@@ -215,10 +216,10 @@ echo cmake maracluster.....
 %CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%\maracluster"
 
 echo build maracluster.....
-msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m
 
-::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
-::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+::msbuild INSTALL.vcxproj /p:Configuration=%BUILD_TYPE% /m
+::msbuild RUN_TESTS.vcxproj /p:Configuration=%BUILD_TYPE% /m
 
 if "%VENDOR%" == "true" (
   ::::::: Building maracluster with vendor support :::::::
@@ -228,10 +229,10 @@ if "%VENDOR%" == "true" (
   %CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%\maracluster"
 
   echo build maracluster with vendor support.....
-  msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m
 
-  ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
-  ::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  ::msbuild INSTALL.vcxproj /p:Configuration=%BUILD_TYPE% /m
+  ::msbuild RUN_TESTS.vcxproj /p:Configuration=%BUILD_TYPE% /m
 )
 
 if not "%NO_GUI%" == "true" (
@@ -242,10 +243,10 @@ if not "%NO_GUI%" == "true" (
   %CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
 
   echo build maracluster gui.....
-  msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m
   
-  ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
-  ::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  ::msbuild INSTALL.vcxproj /p:Configuration=%BUILD_TYPE% /m
+  ::msbuild RUN_TESTS.vcxproj /p:Configuration=%BUILD_TYPE% /m
 )
 
 :::::::::::::::::::::::::::::::::::::::
@@ -274,5 +275,6 @@ cd /D "%SRC_DIR%"
 EXIT /B %exit_code%
 
 :downloadfile
+echo Downloading %1 to %2
 PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
 EXIT /B

@@ -4,11 +4,11 @@ tools_dir=$1
 cd ${tools_dir}
 
 echo "Download source code for ProteoWizard from their TeamCity server"
-wget https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
+wget --no-verbose https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
 linux_pwiz=pwiz-src-without-tv-$(cat VERSION | sed 's/ /_/g')
 # https://teamcity.labkey.org/viewType.html?buildTypeId=bt81
 # without-tv: without tests and vendor reader
-wget https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/${linux_pwiz}.tar.bz2
+wget --no-verbose https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/${linux_pwiz}.tar.bz2
 
 mkdir proteowizard
 tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
@@ -48,16 +48,11 @@ rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  librar
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
 rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_67_0/boost/ ../include/boost
 
-pwd
+cat ../pwiz_installation.log
 ls ../lib
 
 # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
-ln -s -f ../lib/libboost_system-*.a ../lib/libboost_system.a
-ln -s -f ../lib/libboost_thread-*.a ../lib/libboost_thread.a
-ln -s -f ../lib/libboost_chrono-*.a ../lib/libboost_chrono.a
-ln -s -f ../lib/libboost_regex-*.a ../lib/libboost_regex.a
-ln -s -f ../lib/libboost_filesystem-*.a ../lib/libboost_filesystem.a
-ln -s -f ../lib/libboost_iostreams-*.a ../lib/libboost_iostreams.a
-ln -s -f ../lib/libboost_program_options-*.a ../lib/libboost_program_options.a
-ln -s -f ../lib/libboost_serialization-*.a ../lib/libboost_serialization.a
+for component in system thread chrono regex filesystem iostreams program_options serialization; do
+  ln -s -f $(ls ../lib/libboost_${component}-*.a | head -n1) ../lib/libboost_${component}.a
+done
 

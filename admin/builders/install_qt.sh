@@ -7,7 +7,7 @@ linux_qt=qtbase-opensource-src-5.9.9
 if [ ! -d Qt-dynamic ]; then
 
   if [ ! -f ${linux_qt}.tar.xz ]; then
-    wget https://download.qt.io/archive/qt/5.9/5.9.9/submodules/${linux_qt}.tar.xz
+    wget --no-verbose https://download.qt.io/archive/qt/5.9/5.9.9/submodules/${linux_qt}.tar.xz
   fi
 
   tar xf ${linux_qt}.tar.xz
@@ -27,7 +27,7 @@ cd ${tools_dir}
 function version_lt() { test "$(echo "$@" | tr " " "\n" | (sort -rV || gsort -rV) | head -n 1)" != "$1"; }
 
 if version_lt $(cmake --version | head -n1 | cut -f3 -d ' ') "3.5"; then
-  wget https://github.com/Kitware/CMake/releases/download/v3.13.3/cmake-3.13.3-Linux-x86_64.sh
+  wget --no-verbose https://github.com/Kitware/CMake/releases/download/v3.13.3/cmake-3.13.3-Linux-x86_64.sh
   bash cmake-3.13.3-Linux-x86_64.sh --skip-license --exclude-subdir
   CMAKE_BINARY=${build_dir}/tools/bin/cmake
 else
