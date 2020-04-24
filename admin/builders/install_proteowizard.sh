@@ -48,6 +48,9 @@ rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  librar
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
 rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_67_0/boost/ ../include/boost
 
+pwd
+ls ../lib
+
 # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
 ln -s -f ../lib/libboost_system-*.a ../lib/libboost_system.a
 ln -s -f ../lib/libboost_thread-*.a ../lib/libboost_thread.a

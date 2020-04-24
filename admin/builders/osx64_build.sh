@@ -7,6 +7,7 @@
 #----------------------------------------
 
 # managing input arguments
+no_gui=false
 while getopts “s:b:r:t:g” OPTION; do
   case $OPTION in
     s) src_dir=${OPTARG};;
@@ -21,22 +22,6 @@ done
 if [[ ! -d /Applications/XCode.app ]]
   then
     echo "Apple developer tools are required (Search for XCode in the App Store)"
-    exit 1
-fi
-
-if [[ ! -d /Applications/PackageMaker.app ]]
-  then
-    echo "Apple developer PackageManager is required and expected in the "
-    echo "/Applications folder. If you have moved it elsewhere, please change this script"
-    echo ""
-    echo "It is part of the Auxiliary tools for XCode - Late July 2012"
-    echo "Yes, 2012! since then Apple moved to the app store and requires"
-    echo "packages and dmgs to be build differently. "
-    echo "However, the old packagemaker still works with 10.11"
-    echo
-    echo "You can find it here: "
-    echo "http://adcdownload.apple.com/Developer_Tools/auxiliary_tools_for_xcode__late_july_2012/xcode44auxtools6938114a.dmg"
-    echo ""
     exit 1
 fi
 
@@ -140,6 +125,6 @@ if [ "$no_gui" != true ] ; then
 fi
 
 mkdir -p $release_dir
-cp -v $build_dir/maracluster/mar*.dmg $release_dir && \
+cp -v $build_dir/maracluster/mar*.pkg $release_dir && \
   ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.dmg $release_dir)
 

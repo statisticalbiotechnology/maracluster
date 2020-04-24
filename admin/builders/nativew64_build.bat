@@ -20,6 +20,7 @@ set BUILD_DIR=%SRC_DIR%\build\win64
 set RELEASE_DIR=%SRC_DIR%\release\win64
 set BUILD_TYPE=Release
 set NO_GUI="false"
+set VENDOR="false"
 
 :parse
 IF "%~1"=="" GOTO endparse
@@ -27,6 +28,7 @@ IF "%~1"=="-s" (set SRC_DIR=%~2)
 IF "%~1"=="-b" (set BUILD_DIR=%~2)
 IF "%~1"=="-r" (set RELEASE_DIR=%~2)
 IF "%~1"=="-g" (set NO_GUI="true")
+IF "%~1"=="-d" (set VENDOR="true")
 SHIFT
 GOTO parse
 :endparse
@@ -36,6 +38,7 @@ del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" >nul 2>&1
 del "%BUILD_DIR%\maracluster-gui\mar*.exe" >nul 2>&1
 
 call %SRC_DIR%\maracluster\admin\builders\_init_msvc_.bat 64bit
+echo VS install dir %InstallDir%
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::::: START INSTALL DEPENDENCIES ::::::::::::::::
@@ -217,17 +220,19 @@ msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TY
 ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 ::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 
-::::::: Building maracluster with vendor support :::::::
-if not exist "%BUILD_DIR%\maracluster-vendor-support" (md "%BUILD_DIR%\maracluster-vendor-support")
-cd /D "%BUILD_DIR%\maracluster-vendor-support"
-echo cmake maracluster with vendor support.....
-%CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%\maracluster"
+if "%VENDOR%" == "true" (
+  ::::::: Building maracluster with vendor support :::::::
+  if not exist "%BUILD_DIR%\maracluster-vendor-support" (md "%BUILD_DIR%\maracluster-vendor-support")
+  cd /D "%BUILD_DIR%\maracluster-vendor-support"
+  echo cmake maracluster with vendor support.....
+  %CMAKE_EXE% -G "Visual Studio %MSVC_VER% Win64" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%\maracluster"
 
-echo build maracluster with vendor support.....
-msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  echo build maracluster with vendor support.....
+  msbuild PACKAGE.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
 
-::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
-::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  ::msbuild INSTALL.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+  ::msbuild RUN_TESTS.vcxproj /p:VCTargetsPath="%VCTARGET%" /p:Configuration=%BUILD_TYPE% /m
+)
 
 if not "%NO_GUI%" == "true" (
   ::::::: Building maracluster with GUI :::::::
@@ -249,14 +254,16 @@ if not "%NO_GUI%" == "true" (
 
 echo Copying installers to %RELEASE_DIR%
 
-copy "%BUILD_DIR%\maracluster\mar*.exe" "%RELEASE_DIR%"
+xcopy "%BUILD_DIR%\maracluster\mar*.exe" "%RELEASE_DIR%"
 set /A exit_code=%ERRORLEVEL%
 
-copy "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" "%RELEASE_DIR%"
-set /A exit_code=exit_code+%ERRORLEVEL%
+if "%VENDOR%" == "true" (
+  xcopy "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" "%RELEASE_DIR%"
+  set /A exit_code=exit_code+%ERRORLEVEL%
+)
 
 if not "%NO_GUI%" == "true" (
-  copy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
+  xcopy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
   set /A exit_code=exit_code+%ERRORLEVEL%
 )
 
