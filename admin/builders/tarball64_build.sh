@@ -74,9 +74,6 @@ echo -n "make maracluster (this will take few minutes).....";
 make -j 4;
 make -j 4 package;
 
-mkdir -p $release_dir
-cp -v $build_dir/maracluster/mar*.tar.gz $release_dir
-
 if [ "$no_gui" != true ] ; then
   #######maracluster-gui########
   mkdir -p $build_dir/maracluster-gui
@@ -90,7 +87,8 @@ if [ "$no_gui" != true ] ; then
 
   make -j 4;
   make -j 4 package;
-  
-  cp -v $build_dir/maracluster-gui/mar*.tar.gz $release_dir
 fi
 
+mkdir -p $release_dir
+cp -v $build_dir/maracluster/mar*.tar.gz $release_dir && \
+  ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.tar.gz $release_dir)

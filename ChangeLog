@@ -1,3 +1,8 @@
+v1.01.1
+* Fixing several build issues
+* Added OpenMP in osx build
+* Undo nativeId fix which broke mgf and mzML output for consensus spectrum file (#19)
+
 v1.01
 * Fixing several build issues
 * Fixed nativeId issue with new ProteoWizard version for MS2 format

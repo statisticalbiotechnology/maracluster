@@ -87,10 +87,14 @@ if (APPLE)
   install(PROGRAMS ${QtCocoaPlugin_location} DESTINATION maracluster-gui.app/Contents/plugins/platforms)
   set(QtCocoaPlugin_lib \${CMAKE_INSTALL_PREFIX}/maracluster-gui.app/Contents/plugins/platforms/${QtCocoaPlugin_name})
   
-  get_target_property(QtMacStylePlugin_location Qt5::QMacStylePlugin LOCATION)
-  get_filename_component(QtMacStylePlugin_name ${QtMacStylePlugin_location} NAME)
-  install(PROGRAMS ${QtMacStylePlugin_location} DESTINATION maracluster-gui.app/Contents/plugins/styles)
-  set(QtMacStylePlugin_lib \${CMAKE_INSTALL_PREFIX}/maracluster-gui.app/Contents/plugins/styles/${QtMacStylePlugin_name})
+  set(QtMacStylePlugin_lib "")
+  if (Qt5::QMacStylePlugin) # for Qt 5.11 and up
+    get_target_property(QtMacStylePlugin_location Qt5::QMacStylePlugin LOCATION)
+    get_filename_component(QtMacStylePlugin_name ${QtMacStylePlugin_location} NAME)
+    install(PROGRAMS ${QtMacStylePlugin_location} DESTINATION maracluster-gui.app/Contents/plugins/styles)
+    set(QtMacStylePlugin_lib \${CMAKE_INSTALL_PREFIX}/maracluster-gui.app/Contents/plugins/styles/${QtMacStylePlugin_name})
+  endif (Qt5::QMacStylePlugin)
+  
   
   install(CODE "
     include(BundleUtilities)

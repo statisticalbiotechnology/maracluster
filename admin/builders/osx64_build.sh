@@ -7,7 +7,7 @@
 #----------------------------------------
 
 # managing input arguments
-while getopts “s:b:r:t:” OPTION; do
+while getopts “s:b:r:t:g” OPTION; do
   case $OPTION in
     s) src_dir=${OPTARG};;
     t) branch=${OPTARG};;
@@ -45,18 +45,18 @@ if [[ -d /opt/local/var/macports ]]
   then
     echo "[ Package manager ] : MacPorts "
     package_manager="sudo port"
-    other_packages="cmake gnutar wget coreutils"
+    other_packages="gnutar wget coreutils libomp cmake"
 elif [[ -f ${HOME}/bin/brew ]]
   then
     echo "[ Package manager ] : Homebrew "
     package_manager=$HOME/bin/brew
-    other_packages="cmake gnu-tar wget coreutils"
+    other_packages="gnu-tar wget coreutils libomp cmake"
 elif [[ -f /usr/local/bin/brew ]]
   then
     echo "[ Package manager ] : Homebrew "
     package_manager="brew"
     ${package_manager} update || true # brew.rb raises an error on the vagrant box, just ignore it
-    other_packages="cmake gnu-tar wget coreutils"
+    other_packages="gnu-tar wget coreutils libomp cmake"
 else
     package_manager_installed=false
 fi
@@ -127,9 +127,6 @@ make -j 4 package;
 
 echo "build directory was : ${build_dir}";
 
-mkdir -p $release_dir
-cp -v $build_dir/maracluster/mar*.dmg $release_dir
-
 if [ "$no_gui" != true ] ; then
   #######maracluster-gui########
   mkdir -p $build_dir/maracluster-gui
@@ -140,11 +137,9 @@ if [ "$no_gui" != true ] ; then
   echo -n "make maracluster-gui.....";
   make -j4
   make -j4 package;
-  
-  cp -v $build_dir/maracluster-gui/mar*.dmg $release_dir
 fi
 
-#--------------------------------------------
-
-
+mkdir -p $release_dir
+cp -v $build_dir/maracluster/mar*.dmg $release_dir && \
+  ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.dmg $release_dir)
 

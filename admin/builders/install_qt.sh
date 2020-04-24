@@ -3,11 +3,11 @@ tools_dir=$1
 # change directory to the build director
 cd ${tools_dir}
 
-linux_qt=qtbase-everywhere-src-5.11.2
+linux_qt=qtbase-opensource-src-5.9.9
 if [ ! -d Qt-dynamic ]; then
 
   if [ ! -f ${linux_qt}.tar.xz ]; then
-    wget https://download.qt.io/archive/qt/5.11/5.11.2/submodules/${linux_qt}.tar.xz
+    wget https://download.qt.io/archive/qt/5.9/5.9.9/submodules/${linux_qt}.tar.xz
   fi
 
   tar xf ${linux_qt}.tar.xz

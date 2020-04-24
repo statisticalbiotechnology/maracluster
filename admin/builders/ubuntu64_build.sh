@@ -72,9 +72,6 @@ make -j 4;
 make -j 4 package;
 sudo make install;
 
-mkdir -p $release_dir
-cp -v $build_dir/maracluster/mar*.deb $release_dir
-
 if [ "$no_gui" != true ] ; then
   #######maracluster-gui########
   mkdir -p $build_dir/maracluster-gui
@@ -89,7 +86,10 @@ if [ "$no_gui" != true ] ; then
   make -j 4;
   make -j 4 package;
   sudo make install
-  
-  cp -v $build_dir/maracluster-gui/mar*.deb $release_dir
 fi
+
+mkdir -p $release_dir
+cp -v $build_dir/maracluster/mar*.deb $release_dir && \
+  ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.deb $release_dir)
+
 

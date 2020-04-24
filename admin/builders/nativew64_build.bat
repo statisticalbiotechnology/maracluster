@@ -35,43 +35,36 @@ del "%BUILD_DIR%\maracluster\mar*.exe" >nul 2>&1
 del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" >nul 2>&1
 del "%BUILD_DIR%\maracluster-gui\mar*.exe" >nul 2>&1
 
-call %SRC_DIR%\maracluster\admin\builders\setup_env.bat 64bit
-
-set VCTARGET=%PROGRAM_FILES_DIR%\MSBuild\Microsoft.Cpp\v4.0\V%MSVC_VER%0
+call %SRC_DIR%\maracluster\admin\builders\_init_msvc_.bat 64bit
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::::: START INSTALL DEPENDENCIES ::::::::::::::::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 setlocal
+
+call %SRC_DIR%\maracluster\admin\builders\_urls_and_file_names_.bat
+
 set INSTALL_DIR=%BUILD_DIR%\tools
 if not exist "%INSTALL_DIR%" (md "%INSTALL_DIR%")
 if not exist "%RELEASE_DIR%" (md "%RELEASE_DIR%")
 
-set ZIP_URL=http://downloads.sourceforge.net/sevenzip/7z920.exe
-if not exist "%INSTALL_DIR%\7zip" (
+set ZIP_DIR=%INSTALL_DIR%\%ZIP_BASE%
+if not exist "%ZIP_DIR%" (
   echo Downloading and installing 7-Zip
   call :downloadfile %ZIP_URL% %INSTALL_DIR%\7zip.exe
   "%INSTALL_DIR%\7zip.exe" /S /D=%INSTALL_DIR%\7zip
 )
-set ZIP_EXE="%INSTALL_DIR%\7zip\7z.exe"
+set ZIP_EXE="%ZIP_DIR%\7z.exe"
 
-set CMAKE_BASE=cmake-3.13.4-win32-x86
-set CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.13.4/%CMAKE_BASE%.zip
-if not exist "%INSTALL_DIR%\%CMAKE_BASE%" (
+set CMAKE_DIR=%INSTALL_DIR%\%CMAKE_BASE%
+if not exist "%CMAKE_DIR%" (
   echo Downloading and installing CMake
   call :downloadfile %CMAKE_URL% %INSTALL_DIR%\cmake.zip
   %ZIP_EXE% x "%INSTALL_DIR%\cmake.zip" -o"%INSTALL_DIR%" -aoa -xr!doc > NUL
 )
-set CMAKE_EXE="%INSTALL_DIR%\%CMAKE_BASE%\bin\cmake.exe"
+set CMAKE_EXE="%CMAKE_DIR%\bin\cmake.exe"
 
-::: https://teamcity.labkey.org/viewType.html?buildTypeId=bt81 :::
-::: without-t = without tests :::
-set PWIZ_VERSION_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
-call :downloadfile %PWIZ_VERSION_URL% %INSTALL_DIR%\VERSION
-set /p PWIZ_VERSION_STRING=<%INSTALL_DIR%\VERSION
-set PWIZ_BASE=pwiz-src-without-t-%PWIZ_VERSION_STRING: =_%
-set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.tar.bz2
 set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
@@ -162,13 +155,10 @@ if not exist "%PWIZ_DIR%\lib" (
   for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y > NUL
 )
 
-set QT_BASE=qtbase-everywhere-src-5.11.2
-set QT_URL=https://download.qt.io/archive/qt/5.11/5.11.2/submodules/%QT_BASE%.zip
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
-::: use multiple cores with jom instead of single-core nmake :::
-set JOM_URL=http://download.qt.io/official_releases/jom/jom_1_1_3.zip
 if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
+    ::: use multiple cores with jom instead of single-core nmake :::
     echo Downloading Jom
     call :downloadfile %JOM_URL% %INSTALL_DIR%\jom.zip
     %ZIP_EXE% x "%INSTALL_DIR%\jom.zip" -o"%INSTALL_DIR%\jom" -aoa > NUL
@@ -195,7 +185,6 @@ if not "%NO_GUI%" == "true" (
 
 ::: Needed for CPack :::
 set NSIS_DIR=%INSTALL_DIR%\nsis
-set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS 3/3.04/nsis-3.04-setup.exe/download
 if not exist "%NSIS_DIR%" (
   echo Downloading and installing NSIS installer
   call :downloadfile "%NSIS_URL%" %INSTALL_DIR%\nsis.exe
@@ -259,15 +248,23 @@ if not "%NO_GUI%" == "true" (
 :::::::::::::::::::::::::::::::::::::::
 
 echo Copying installers to %RELEASE_DIR%
+
 copy "%BUILD_DIR%\maracluster\mar*.exe" "%RELEASE_DIR%"
+set /A exit_code=%ERRORLEVEL%
+
 copy "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" "%RELEASE_DIR%"
-copy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
+set /A exit_code=exit_code+%ERRORLEVEL%
+
+if not "%NO_GUI%" == "true" (
+  copy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
+  set /A exit_code=exit_code+%ERRORLEVEL%
+)
 
 echo Finished buildscript execution in build directory %BUILD_DIR%
 
 cd /D "%SRC_DIR%"
 
-EXIT /B %errorlevel%
+EXIT /B %exit_code%
 
 :downloadfile
 PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"

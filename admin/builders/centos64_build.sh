@@ -1,11 +1,12 @@
 #!/bin/bash
 # managing input arguments
-while getopts “s:b:r:t:” OPTION; do
+while getopts “s:b:r:t:g” OPTION; do
   case $OPTION in
     s) src_dir=${OPTARG};;
     t) branch=${OPTARG};;
     r) release_dir=${OPTARG};;
     b) build_dir=${OPTARG};;
+    g) no_gui=true;;
     \?) echo "Invalid option: -${OPTARG}" >&2;;
   esac
 done
@@ -66,10 +67,6 @@ ${CMAKE_BINARY} -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_P
 echo -n "make maracluster (this will take few minutes).....";
 make -j 4;
 make -j 4 package;
-sudo make install;
-
-mkdir -p $release_dir
-cp -v $build_dir/maracluster/mar*.rpm $release_dir
 
 if [ "$no_gui" != true ] ; then
   #######maracluster-gui########
@@ -84,8 +81,10 @@ if [ "$no_gui" != true ] ; then
 
   make -j 4;
   make -j 4 package;
-  sudo make install
-  
-  cp -v $build_dir/maracluster-gui/mar*.rpm $release_dir
 fi
+
+mkdir -p $release_dir
+cp -v $build_dir/maracluster/mar*.rpm $release_dir && \
+  ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.rpm $release_dir)
+
 

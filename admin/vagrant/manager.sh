@@ -299,6 +299,7 @@ cp -v ${tmp_dir}/mara*.${package_ext} ${release};
 
 if [[ $? -eq 0 ]] && [[ -z ${alive} ]]; then
   vagrant destroy -f
+  rm -rf ${tmp_dir}
 else
   echo "-a option set or encountered error: keeping the VM alive, remember to close and delete the VM manually."
   exit 1
