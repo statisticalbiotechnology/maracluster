@@ -29,9 +29,13 @@ fi
 
 rm -f $build_dir/{maracluster,maracluster-gui}/mar*.deb
 
+# skip apt-upgrade if this is a github actions ci job
 sudo apt-get update;
-sudo apt-get upgrade;
-sudo apt-get -y install g++ make cmake
+if [ -z "$CI" ]; then
+  # trap 'echo "EXIT (rc: $?)" && exit 1' ERR
+  sudo apt-get upgrade;
+  sudo apt-get -y install g++ make cmake;
+fi
 CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is needed
 
 mkdir -p ${build_dir}/tools
