@@ -32,9 +32,15 @@ if %ERRORLEVEL% EQU 0 (
   set "PROGRAM_FILES_DIR=C:\Program Files (x86)"
 )
 
+::: The vcvarsall.bat has been moved in VS2017 and later
+set AUXILIARY_PATH=
+if %MSVC_VER% GEQ 15 (
+  set AUXILIARY_PATH=Auxiliary\Build\
+)
+
 :: use the VS command prompt settings to set-up paths for compiler and builder
 :: see https://msdn.microsoft.com/en-us/library/f2ccy3wt.aspx for possible vcvarsall.bat arguments
-set VCVARS_BAT=%MSVC_INSTALL_DIR%\VC\vcvarsall.bat
+set VCVARS_BAT=%MSVC_INSTALL_DIR%\VC\%AUXILIARY_PATH%vcvarsall.bat
 if not defined DevEnvDir (
   echo Setting compiler and builder paths for %BUILD_TARGET% target on %BUILD_PLATFORM% build platform
   if "%BUILD_TARGET%" == "32bit" (
