@@ -94,6 +94,6 @@ fi
 
 mkdir -p $release_dir
 cp -v $build_dir/maracluster/mar*.deb $release_dir && \
-  ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.deb $release_dir)
+  ([ "$no_gui" == true ] || cp -v $build_dir/maracluster-gui/mar*.deb $release_dir)
 
 

@@ -85,6 +85,6 @@ fi
 
 mkdir -p $release_dir
 cp -v $build_dir/maracluster/mar*.rpm $release_dir && \
-  ("$no_gui" == true || cp -v $build_dir/maracluster-gui/mar*.rpm $release_dir)
+  ([ "$no_gui" == true ] || cp -v $build_dir/maracluster-gui/mar*.rpm $release_dir)
 
 
