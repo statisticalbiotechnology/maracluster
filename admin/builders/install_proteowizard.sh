@@ -14,6 +14,11 @@ mkdir proteowizard
 tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
 cd proteowizard
 
+if [[ "$OSTYPE" == "darwin"* ]] && [ -n "$CI" ]; then
+  wget --no-verbose https://github.com/boostorg/atomic/commit/6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
+  patch libraries/boost_1_67_0/boost/atomic/detail/ops_gcc_x86_dcas.hpp < 6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
+fi
+
 echo "Building ProteoWizard and Boost, this may take some time.."
 
 # if you have more than 4GB of memory available, you could try to use more than 2 cores to speed things up
