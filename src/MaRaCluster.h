@@ -29,6 +29,8 @@
 #include <sstream>
 
 #include <boost/filesystem.hpp>
+#include <boost/asio.hpp>
+#include <boost/functional/hash_fwd.hpp>
 
 #include "Option.h"
 #include "PvalueCalculator.h"
@@ -71,6 +73,11 @@ class MaRaCluster {
   virtual int createIndex();
   int doClustering(const std::vector<std::string> pvalFNs, 
     std::vector<std::string> pvalTreeFNs, SpectrumFileList& fileList);
+  
+  // google analytics
+  static bool parseUrl(std::string url, std::string* host, std::string* path);
+  static void httpRequest(const std::string& url, const std::string& data);
+  static void postToAnalytics(const std::string& appName);
   
   Mode mode_;
   std::string call_;

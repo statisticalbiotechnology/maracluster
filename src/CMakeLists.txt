@@ -109,7 +109,7 @@ target_link_libraries(maracluster batchlibrary maraclusterlibrary ${COMMON_LIBRA
 if (NOT DEFINED MARACLUSTER_BIN_DESTINATION)
   set(MARACLUSTER_BIN_DESTINATION bin)
 endif ()
-install(TARGETS maracluster EXPORT MARACLUSTER RUNTIME DESTINATION ${MARACLUSTER_BIN_DESTINATION} COMPONENT applications) # Important to use relative path here (used by CPack)!
+install(TARGETS maracluster EXPORT MARACLUSTER RUNTIME DESTINATION ${MARACLUSTER_BIN_DESTINATION}) # Important to use relative path here (used by CPack)!
 #install(TARGETS extractspec EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #install(TARGETS msgffixmzml EXPORT MARACLUSTER DESTINATION bin) # Important to use relative path here (used by CPack)!
 #if(MSVC)
