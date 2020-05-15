@@ -270,6 +270,7 @@ if not "%NO_GUI%" == "true" (
 
 echo Finished buildscript execution in build directory %BUILD_DIR%
 
+echo Ex code %exit_code%
 cd /D "%SRC_DIR%"
 
 EXIT /B %exit_code%
