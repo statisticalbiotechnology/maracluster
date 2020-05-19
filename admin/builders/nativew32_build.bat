@@ -226,20 +226,19 @@ if not "%NO_GUI%" == "true" (
   ::msbuild RUN_TESTS.vcxproj /p:Configuration=%BUILD_TYPE% /m
 )
 
+echo Finished buildscript execution in build directory %BUILD_DIR%
+
 :::::::::::::::::::::::::::::::::::::::
 :::::::::::: END BUILD ::::::::::::::::
 :::::::::::::::::::::::::::::::::::::::
 
 echo Copying installers to %RELEASE_DIR%
-xcopy "%BUILD_DIR%\maracluster\mar*.exe" "%RELEASE_DIR%"
-set /A exit_code=%ERRORLEVEL%
+set /A exit_code=0
+call :copytorelease "%BUILD_DIR%\maracluster\mar*.exe"
 
 if not "%NO_GUI%" == "true" (
-  xcopy "%BUILD_DIR%\maracluster-gui\mar*.exe" "%RELEASE_DIR%"
-  set /A exit_code=exit_code+%ERRORLEVEL%
+  call :copytorelease "%BUILD_DIR%\maracluster-gui\mar*.exe"
 )
-
-echo Finished buildscript execution in build directory %BUILD_DIR%
 
 cd /D "%SRC_DIR%"
 
@@ -248,4 +247,11 @@ EXIT /B %exit_code%
 :downloadfile
 echo Downloading %1 to %2
 PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
+EXIT /B
+
+:copytorelease
+echo Copying "%1" to "%RELEASE_DIR%"
+xcopy %1 "%RELEASE_DIR%" /Y
+dir %1 /b /a-d >nul 2>&1
+set /A exit_code=exit_code+%ERRORLEVEL%
 EXIT /B
