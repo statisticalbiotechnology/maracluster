@@ -157,6 +157,11 @@ if not exist "%PWIZ_DIR%\lib" (
 
   mkdir include
   for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y > NUL
+  
+  ::: copy the boost::asio library, which is not included by the ProteoWizard boost tar but is needed for maracluster
+  call :downloadfile "%BOOST_ASIO_URL%" %INSTALL_DIR%\boost_asio.zip
+  %ZIP_EXE% x "%INSTALL_DIR%\boost_asio.zip" -o"%INSTALL_DIR%" -aoa > NUL
+  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_67_0' -Recurse"
 )
 
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
