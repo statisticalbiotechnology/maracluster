@@ -35,8 +35,16 @@ CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is neede
 mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
+# we need gcc >= 5 to compile ProteoWizard, since they use the c++14 flag
+pre=""
+if [[ $(rpm -q --queryformat '%{VERSION}' centos-release) < 8 ]]; then
+  sudo yum install -y centos-release-scl
+  sudo yum install -y devtoolset-7-gcc*
+  pre="scl enable devtoolset-7 --"
+fi
+
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
-  ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
+  ${pre} ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 
 #-----MaRaCluster-GUI dependencies-------
@@ -55,18 +63,25 @@ if [ "$no_gui" != true ] ; then
   fi
   
   sudo yum install -y mesa-libGL-devel libicu-devel freetype-devel
-  source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
+  ${pre} source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
+  
+  # the child process in devtoolset-7 does not export the CMAKE_BINARY variable from install_qt.sh, so set it again to be safe
+  function version_lt() { test "$(echo "$@" | tr " " "\n" | (sort -rV || gsort -rV) | head -n 1)" != "$1"; }
+
+  if version_lt $(cmake --version | head -n1 | cut -f3 -d ' ') "3.5"; then
+    CMAKE_BINARY=${build_dir}/tools/bin/cmake
+  fi
 fi
 
 mkdir -p $build_dir/maracluster
 #-----cmake-----
 cd $build_dir/maracluster;
 echo -n "cmake maracluster.....";
-${CMAKE_BINARY} -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH=$build_dir/tools $src_dir/maracluster;
+${pre} ${CMAKE_BINARY} -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH=$build_dir/tools $src_dir/maracluster;
 #-----make------
 echo -n "make maracluster (this will take few minutes).....";
-make -j 4;
-make -j 4 package;
+${pre} make -j 4;
+${pre} make -j 4 package;
 
 if [ "$no_gui" != true ] ; then
   #######maracluster-gui########
@@ -74,13 +89,13 @@ if [ "$no_gui" != true ] ; then
   cd $build_dir/maracluster-gui
   #-----cmake-----
   echo -n "cmake maracluster-gui.....";
-  ${CMAKE_BINARY} -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH="$build_dir/tools/;$build_dir/tools/Qt-dynamic/" $src_dir/maracluster/src/qt-gui;
+  ${pre} ${CMAKE_BINARY} -DTARGET_ARCH=amd64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_PREFIX_PATH="$build_dir/tools/;$build_dir/tools/Qt-dynamic/" $src_dir/maracluster/src/qt-gui;
 
   #-----make------
   echo -n "make maracluster-gui (this will take few minutes).....";
 
-  make -j 4;
-  make -j 4 package;
+  ${pre} make -j 4;
+  ${pre} make -j 4 package;
 fi
 
 mkdir -p $release_dir
