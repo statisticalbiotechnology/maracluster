@@ -17,6 +17,8 @@
 #ifndef MARACLUSTER_SCANID_H_
 #define MARACLUSTER_SCANID_H_
 
+#include <ostream>
+
 #include <boost/functional/hash.hpp>
 
 namespace maracluster {
