@@ -483,6 +483,8 @@ void MSFileMerger::writeClusterBins(unsigned int batchIdx,
     //MSData msdMerged;
     msdMerged.id = msdMerged.run.id = "merged_spectra";
     msdMerged.run.spectrumListPtr = spectrumLists[i];
+    msdMerged.run.defaultSourceFilePtr = SourceFilePtr(new SourceFile("merged file"));
+    msdMerged.run.defaultSourceFilePtr->set(pwiz::cv::MS_nativeID_format, pwiz::cv::MS_scan_number_only_nativeID_format);
     //msdMerged.dataProcessingPtrs = dataProcessingPtrs_;
     //msdMerged.instrumentConfigurationPtrs = instrumentConfigurationPtrs_;
 
