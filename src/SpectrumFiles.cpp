@@ -312,7 +312,7 @@ void SpectrumFiles::getPrecMzLimits(std::vector<double>& precMzs,
     bool precursorToleranceDa) {
   float pvecCost = 0.7f; // computation time for 1 p-value vector in ms on 1 core
   float pvalCost = 0.001f; // computation time for 1 p-value pair in ms on 1 core
-  float maxCost = 120.0f*60.0f*1000.0f; // max computation time = 120 CPU minutes
+  float maxCost = 0.1f*60.0f*1000.0f; // max computation time = 120 CPU minutes
   
   unsigned long long numComparisons = 0uL;
   if (precMzs.size() > 0) {

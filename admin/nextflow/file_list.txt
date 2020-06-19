@@ -1,0 +1,3 @@
+/media/storage/matthew/maracluster/MaRaCluster_system_tests/sample/mzML/subset_Linfeng_011011_HapMap35_5.mzML
+/media/storage/matthew/maracluster/MaRaCluster_system_tests/sample/mzML/subset_Linfeng_012711_HapMap36_5.mzML
+/media/storage/matthew/maracluster/MaRaCluster_system_tests/sample/mzML/subset_Linfeng_111911_HapMap37_5.mzML

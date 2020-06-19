@@ -430,8 +430,7 @@ void PvalueVectors::batchCalculateAndClusterPvalues(
   
   std::map<ScanId, std::pair<float, float> > precMzLimits;
   if (scanInfoFN.size() > 0) {
-    SpectrumFiles reader;
-    reader.readPrecMzLimits(scanInfoFN, precMzLimits);
+    SpectrumFiles::readPrecMzLimits(scanInfoFN, precMzLimits);
   } else {
     getPrecMzLimits(precMzLimits);
   }

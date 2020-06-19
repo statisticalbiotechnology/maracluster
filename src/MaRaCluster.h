@@ -53,7 +53,12 @@
 
 namespace maracluster {
 
-enum Mode { NONE, BATCH, PVALUE, UNIT_TEST, INDEX, CLUSTER, CONSENSUS, SEARCH, PROFILE_CONSENSUS, PROFILE_SEARCH };
+enum Mode { NONE, BATCH, PVALUE, OVERLAP, UNIT_TEST, INDEX, CLUSTER, CONSENSUS, SEARCH, PROFILE_CONSENSUS, PROFILE_SEARCH };
+
+struct OverlapBatch {
+  std::vector<std::string> pvalFNs;
+  std::string headPvecFile, tailPvecFile;
+};
 
 class MaRaCluster {  
  public:
@@ -73,10 +78,19 @@ class MaRaCluster {
   virtual int createIndex();
   int doClustering(const std::vector<std::string> pvalFNs, 
     std::string& resultTreeFN, const std::string& matrixFN,
-    SpectrumFileList& fileList);
+    const unsigned int mergeOffset);
+  int processDatFiles(const std::vector<std::string>& datFNs);
   int clusterSpectra(const std::string& spectrumInFN, 
     const std::string& pvaluesFN, const std::string& pvalueVectorsBaseFN, 
     const std::string& pvalueTreeFN);
+  
+  void getOverlapBatches(const std::vector<std::string>& datFNs, 
+    std::vector<std::string>& pvalTreeFNs, 
+    std::vector<OverlapBatch>& overlapBatches);
+  int processOverlapBatches(std::vector<OverlapBatch>& overlapBatches,
+    std::vector<std::string>& pvalTreeFNs, const unsigned int mergeOffset);
+  int processOverlapBatch(OverlapBatch& overlapBatch, 
+    const unsigned int overlapIdx, const unsigned int mergeOffset);
   
   // google analytics
   static bool parseUrl(std::string url, std::string* host, std::string* path);
@@ -95,6 +109,7 @@ class MaRaCluster {
   std::string pvalVecInFileFN_;
   std::string pvalueVectorsBaseFN_;
   std::string overlapBatchFileFN_;
+  unsigned int overlapBatchIdx_;
   boost::filesystem::path outputPath;
   std::string outputFolder_;
   std::string spectrumBatchFileFN_;

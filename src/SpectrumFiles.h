@@ -82,18 +82,22 @@ class SpectrumFiles {
   
   void getPeakCountsAndPrecursorMzs(SpectrumFileList& fileList,
     std::vector<double>& precMzsAccumulated, const std::string& peakCountFN);
-    
-  void writeDatFNsToFile(std::vector<std::string>& datFNs,
-    const std::string& datFNFile);
-  void getDatFNs(std::vector<double>& limits, std::vector<std::string>& datFNs);
-  void readDatFNsFromFile(const std::string& datFNFile,
-    std::vector<std::string>& datFNs);
-  void readPrecMzLimits(const std::string& scanInfoFN,
-    std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
   void getBatchSpectra(const std::string& spectrumFN, 
     SpectrumFileList& fileList, std::vector<Spectrum>& localSpectra,
     std::vector<ScanInfo>& localScanInfos);
+  
+  void getDatFNs(std::vector<double>& limits, 
+    std::vector<std::string>& datFNs);
+    
+  static void writeDatFNsToFile(std::vector<std::string>& datFNs,
+    const std::string& datFNFile);
+  
+  static void readDatFNsFromFile(const std::string& datFNFile,
+    std::vector<std::string>& datFNs);
+  
+  static void readPrecMzLimits(const std::string& scanInfoFN,
+    std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
   static bool limitsUnitTest();
   
@@ -104,9 +108,9 @@ class SpectrumFiles {
   virtual void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
     std::vector<MassChargeCandidate>& mccs, ScanId scanId);
   
-  void writePrecMzs(const std::vector<double>& PrecMzs);
+  void writePrecMzs(const std::vector<double>& precMzs);
   void readPrecMzs(const std::string& precMzFN,
-                             std::vector<double>& PrecMzs);
+                             std::vector<double>& precMzs);
   
   void getPrecMzLimits(std::vector<double>& precMzs, 
     std::vector<double>& limits, double precursorTolerance, 

@@ -20,9 +20,9 @@ namespace maracluster {
 
 MaRaCluster::MaRaCluster() :
     mode_(NONE), call_(""), percOutFN_(""), fnPrefix_("MaRaCluster"), 
-    peakCountFN_(""), datFNFile_(""), 
-    scanInfoFN_(""), pvaluesFN_(""), clusterFileFN_(""),
-    pvalVecInFileFN_(""), pvalueVectorsBaseFN_(""), overlapBatchFileFN_(""), 
+    peakCountFN_(""), datFNFile_(""), scanInfoFN_(""), pvaluesFN_(""), 
+    clusterFileFN_(""), pvalVecInFileFN_(""), pvalueVectorsBaseFN_(""), 
+    overlapBatchFileFN_(""), overlapBatchIdx_(0u), 
     spectrumBatchFileFN_(""), spectrumInFN_(""), spectrumOutFN_(""),
     spectrumLibraryFN_(""), matrixFN_(""), resultTreeFN_(""),
     skipFilterAndSort_(false), writeAll_(false), precursorTolerance_(20),
@@ -137,6 +137,10 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       "File with 2 tab separated columns as: tail_file <tab> head_file for"
       " which overlapping p-values should be calculated",
       "filename");
+  cmd.defineOption("W",
+      "overlapBatchIdx",
+      "Index of overlap to process, requires -j/--datFNfile to be specified.",
+      "filename");
   cmd.defineOption("q",
       "pvalOut",
       "File where p-values will be written to.",
@@ -187,6 +191,7 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
     std::string mode = cmd.arguments[0];
     if (mode == "batch") mode_ = BATCH;
     else if (mode == "pvalue") mode_ = PVALUE;
+    else if (mode == "overlap") mode_ = OVERLAP;
     else if (mode == "unit-test") mode_ = UNIT_TEST;
     else if (mode == "index") mode_ = INDEX;
     else if (mode == "cluster") mode_ = CLUSTER;
@@ -221,6 +226,7 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   if (cmd.optionSet("specIn")) spectrumInFN_ = cmd.options["specIn"];
   if (cmd.optionSet("clusterFile")) clusterFileFN_ = cmd.options["clusterFile"];
   if (cmd.optionSet("overlapBatch")) overlapBatchFileFN_ = cmd.options["overlapBatch"];
+  if (cmd.optionSet("overlapBatchIdx")) overlapBatchIdx_ = cmd.getInt("overlapBatchIdx", 0, 100000);
   if (cmd.optionSet("pvalueVecFile")) pvalVecInFileFN_ = cmd.options["pvalueVecFile"];
   
   // file output options for maracluster pvalue
@@ -312,6 +318,26 @@ int MaRaCluster::createIndex() {
   return EXIT_SUCCESS;
 }
 
+int MaRaCluster::processDatFiles(const std::vector<std::string>& datFNs) {
+  for (size_t i = 0; i < datFNs.size(); ++i) {
+    // make sure the file exists
+    if (!Globals::fileExists(datFNs[i])) {
+      std::cerr << "Ignoring missing data file " << datFNs[i] << std::endl;
+      continue;
+    }
+
+    std::string datFN = datFNs[i];
+    std::string pvalueVectorsBaseFN = datFN + ".pvalue_vectors";
+    std::string pvaluesFN = datFN + ".pvalues.dat"; // only contains pvalues from overlap regions
+    std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
+    
+    int error = clusterSpectra(datFN, pvaluesFN, pvalueVectorsBaseFN, pvalueTreeFN);
+    if (error != EXIT_SUCCESS) return error;
+  }
+  
+  return EXIT_SUCCESS;
+}
+
 int MaRaCluster::clusterSpectra(const std::string& spectrumInFN, 
     const std::string& pvaluesFN, const std::string& pvalueVectorsBaseFN, 
     const std::string& pvalueTreeFN) {  
@@ -353,9 +379,82 @@ int MaRaCluster::clusterSpectra(const std::string& spectrumInFN,
   return EXIT_SUCCESS;
 }
 
+void MaRaCluster::getOverlapBatches(const std::vector<std::string>& datFNs, 
+    std::vector<std::string>& pvalTreeFNs, 
+    std::vector<OverlapBatch>& overlapBatches) {
+  for (size_t i = 0; i < datFNs.size(); ++i) {
+    // make sure the file exists
+    if (!Globals::fileExists(datFNs[i])) {
+      std::cerr << "Ignoring missing data file " << datFNs[i] << std::endl;
+      continue;
+    }
+
+    std::string datFN = datFNs[i];
+    std::string pvalueVectorsBaseFN = datFN + ".pvalue_vectors";
+    std::string pvaluesFN = datFN + ".pvalues.dat"; // only contains pvalues from overlap regions
+    std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
+    
+    overlapBatches[i].pvalFNs.push_back(pvaluesFN + ".head.dat");
+    overlapBatches[i].headPvecFile = pvalueVectorsBaseFN + ".head.dat";
+    
+    overlapBatches[i+1].pvalFNs.push_back(pvaluesFN + ".tail.dat");
+    overlapBatches[i+1].tailPvecFile = pvalueVectorsBaseFN + ".tail.dat";
+    
+    pvalTreeFNs.push_back(pvalueTreeFN);
+  }
+}
+
+int MaRaCluster::processOverlapBatches(
+    std::vector<OverlapBatch>& overlapBatches,
+    std::vector<std::string>& pvalTreeFNs, const unsigned int mergeOffset) {
+  for (size_t overlapIdx = 0; overlapIdx < overlapBatches.size(); ++overlapIdx) {
+    int error = processOverlapBatch(overlapBatches[overlapIdx], overlapIdx, mergeOffset);
+    if (error != EXIT_SUCCESS) return error;
+    
+    std::string resultTreeFN = outputFolder_ + "/overlap." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalue_tree.tsv";
+    pvalTreeFNs.push_back(resultTreeFN);
+  }
+  
+  return EXIT_SUCCESS;
+}
+
+int MaRaCluster::processOverlapBatch(OverlapBatch& overlapBatch, 
+    const unsigned int overlapIdx, const unsigned int mergeOffset) {
+  std::string pvaluesFN = outputFolder_ + "/overlap." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalues.dat";
+  std::string resultTreeFN = outputFolder_ + "/overlap." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalue_tree.tsv";
+  std::string matrixFN = outputFolder_ + "/poisoned." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalues.dat";
+  if (!overlapBatch.tailPvecFile.empty() && !overlapBatch.headPvecFile.empty()) {
+    if (!Globals::fileExists(pvaluesFN)) {
+      PvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
+      
+      pvecs.batchCalculatePvaluesOverlap(overlapBatch.tailPvecFile, overlapBatch.headPvecFile);
+      pvecs.clearPvalueVectors();
+      remove(overlapBatch.tailPvecFile.c_str());
+      remove(overlapBatch.headPvecFile.c_str());
+    } else {
+      std::cerr << "Using p-values from " << pvaluesFN << 
+          ". Remove this file to generate new p-values." << std::endl;
+    }
+    
+    if (Globals::fileExists(pvaluesFN)) {
+      overlapBatch.pvalFNs.push_back(pvaluesFN);
+    }
+  }
+  
+  if (Globals::VERB > 2) {
+    std::cerr << "Clustering overlap batch " << overlapIdx << ":" << std::endl;
+    BOOST_FOREACH (const std::string& s, overlapBatch.pvalFNs) {
+      std::cerr << "  " << s << std::endl;
+    }
+  }
+  
+  int error = doClustering(overlapBatch.pvalFNs, resultTreeFN, matrixFN, mergeOffset);
+  return error;
+}
+
 int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs, 
     std::string& resultTreeFN, const std::string& matrixFN, 
-    SpectrumFileList& fileList) {
+    const unsigned int mergeOffset) {
   // input checks
   if (matrixFN.empty() && resultTreeFN.empty()) {
     std::cerr << "Error: no input file specified with -m/--clusteringMatrix or -u/--clusteringTree flag" << std::endl;
@@ -380,7 +479,7 @@ int MaRaCluster::doClustering(const std::vector<std::string> pvalFNs,
     }
     
     SparseClustering matrix;
-    matrix.setMergeOffset(fileList.getMergeOffset());
+    matrix.setMergeOffset(mergeOffset);
     matrix.initMatrix(matrixFN);
     matrix.setClusterPairFN(resultTreeFN);
     matrix.doClustering(std::min(dbPvalThreshold_, clusterThresholds_.back()));
@@ -574,105 +673,60 @@ int MaRaCluster::run() {
       // maracluster -b /media/storage/mergespec/data/Linfeng/batchcluster/all.txt \
                   -f /media/storage/mergespec/data/Linfeng/batchcluster/output/
       
+      /*************************************************************************
+        Step 1: Read in spectra and divide them in batches by precursor m/z
+       ************************************************************************/
+       
       int error = createIndex();
-      if (error != EXIT_SUCCESS) return error;
+      if (error != EXIT_SUCCESS) return error;      
+            
+      /*************************************************************************
+        Step 2: Process each of the batches and cluster non-overlapping regions
+       ************************************************************************/
       
       std::vector<std::string> datFNs;
-      {
-        SpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
-        spectrumFiles.readDatFNsFromFile(datFNFile_, datFNs);
-      }
+      SpectrumFiles::readDatFNsFromFile(datFNFile_, datFNs);
       
       if (datFNs.empty()) {
         std::cerr << "Error: could not find any ms2 spectra in the input files." << std::endl;
         return EXIT_FAILURE;
       }
       
-      std::vector<std::string> pvalTreeFNs;
-      std::vector< std::pair<std::string, std::string> > overlapFNs(datFNs.size() - 1);
-      std::vector< std::vector<std::string> > overlapPvalFNs(datFNs.size() + 1);
+      error = processDatFiles(datFNs);
+      if (error != EXIT_SUCCESS) return error;
       
-      for (size_t i = 0; i < datFNs.size(); ++i) {
-        // make sure the file exists
-        if (!Globals::fileExists(datFNs[i])) {
-          std::cerr << "Ignoring missing data file " << datFNs[i] << std::endl;
-          continue;
-        }
-
-        std::string datFN = datFNs[i];
-        std::string pvalueVectorsBaseFN = datFN + ".pvalue_vectors";
-        // pvaluesFN only contains the pvalues in the overlap regions
-        std::string pvaluesFN = datFN + ".pvalues.dat";
-        std::string pvalueTreeFN = datFN + ".pvalue_tree.tsv";
-        
-        error = clusterSpectra(datFN, pvaluesFN, pvalueVectorsBaseFN, pvalueTreeFN);
-        if (error != EXIT_SUCCESS) return error;
-        
-        overlapPvalFNs[i].push_back(pvaluesFN + ".head.dat");
-        if (i > 0) {
-          overlapFNs[i-1].second = pvalueVectorsBaseFN + ".head.dat";
-        }
-        
-        overlapPvalFNs[i+1].push_back(pvaluesFN + ".tail.dat");
-        if (i < datFNs.size() - 1) {
-          overlapFNs[i].first = pvalueVectorsBaseFN + ".tail.dat";
-        }
-        
-        pvalTreeFNs.push_back(pvalueTreeFN);
-      }
+      /*************************************************************************
+        Step 3: Process each of the overlapping regions
+       ************************************************************************/
       
       SpectrumFileList fileList;
       fileList.initFromFile(spectrumBatchFileFN_);
-      if (overlapPvalFNs.size() > 0) {
-        typedef std::vector<std::string> OverlapPvalFNs;
-        size_t overlapIdx = 0;
-        BOOST_FOREACH(OverlapPvalFNs& overlapPvalFNsBatch, overlapPvalFNs) {
-          std::string pvaluesFN = outputFolder_ + "/overlap." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalues.dat";
-          std::string resultTreeFN = outputFolder_ + "/overlap." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalue_tree.tsv";
-          std::string matrixFN = outputFolder_ + "/poisoned." + boost::lexical_cast<std::string>(overlapIdx) + ".pvalues.dat";
-          if (overlapIdx > 0 && overlapIdx < datFNs.size()) {
-            if (!Globals::fileExists(pvaluesFN)) {
-              PvalueVectors pvecs(pvaluesFN, precursorTolerance_, precursorToleranceDa_, dbPvalThreshold_);
-              
-              std::string tailFile = overlapFNs[overlapIdx-1].first;
-              std::string headFile = overlapFNs[overlapIdx-1].second;
-              pvecs.batchCalculatePvaluesOverlap(tailFile, headFile);
-              pvecs.clearPvalueVectors();
-              remove(tailFile.c_str());
-              remove(headFile.c_str());
-            } else {
-              std::cerr << "Using p-values from " << pvaluesFN << 
-                  ". Remove this file to generate new p-values." << std::endl;
-            }
-            
-            if (Globals::fileExists(pvaluesFN)) {
-              overlapPvalFNsBatch.push_back(pvaluesFN);
-            }
-          }
-          
-          if (Globals::VERB > 2) {
-            std::cerr < "Clustering overlap batch " << overlapIdx << ":" << std::endl;
-            BOOST_FOREACH (const std::string& s, overlapPvalFNsBatch) {
-              std::cerr << "  " << s << std::endl;
-            }
-          }
-          
-          error = doClustering(overlapPvalFNsBatch, resultTreeFN, matrixFN, fileList);
-          if (error != EXIT_SUCCESS) return EXIT_FAILURE;
-          
-          pvalTreeFNs.push_back(resultTreeFN);
-          
-          ++overlapIdx;
-        }
-      }
+      unsigned int mergeOffset = fileList.getMergeOffset();
       
+      std::vector<std::string> pvalTreeFNs;
+      std::vector<OverlapBatch> overlapBatches(datFNs.size() + 1);
+      getOverlapBatches(datFNs, pvalTreeFNs, overlapBatches);
+      
+      error = processOverlapBatches(overlapBatches, pvalTreeFNs, mergeOffset);
+      if (error != EXIT_SUCCESS) return error;
+      
+      /*************************************************************************
+        Step 4: Combine all p-value trees into one large tree and write clusters
+       ************************************************************************/
+       
       SpectrumClusters clustering;
       std::string clusterBaseFN = outputFolder_ + "/" + fnPrefix_ + ".clusters_";
-      clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, scanInfoFN_, clusterBaseFN);
+      clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, 
+                               scanInfoFN_, clusterBaseFN);
       
+      /*************************************************************************
+        Step 5: Create and write consensus spectra
+       ************************************************************************/
+       
       if (!spectrumOutFN_.empty()) {
         if (clusterFileFN_.empty()) {
-          clusterFileFN_ = SpectrumClusters::getClusterFN(clusterBaseFN, dbPvalThreshold_);
+          clusterFileFN_ = SpectrumClusters::getClusterFN(clusterBaseFN, 
+                                                          dbPvalThreshold_);
         }
         if (Globals::VERB > 1) {
           std::cerr << "Creating consensus spectra using clusters generated in "
@@ -702,7 +756,10 @@ int MaRaCluster::run() {
     {
       if (pvaluesFN_.empty())
         pvaluesFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalues.tsv";
-        
+      
+      if (pvalueVectorsBaseFN_.empty())
+        pvalueVectorsBaseFN_ = outputFolder_ + "/" + fnPrefix_ + ".pvalue_vectors";
+      
       if (pvalVecInFileFN_.size() > 0) { 
         // direct input of p-value vector file
         // maracluster pvalue -y /media/storage/mergespec/data/batchtest/1300.ms2.pvalue_vectors.tsv
@@ -768,11 +825,26 @@ int MaRaCluster::run() {
           std::cerr << "Error: no input file specified with -i/--specIn or -b/--batch flag" << std::endl;
           return EXIT_FAILURE;
         }
-        std::string pvalueVectorsBaseFN = outputFolder_ + "/" + fnPrefix_ + ".pvalue_vectors";
         
-        clusterSpectra(spectrumInFN_, pvaluesFN_, pvalueVectorsBaseFN, resultTreeFN_);
+        clusterSpectra(spectrumInFN_, pvaluesFN_, pvalueVectorsBaseFN_, resultTreeFN_);
       }
       return EXIT_SUCCESS;
+    }
+    case OVERLAP:
+    {
+      std::vector<std::string> datFNs;
+      SpectrumFiles::readDatFNsFromFile(datFNFile_, datFNs);
+      
+      SpectrumFileList fileList;
+      fileList.initFromFile(spectrumBatchFileFN_);
+      unsigned int mergeOffset = fileList.getMergeOffset();
+      
+      std::vector<std::string> pvalTreeFNs;
+      std::vector<OverlapBatch> overlapBatches(datFNs.size() + 1);
+      getOverlapBatches(datFNs, pvalTreeFNs, overlapBatches);
+      
+      int error = processOverlapBatch(overlapBatches[overlapBatchIdx_], overlapBatchIdx_, mergeOffset);
+      return error;
     }
     case CLUSTER:
     {
@@ -787,15 +859,15 @@ int MaRaCluster::run() {
         std::cerr << "Error: no scannrs file specified with -s/--scanInfoFN flag" << std::endl;
         return EXIT_FAILURE;
       }
-      SpectrumFileList fileList;
-      fileList.initFromFile(spectrumBatchFileFN_);
       
       if (!skipFilterAndSort_) {
         bool tsvInput = false;
         PvalueFilterAndSort::filterAndSort(pvalFNs, matrixFN_, tsvInput);
       }
       
-      int error = doClustering(pvalFNs, resultTreeFN_, matrixFN_, fileList);
+      SpectrumFileList fileList;
+      fileList.initFromFile(spectrumBatchFileFN_);
+      int error = doClustering(pvalFNs, resultTreeFN_, matrixFN_, fileList.getMergeOffset());
       if (error != EXIT_SUCCESS) return EXIT_FAILURE;
       
       pvalTreeFNs.push_back(resultTreeFN_);

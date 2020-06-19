@@ -31,3 +31,6 @@ libs/
 bin/build/
 data/
 admin/vagrant/*_output.txt
+admin/nextflow/work/
+admin/nextflow/.nextflow*
+admin/nextflow/maracluster_output/
