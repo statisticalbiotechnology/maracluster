@@ -18,7 +18,8 @@
 
 namespace maracluster {
 
-void Pvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer) {
+void Pvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer, 
+    const std::string& suffix) {
   if (Globals::VERB > 4) {
     std::cerr << "Writing " << pvalBuffer.size() << " pvalues." << std::endl;
   }
@@ -27,7 +28,7 @@ void Pvalues::batchWrite(std::vector<PvalueTriplet>& pvalBuffer) {
 #pragma omp critical (batch_write_pval)
   {  
     bool append = true;
-    BinaryInterface::write<PvalueTriplet>(pvalBuffer, pvaluesFN_, append);
+    BinaryInterface::write<PvalueTriplet>(pvalBuffer, pvaluesFN_ + suffix, append);
   }
 }
 

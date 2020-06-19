@@ -27,7 +27,7 @@ void Spectra::convertToBatchSpectra(SpectrumFileList& fileList) {
   }
 }
 
-void Spectra::convertToBatchSpectra(std::string& spectrumFN, 
+void Spectra::convertToBatchSpectra(const std::string& spectrumFN, 
     SpectrumFileList& fileList) {
   if (Globals::VERB > 1) {
     std::cerr << "Reading in spectra from " << spectrumFN << std::endl;
@@ -48,7 +48,7 @@ void Spectra::convertToBatchSpectra(std::string& spectrumFN,
   }
 }
 
-void Spectra::readBatchSpectra(std::string& batchSpectraFN) {
+void Spectra::readBatchSpectra(const std::string& batchSpectraFN) {
   if (Globals::VERB > 1) {
     std::cerr << "Reading in spectra from " << batchSpectraFN << std::endl;
   }

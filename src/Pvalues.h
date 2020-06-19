@@ -32,7 +32,8 @@ class Pvalues {
   Pvalues() : pvaluesFN_("") { }
   Pvalues(const std::string& pvaluesFN) : pvaluesFN_(pvaluesFN) { }
   
-  void batchWrite(std::vector<PvalueTriplet>& pvalBuffer);
+  void batchWrite(std::vector<PvalueTriplet>& pvalBuffer,
+                  const std::string& suffix = "");
   
   inline std::string getPvaluesFN() const { return pvaluesFN_; }
  protected:

@@ -41,7 +41,7 @@ void SpectrumClusters::printClusters(
 void SpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals) {
   if (Globals::VERB > 1) {
-    std::cerr << "Reading in p-value tree." << std::endl;
+    std::cerr << "Reading in p-value tree from " << pvalTreeFN << "." << std::endl;
   }
   if (!Globals::fileIsEmpty(pvalTreeFN)) {
     boost::iostreams::mapped_file mmap(pvalTreeFN, 
@@ -56,7 +56,7 @@ void SpectrumClusters::readPvalTree(const std::string& pvalTreeFN,
       tmp.readFromString(f, &next); f = next;
       pvals.push_back(tmp);
     }
-  } else {
+  } else if (Globals::VERB > 0) {
     std::cerr << "WARNING: Empty pvalue tree file " << pvalTreeFN << std::endl;
   }
 }
@@ -100,7 +100,7 @@ void SpectrumClusters::createClusterings(
       std::swap(pvalTriplet.scannr1, pvalTriplet.scannr2);
     }
     
-    if (clusters[pvalTriplet.scannr1].size() == 0) {
+    if (clusters[pvalTriplet.scannr1].size() == 0 && Globals::VERB > 0) {
       std::cerr << "ERROR: Empty clusters: " << pvalTriplet.scannr1 
           << " " << clusters[pvalTriplet.scannr2].size() << " " 
           << pvalTriplet.scannr2 << " " << pvalTriplet.pval << std::endl;   

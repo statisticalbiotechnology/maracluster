@@ -328,7 +328,11 @@ void SpectrumFiles::getPrecMzLimits(std::vector<double>& precMzs,
       }
       numComparisons += (idx - lowerBoundIdx);
       curCost += (idx - lowerBoundIdx)*pvalCost;
-      if (curCost > maxCost && lowerBound > limits.back()) {
+      // ensure that each bin contains at least two precursor tolerance widths 
+      // such that the overlap regions do not overlap
+      double lowerLowerBound = PvalueVectors::getLowerBound(lowerBound, 
+          precursorTolerance, precursorToleranceDa);
+      if (curCost > maxCost && lowerLowerBound > limits.back()) {
         curCost = 0.0f;
         limits.push_back(precMzs[idx]);
       }

@@ -40,10 +40,10 @@ class Spectra {
   void setBatchSpectra(std::vector<Spectrum>& spectra) {
     spectra_ = spectra;
   }
-  void convertToBatchSpectra(std::string& spectrumFN, 
+  void convertToBatchSpectra(const std::string& spectrumFN, 
     SpectrumFileList& fileList);
   void convertToBatchSpectra(SpectrumFileList& fileList);
-  void readBatchSpectra(std::string& batchSpectraFN);
+  void readBatchSpectra(const std::string& batchSpectraFN);
   
   void sortSpectraByPrecMass();
   void sortSpectraByPrecMz();

@@ -72,7 +72,11 @@ class MaRaCluster {
   
   virtual int createIndex();
   int doClustering(const std::vector<std::string> pvalFNs, 
-    std::vector<std::string> pvalTreeFNs, SpectrumFileList& fileList);
+    std::string& resultTreeFN, const std::string& matrixFN,
+    SpectrumFileList& fileList);
+  int clusterSpectra(const std::string& spectrumInFN, 
+    const std::string& pvaluesFN, const std::string& pvalueVectorsBaseFN, 
+    const std::string& pvalueTreeFN);
   
   // google analytics
   static bool parseUrl(std::string url, std::string* host, std::string* path);

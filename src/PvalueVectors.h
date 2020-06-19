@@ -121,9 +121,8 @@ class PvalueVectors {
   void batchCalculatePvaluesLibrarySearch(
     std::vector<Spectrum>& querySpectra);
   
-  void batchCalculatePvaluesOverlap(
-      std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
-      std::vector<PvalueVectorsDbRow>& pvalVecCollectionHead);
+  void batchCalculatePvaluesOverlap(const std::string& tailFile, 
+                                    const std::string& headFile);
   
   static inline double getLowerBound(double precMass, double precursorTolerance, 
       bool precursorToleranceDa) {
@@ -214,13 +213,12 @@ class PvalueVectors {
     std::vector<PvalueTriplet>& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float lowerPrecMz, float upperPrecMz);
-  bool isPoisoned(const ScanId& si,
-    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+  bool isPoisoned(const std::pair<float, float>& scanPrecMzLimits, 
     float lowerPrecMz, float upperPrecMz);
-  bool isSafeToWrite(const ScanId& si,
-    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+  bool isSafeToWrite(const std::pair<float, float>& scanPrecMzLimits, 
     float upperPrecMz);
-    
+  bool isInHead(const std::pair<float, float>& scanPrecMzLimits);
+  
   inline double getLowerBound(double mass) { 
     return getLowerBound(mass, precursorTolerance_, precursorToleranceDa_);
   }

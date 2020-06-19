@@ -340,14 +340,8 @@ void PvalueVectors::parseBatchOverlapFile(
 void PvalueVectors::processOverlapFiles(
     std::vector< std::pair<std::string, std::string> >& overlapFNs) {
   typedef std::pair<std::string, std::string> OverlapPair;
-  BOOST_FOREACH(OverlapPair& p, overlapFNs) {
-    std::vector<PvalueVectorsDbRow> pvalVecCollectionTail;
-    std::vector<PvalueVectorsDbRow> pvalVecCollectionHead;
-    
-    readPvalueVectorsFile(p.first, pvalVecCollectionTail);
-    readPvalueVectorsFile(p.second, pvalVecCollectionHead);
-    
-    batchCalculatePvaluesOverlap(pvalVecCollectionTail, pvalVecCollectionHead);
+  BOOST_FOREACH(OverlapPair& p, overlapFNs) {    
+    batchCalculatePvaluesOverlap(p.first, p.second);
     
     remove(p.first.c_str());
     remove(p.second.c_str());
@@ -643,22 +637,33 @@ void PvalueVectors::runPoisonedClusterJob(ClusterJob& poisonedClusterJob,
   clusterPvals(pvalBuffer, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals, precMzLimits, 
       poisonedClusterJob.lowerPrecMz, poisonedClusterJob.upperPrecMz, resultTreeFN);
   
+  // this is technically not necessary, but reduces the number of p-values that need to be kept in memory
   if (poisonedClusterJob.startBatch == 0) {
-    std::vector<PvalueTriplet> pvalBufferWrite, pvalBufferKeep;
+    std::vector<PvalueTriplet> pvalBufferHead, pvalBufferKeep;
     BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals) {
-      if (isSafeToWrite(pt.scannr1, precMzLimits, poisonedClusterJob.upperPrecMz)
-           && isSafeToWrite(pt.scannr2, precMzLimits, poisonedClusterJob.upperPrecMz)) {
-        pvalBufferWrite.push_back(pt);
+      if (isSafeToWrite(precMzLimits[pt.scannr1], poisonedClusterJob.upperPrecMz)
+           && isSafeToWrite(precMzLimits[pt.scannr2], poisonedClusterJob.upperPrecMz)
+           && isInHead(precMzLimits[pt.scannr1])) {
+        pvalBufferHead.push_back(pt);
       } else {
         pvalBufferKeep.push_back(pt);
       }
     }
     clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.swap(pvalBufferKeep);
-    pvalues_.batchWrite(pvalBufferWrite);
+    pvalues_.batchWrite(pvalBufferHead, ".head.dat");
   }
   
   if (poisonedClusterJob.endBatch + 1 == clusterJobs.size()) {
-    pvalues_.batchWrite(clusterJobs[poisonedClusterJob.endBatch].poisonedPvals);
+    std::vector<PvalueTriplet> pvalBufferHead, pvalBufferTail;
+    BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals) {
+      if (isInHead(precMzLimits[pt.scannr1])) {
+        pvalBufferHead.push_back(pt);
+      } else {
+        pvalBufferTail.push_back(pt);
+      }
+    }
+    pvalues_.batchWrite(pvalBufferHead, ".head.dat");
+    pvalues_.batchWrite(pvalBufferTail, ".tail.dat");
   }
   
   poisonedClusterJob.finished = true;
@@ -699,30 +704,36 @@ void PvalueVectors::markPoisoned(SparsePoisonedClustering& matrix,
   }
   
   BOOST_FOREACH (const ScanId& si, scanIds) {
-    if (isPoisoned(si, precMzLimits, lowerPrecMz, upperPrecMz)) {
+    if (isPoisoned(precMzLimits[si], lowerPrecMz, upperPrecMz)) {
       matrix.markPoisoned(si);
     }
   }
 }
 
-bool PvalueVectors::isPoisoned(const ScanId& si,
-    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+bool PvalueVectors::isPoisoned(const std::pair<float, float>& scanPrecMzLimits, 
     float lowerPrecMz, float upperPrecMz) {
-  float minPrecMz = precMzLimits[si].first;
-  float maxPrecMz = precMzLimits[si].second;
+  float minPrecMz = scanPrecMzLimits.first;
+  float maxPrecMz = scanPrecMzLimits.second;
   
   return (minPrecMz < getUpperBound(lowerPrecMz)
           || upperPrecMz < getUpperBound(maxPrecMz));
 }
 
-bool PvalueVectors::isSafeToWrite(const ScanId& si,
-    std::map<ScanId, std::pair<float, float> >& precMzLimits, 
+bool PvalueVectors::isSafeToWrite(const std::pair<float, float>& scanPrecMzLimits, 
     float upperPrecMz) {
-  float maxPrecMz = precMzLimits[si].second;
+  float maxPrecMz = scanPrecMzLimits.second;
   
   return (upperPrecMz > getUpperBound(maxPrecMz));
 }
 
+/* This is not completely fool-proof. In the case that a scan has precursors
+   in/close to both the head and tail overlap regions, we have to make a choice 
+   here. The alternative is to cluster all overlap regions in one go, which can 
+   be very computationally costly for large datasets. */
+bool PvalueVectors::isInHead(const std::pair<float, float>& scanPrecMzLimits) {
+  return (scanPrecMzLimits.first - pvalVecCollection_.front().precMz) < 
+          (pvalVecCollection_.back().precMz - scanPrecMzLimits.second);
+}
 
 /* This function presumes that the pvalue vectors are sorted by precursor
    mass by writePvalueVectors() */
@@ -897,11 +908,16 @@ void PvalueVectors::batchCalculatePvaluesJaccardFilter() {
 #endif
 
 void PvalueVectors::batchCalculatePvaluesOverlap(
-    std::vector<PvalueVectorsDbRow>& pvalVecCollectionTail,
-    std::vector<PvalueVectorsDbRow>& pvalVecCollectionHead) {
+    const std::string& tailFile, const std::string& headFile) {
   if (Globals::VERB > 1) {
     std::cerr << "Calculating pvalues of overlap" << std::endl;
   }
+  
+  std::vector<PvalueVectorsDbRow> pvalVecCollectionTail;
+  std::vector<PvalueVectorsDbRow> pvalVecCollectionHead;
+  
+  readPvalueVectorsFile(tailFile, pvalVecCollectionTail);
+  readPvalueVectorsFile(headFile, pvalVecCollectionHead);
   
   size_t n1 = pvalVecCollectionTail.size();
   size_t n2 = pvalVecCollectionHead.size();
