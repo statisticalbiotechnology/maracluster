@@ -209,6 +209,11 @@ class PvalueVectors {
   void getPrecMzLimits(
     std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
+  bool pauseQueue(
+    const std::deque<ClusterJob>& clusterJobs,
+    const std::vector< std::vector<PvalueTriplet> >& pvalBuffers,
+    ClusterJob& poisonedClusterJob);
+  
   void markPoisoned(SparsePoisonedClustering& matrix, 
     std::vector<PvalueTriplet>& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 

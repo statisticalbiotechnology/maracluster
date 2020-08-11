@@ -365,6 +365,7 @@ int MaRaCluster::clusterSpectra(const std::string& spectrumInFN,
     
     // write to temporary file, rename to real filename when finished to prevent using incomplete results
     std::string pvalueTreeTmpFN = pvalueTreeFN + ".tmp"; 
+    remove(pvalueTreeTmpFN.c_str());
     if (pvalueTreeFN.size() > 0) {
       pvecs.batchCalculateAndClusterPvalues(pvalueTreeTmpFN, scanInfoFN_);
     } else {

@@ -52,6 +52,13 @@ bool MatrixLoader::nextEdge(unsigned int& row, unsigned int& col, double& value)
 }
 */
 
+void MatrixLoader::initVector(std::vector<PvalueTriplet>& pvec) {
+  pvals_.swap(pvec);
+  numPvals_ = pvals_.size();
+  edgesAvailable_ = true;
+  useFileInput_ = false;
+}
+
 bool MatrixLoader::initStream(const std::string& matrixFN) {
   matrixStream_.open(matrixFN.c_str(), std::ios::in | std::ios::binary);
   if (!matrixStream_.is_open()) {
@@ -60,6 +67,7 @@ bool MatrixLoader::initStream(const std::string& matrixFN) {
   } else {
     numPvals_ = estimateNumPvals(matrixFN);
     edgesAvailable_ = true;
+    useFileInput_ = true;
     return true;
   }
 }
@@ -80,17 +88,29 @@ bool MatrixLoader::nextEdge(ScanId& row, ScanId& col, double& value) {
   }
 }
 
-void MatrixLoader::nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec) {  
-  PvalueTriplet tmp;
-  char buffer[sizeof(PvalueTriplet)];
-  unsigned int i = 0;
-  while (++i <= n && matrixStream_.read(buffer, sizeof(PvalueTriplet))) {
-    memcpy(&tmp, buffer, sizeof(tmp));
-    pvec.push_back(tmp);
-  }
-  
-  if (i < n) {
-    edgesAvailable_ = false;
+void MatrixLoader::nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec) {
+  if (!useFileInput_) {
+    if (offset_ < numPvals_) {
+      unsigned int n_min = (std::min)((unsigned int)(numPvals_ - offset_), n);
+      pvec.insert(pvec.begin(), pvals_.begin() + offset_, pvals_.begin() + offset_ + n_min);
+      offset_ += n_min;
+      if (offset_ >= numPvals_) {
+        pvals_.clear();
+        edgesAvailable_ = false;
+      }
+    }
+  } else {
+    PvalueTriplet tmp;
+    char buffer[sizeof(PvalueTriplet)];
+    unsigned int i = 0;
+    while (++i <= n && matrixStream_.read(buffer, sizeof(PvalueTriplet))) {
+      memcpy(&tmp, buffer, sizeof(tmp));
+      pvec.push_back(tmp);
+    }
+    
+    if (i < n) {
+      edgesAvailable_ = false;
+    }
   }
 }
 

@@ -34,11 +34,12 @@ namespace maracluster {
 
 class MatrixLoader {
  public:
-  MatrixLoader() : edgesAvailable_(false) {}
+  MatrixLoader() : edgesAvailable_(false), offset_(0u), useFileInput_(false) {}
   
   long long numPvals_;
   
   bool initStream(const std::string& matrixFN);
+  void initVector(std::vector<PvalueTriplet>& pvec);
   bool nextEdge(ScanId& row, ScanId& col, double& value);
   void nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec);
   
@@ -46,6 +47,10 @@ class MatrixLoader {
  protected:
   SpectrumFileList fileList_;
   std::ifstream matrixStream_;
+  
+  bool useFileInput_;
+  std::vector<PvalueTriplet> pvals_;
+  unsigned int offset_;
   
   static long long estimateNumPvals(const std::string& pvalFN);
   static long long getFileSize(const std::string& pvalFN);

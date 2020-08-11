@@ -85,6 +85,9 @@ class SparseClustering {
   void loadEdges(std::vector<PvalueTriplet>& pvec);
   virtual bool edgesLeft();
   
+  virtual bool verifyEdgeBoth(SparseEdge& minEdge) { return true; }
+  virtual bool verifyEdgeSingle(SparseEdge& minEdge) { return true; }
+  
   void getClusterMemberships(
     boost::unordered_map<ScanId, ScanId>& clusterMemberships);
   void updateMissingEdges(

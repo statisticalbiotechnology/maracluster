@@ -13,7 +13,7 @@
   limitations under the License.
   
  ******************************************************************************/
- 
+
 #ifndef MARACLUSTER_SPARSEPOISONEDCLUSTERING_H_
 #define MARACLUSTER_SPARSEPOISONEDCLUSTERING_H_
 
@@ -35,9 +35,18 @@
 
 namespace maracluster {
 
+/**
+  This class extends the SparseClustering class by adding functionality for 
+  "poisoned" clustering. A set of nodes (ScanIds) are marked as poisoned, 
+  e.g. since their precursor m/z is close to the bin/batch m/z border. Edges
+  that have at least one node that is poisoned will not be clustered, and
+  the other node for that edge will also be marked as poisoned (hence the
+  poison analogy). These poisoned nodes and edges can then be clustered at a 
+  later stage.
+*/
 class SparsePoisonedClustering : public SparseClustering {
  public:
-  SparsePoisonedClustering() : SparseClustering(), edgesLeft_(false), mergeCnt_(0u) { }
+  SparsePoisonedClustering() : SparseClustering() { }
   
   inline void markPoisoned(const ScanId& scanId) {
     isPoisoned_[scanId] = true;
@@ -48,26 +57,19 @@ class SparsePoisonedClustering : public SparseClustering {
   }
   
   void initPvals(std::vector<PvalueTriplet>& pvec) {
-    edgesLeft_ = true;
-    pvals_.swap(pvec);
+    matrixLoader_.initVector(pvec);
   }
   
   void getPoisonedEdges(std::vector<PvalueTriplet>& pvec) {
     pvec.swap(poisonedEdges_);
-    /*insert(pvec.end(), poisonedEdges_.begin(), poisonedEdges_.end());
-    poisonedEdges_.clear();*/
   }
-  
-  void doClustering(double cutoff);
   
  protected:  
   boost::unordered_map<ScanId, bool> isPoisoned_;
-  std::vector<PvalueTriplet> pvals_, poisonedEdges_;
-  bool edgesLeft_;
-  unsigned int mergeCnt_;
+  std::vector<PvalueTriplet> poisonedEdges_;
   
-  void loadNextEdges();
-  bool edgesLeft() { return edgesLeft_; }
+  bool verifyEdgeBoth(SparseEdge& minEdge);
+  bool verifyEdgeSingle(SparseEdge& minEdge);
 };
 
 } /* namespace maracluster */

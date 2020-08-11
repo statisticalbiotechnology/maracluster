@@ -130,6 +130,11 @@ void SparseClustering::addNewEdges(
     
     ScanId s1 = (std::min)(row, col);
     ScanId s2 = (std::max)(row, col);
+    
+    // for poisoned clustering
+    SparseEdge edge(pvec[i].pval, s1, s2);
+    if (!verifyEdgeBoth(edge)) continue;
+    
 #ifdef SINGLE_LINKAGE
     if (row != col) {
       size_t idx = 0;
@@ -232,14 +237,6 @@ void SparseClustering::updateMatrix(const ScanId& minRow, const ScanId& minCol,
 void SparseClustering::doClustering(double cutoff) {  
   std::cerr << "Starting MinHeap clustering" << std::endl;
   
-  // decide if we write the results to a file or stdout
-  std::ofstream resultFNStream;
-  bool writeTree = false;
-  if (clusterPairFN_.size() > 0) {
-    resultFNStream.open(clusterPairFN_.c_str());
-    writeTree = true;
-  }
-  
   time_t startTime, elapsedTime;
   time(&startTime);
   clock_t startClock = clock(), elapsedClock;
@@ -252,10 +249,13 @@ void SparseClustering::doClustering(double cutoff) {
   }
   
   unsigned int mergeCnt = 0u;
+  std::vector<PvalueTriplet> tree;
   while (!edgeList_.empty() && edgeList_.top().value < cutoff) {
     SparseEdge minEdge = edgeList_.top();
     popEdge();
     if (matrix_.isAlive(minEdge.row) && matrix_.isAlive(minEdge.col)) {
+      if (!verifyEdgeSingle(minEdge)) continue; // for poisoned clustering
+      
       if (mergeCnt % 10000 == 0) {
         std::cerr << "It. " << mergeCnt << ": minRow = " << minEdge.row 
                   << ", minCol = " << minEdge.col 
@@ -266,14 +266,19 @@ void SparseClustering::doClustering(double cutoff) {
       ScanId mergeScanId(mergeOffset_, mergeCnt++);
       setRoot(mergeScanId, minRowRoot);
       
-      if (writeTree) {
-        ScanId minColRoot = getRoot(minEdge.col);
-        PvalueTriplet tmp(minRowRoot, minColRoot, minEdge.value);
-        resultFNStream << tmp << "\n";
-      }
+      ScanId minColRoot = getRoot(minEdge.col);
+      tree.push_back(PvalueTriplet(minRowRoot, minColRoot, minEdge.value));
       
       joinClusters(minEdge.row, minEdge.col, mergeScanId);
       updateMatrix(minEdge.row, minEdge.col, mergeScanId);
+    }
+  }
+  
+  #pragma omp critical (write_tree)
+  {
+    std::ofstream resultFNStream(clusterPairFN_.c_str(), std::ios_base::app);
+    BOOST_FOREACH (PvalueTriplet& pval, tree) {
+      resultFNStream << pval << std::endl;
     }
   }
   
