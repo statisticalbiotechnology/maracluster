@@ -190,12 +190,19 @@ void PvalueVectors::writePvalueVectors(
   if (Globals::VERB > 1) {
     std::cerr << "Writing pvalue vectors" << std::endl;
   }
+  
+  size_t n = pvalVecCollection_.size();
+  if (n == 0u) {
+    std::stringstream ss;
+    ss << "(PvalueVectors.cpp) no spectra available for clustering, "
+       << "this can happen if your spectra have < 15 distinct peaks under 2000 m/z." << std::endl;
+    throw MyException(ss);
+  }
 
-  std::vector<PvalueVector> headList, tailList, allList;
   double headOverlapLimit = getUpperBound(pvalVecCollection_.front().precMz);
   double tailOverlapLimit = getLowerBound(pvalVecCollection_.back().precMz);
-  size_t n = pvalVecCollection_.size();
   
+  std::vector<PvalueVector> headList, tailList, allList;
   for (size_t i = 0; i < n; ++i) {
     if (i % 100000 == 0 && Globals::VERB > 2) {
       std::cerr << "Writing pvalue vector " << i << "/" << n << std::endl;

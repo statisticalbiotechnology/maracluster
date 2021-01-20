@@ -28,6 +28,8 @@
 #include <boost/foreach.hpp>
 
 #include "Globals.h"
+#include "MyException.h"
+
 #include "PvalueVector.h"
 #include "Pvalues.h"
 #include "Spectrum.h"
