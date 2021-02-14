@@ -25,6 +25,11 @@ bool SparsePoisonedClustering::verifyEdgeBoth(SparseEdge& minEdge) {
     poisonedEdges_.push_back(PvalueTriplet(std::min(minRowRoot, minColRoot), 
                                            std::max(minRowRoot, minColRoot), 
                                            minEdge.value));
+    
+    if (poisonedEdges_.size() % 10000000 == 0) {
+      std::cerr << "Collected " << poisonedEdges_.size() << " poisoned edges" << std::endl;
+    }
+    
     return false;
   }
   return true;
@@ -40,6 +45,11 @@ bool SparsePoisonedClustering::verifyEdgeSingle(SparseEdge& minEdge) {
     poisonedEdges_.push_back(PvalueTriplet(std::min(minRowRoot, minColRoot), 
                                            std::max(minRowRoot, minColRoot), 
                                            minEdge.value));
+    
+    if (poisonedEdges_.size() % 10000000 == 0) {
+      std::cerr << "Collected " << poisonedEdges_.size() << " poisoned edges" << std::endl;
+    }
+    
     return false;
   }
   return true;

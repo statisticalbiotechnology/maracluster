@@ -18,42 +18,8 @@
 
 namespace maracluster {
 
-/* for non-binary input
-bool MatrixLoader::initStream(const std::string& matrixFN) {
-  matrixStream_.open(matrixFN.c_str());
-  if (!matrixStream_.is_open()) {
-    std::cerr << "Could not open matrix file " << matrixFN << std::endl;
-    return false;
-  } else {
-    edgesAvailable_ = true;
-    return true;
-  }
-}
-
-// reads in a sparse matrix from a tab delimited file, organised as: fileIdx1 <tab> scannr1 <tab> fileIdx2 <tab> scannr2 <tab> pvalue
-bool MatrixLoader::nextEdge(unsigned int& row, unsigned int& col, double& value) {  
-  std::string line;
-  if (getline(matrixStream_, line)) {
-    if (false) {
-      std::string filePath1, filePath2;
-      std::istringstream iss(line);
-      iss >> filePath1 >> row >> filePath2 >> col >> value;
-      row = fileList_.getScanId(filePath1, row);
-      col = fileList_.getScanId(filePath2, col);
-    } else {
-      std::istringstream iss(line);
-      iss >> row >> col >> value;
-    }
-    return true;
-  } else {
-    edgesAvailable_ = false;
-    return false;
-  }
-}
-*/
-
-void MatrixLoader::initVector(std::vector<PvalueTriplet>& pvec) {
-  pvals_.swap(pvec);
+void MatrixLoader::initVector(const std::vector<PvalueTriplet>& pvec) {
+  pvals_ = pvec;
   numPvals_ = pvals_.size();
   edgesAvailable_ = true;
   useFileInput_ = false;
@@ -113,40 +79,6 @@ void MatrixLoader::nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec) 
     }
   }
 }
-
-/*
-bool MatrixLoader::initStream(const std::string& matrixFN) {
-  numPvals_ = estimateNumPvals(matrixFN);
-  mmap_ = boost::iostreams::mapped_file(matrixFN, 
-            boost::iostreams::mapped_file::readonly);
-  f_ = mmap_.const_data();
-  l_ = f_ + mmap_.size();
-  
-  if (!f_) {
-    std::cerr << "Could not open matrix file " << matrixFN << std::endl;
-    return false;
-  } else {
-    edgesAvailable_ = true;
-    return true;
-  }
-}
-
-bool MatrixLoader::nextEdge(unsigned int& row, unsigned int& col, double& value) {  
-  PvalueTriplet tmp;
-  if (errno == 0 && f_ && f_<(l_-sizeof(tmp)) ) {
-    memcpy(&tmp, f_, sizeof(tmp));
-    f_ += sizeof(tmp);
-    row = tmp.scannr1;
-    col = tmp.scannr2;
-    value = tmp.pval;
-    //std::cerr << row << " " << col << " " << value << std::endl;
-    return true;
-  } else {
-    edgesAvailable_ = false;
-    return false;
-  }
-}
-*/
 
 long long MatrixLoader::estimateNumPvals(const std::string& pvalFN) {
   long long fileSize = getFileSize(pvalFN);

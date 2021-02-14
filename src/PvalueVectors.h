@@ -23,6 +23,8 @@
 #include <vector>
 #include <queue>
 #include <string>
+#include <thread>
+#include <chrono>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
@@ -30,6 +32,7 @@
 #include "Globals.h"
 #include "PvalueVector.h"
 #include "Pvalues.h"
+#include "PvalBuffer.h"
 #include "Spectrum.h"
 #include "SpectrumFiles.h"
 
@@ -78,7 +81,7 @@ struct ClusterJob {
   size_t endIdx;
   double lowerPrecMz, upperPrecMz;
   bool finished;
-  std::vector<PvalueTriplet> poisonedPvals;
+  PvalBuffer poisonedPvals;
 };
 
 class PvalueVectors {
@@ -201,8 +204,8 @@ class PvalueVectors {
     const std::string& resultTreeFN,
     const size_t numPvecBatches);
     
-  void clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
-    std::vector<PvalueTriplet>& pvalPoisonedBuffer,
+  void clusterPvals(PvalBuffer& pvalBuffer,
+    PvalBuffer& pvalPoisonedBuffer,
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float lowerPrecMz, float upperPrecMz, const std::string& resultTreeFN);
     
@@ -215,7 +218,7 @@ class PvalueVectors {
     ClusterJob& poisonedClusterJob);
   
   void markPoisoned(SparsePoisonedClustering& matrix, 
-    std::vector<PvalueTriplet>& pvalBuffer, 
+    PvalBuffer& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float lowerPrecMz, float upperPrecMz);
   bool isPoisoned(const std::pair<float, float>& scanPrecMzLimits, 

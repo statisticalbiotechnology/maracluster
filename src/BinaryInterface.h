@@ -73,6 +73,16 @@ class BinaryInterface {
     }
   }
   
+  static void appendBinary(const std::string& baseFile, const std::string& fileToAppend) {
+    std::ofstream outFile(baseFile.c_str(), std::ios::ate );
+    std::ifstream inFile(fileToAppend.c_str());
+    std::copy( 
+        (std::istreambuf_iterator<char>(inFile)),
+         std::istreambuf_iterator<char>(),
+         std::ostreambuf_iterator<char>(outFile)
+    );
+  }
+  
   static bool fileIsEmpty(const std::string& fileName) {
     std::ifstream in(fileName.c_str(), std::ios::ate | std::ios::binary);
     if (in.is_open()) {

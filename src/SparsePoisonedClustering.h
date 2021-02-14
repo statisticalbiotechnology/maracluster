@@ -56,10 +56,6 @@ class SparsePoisonedClustering : public SparseClustering {
     return isPoisoned_[scanId];
   }
   
-  void initPvals(std::vector<PvalueTriplet>& pvec) {
-    matrixLoader_.initVector(pvec);
-  }
-  
   void getPoisonedEdges(std::vector<PvalueTriplet>& pvec) {
     pvec.swap(poisonedEdges_);
   }

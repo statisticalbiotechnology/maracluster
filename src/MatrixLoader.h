@@ -39,7 +39,7 @@ class MatrixLoader {
   long long numPvals_;
   
   bool initStream(const std::string& matrixFN);
-  void initVector(std::vector<PvalueTriplet>& pvec);
+  void initVector(const std::vector<PvalueTriplet>& pvec);
   bool nextEdge(ScanId& row, ScanId& col, double& value);
   void nextNEdges(unsigned int n, std::vector<PvalueTriplet>& pvec);
   

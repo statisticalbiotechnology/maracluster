@@ -13,7 +13,7 @@
   limitations under the License.
   
  ******************************************************************************/
- 
+
 #include "PvalueVectors.h"
 
 namespace maracluster {
@@ -481,6 +481,7 @@ void PvalueVectors::batchCalculateAndClusterPvalues(
         showedMessage = true;
         std::cerr << "Pausing current thread to clear queue" << std::endl;
       }
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     if (showedMessage) {
       std::cerr << "Resuming current thread" << std::endl;
@@ -508,6 +509,17 @@ void PvalueVectors::attemptClustering(size_t& newStartBatch, size_t& newPoisoned
     std::deque<ClusterJob>& clusterJobs, ClusterJob& poisonedClusterJob,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
     const std::string& resultTreeFN, time_t& startTime, clock_t& startClock) {
+  bool doPoisonedClustering = false;
+#pragma omp critical (dist_cluster)
+  {
+    doPoisonedClustering = createPoisonedClusterJob(newPoisonedStartBatch, numPvecBatches,
+                    minPvalsForClustering, clusterJobs, poisonedClusterJob);
+  }
+    
+  if (doPoisonedClustering) {
+    runPoisonedClusterJob(poisonedClusterJob, clusterJobs, precMzLimits, resultTreeFN, numPvecBatches);
+  }
+  
   bool doClustering = false;
   size_t clusterJobIdx = 0u;
 #pragma omp critical (dist_cluster)
@@ -519,17 +531,9 @@ void PvalueVectors::attemptClustering(size_t& newStartBatch, size_t& newPoisoned
   
   if (doClustering) {
     runClusterJob(clusterJobs[clusterJobIdx], pvalBuffers, precMzLimits, resultTreeFN, startTime, startClock);
-  }
-  
-  bool doPoisonedClustering = false;
-#pragma omp critical (dist_cluster)
-  {
-    doPoisonedClustering = createPoisonedClusterJob(newPoisonedStartBatch, numPvecBatches,
-                    minPvalsForClustering, clusterJobs, poisonedClusterJob);
-  }
-    
-  if (doPoisonedClustering) {
-    runPoisonedClusterJob(poisonedClusterJob, clusterJobs, precMzLimits, resultTreeFN, numPvecBatches);
+    if (Globals::VERB > 2) {
+      std::cerr << "Finished clustering job " << clusterJobIdx+1 << "/" << clusterJobs.size() << std::endl;
+    }
   }
 }
 
@@ -608,15 +612,17 @@ void PvalueVectors::runClusterJob(ClusterJob& clusterJob,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
     const std::string& resultTreeFN,
     time_t& startTime, clock_t& startClock) {
-  std::vector<PvalueTriplet> pvalBuffer;
+  PvalBuffer pvalBuffer;
   for (size_t i = clusterJob.startBatch; i <= clusterJob.endBatch; ++i) {
-    pvalBuffer.insert(pvalBuffer.end(), pvalBuffers[i].begin(), pvalBuffers[i].end());
+    pvalBuffer.getVector().insert(pvalBuffer.getVector().end(), pvalBuffers[i].begin(), pvalBuffers[i].end());
     std::vector<PvalueTriplet> empty;
     pvalBuffers[i].swap(empty);
   }
   
   if (Globals::VERB > 2) {
-    std::cerr << "Starting clustering job: batches " << clusterJob.startBatch << "-" << clusterJob.endBatch << std::endl;
+    std::cerr << "Starting clustering job: batches " 
+      << clusterJob.startBatch << "-" << clusterJob.endBatch 
+      << ", max m/z = " << clusterJob.upperPrecMz << std::endl;
   }
   
   clusterPvals(pvalBuffer, clusterJob.poisonedPvals, precMzLimits, 
@@ -630,7 +636,7 @@ void PvalueVectors::runClusterJob(ClusterJob& clusterJob,
   }
 }
 
-/* pause the queue if more than 100 pvals are queued and a clustering job is currently running */
+/* pause the queue if more than 100M pvals are queued and a clustering job is currently running */
 bool PvalueVectors::pauseQueue(
     const std::deque<ClusterJob>& clusterJobs,
     const std::vector< std::vector<PvalueTriplet> >& pvalBuffers,
@@ -653,22 +659,22 @@ void PvalueVectors::runPoisonedClusterJob(ClusterJob& poisonedClusterJob,
     std::deque<ClusterJob>& clusterJobs,
     std::map<ScanId, std::pair<float, float> >& precMzLimits,
     const std::string& resultTreeFN, const size_t numPvecBatches) {
-  std::vector<PvalueTriplet> pvalBuffer;
+  PvalBuffer pvalBuffer;
   for (size_t i = poisonedClusterJob.startBatch; i <= poisonedClusterJob.endBatch; ++i) {
-    pvalBuffer.insert(pvalBuffer.end(), clusterJobs[i].poisonedPvals.begin(), clusterJobs[i].poisonedPvals.end());
-    std::vector<PvalueTriplet> empty;
-    clusterJobs[i].poisonedPvals.swap(empty);
+    pvalBuffer.merge(clusterJobs[i].poisonedPvals);
   }
   
   if (Globals::VERB > 2) {
-    std::cerr << "Starting poisoned clustering job: batches " << poisonedClusterJob.startBatch << "-" << poisonedClusterJob.endBatch << std::endl;
+    std::cerr << "Starting poisoned clustering job: batches " 
+      << poisonedClusterJob.startBatch << "-" << poisonedClusterJob.endBatch 
+      << ", max m/z = " << poisonedClusterJob.upperPrecMz << std::endl;
   }
   
   clusterPvals(pvalBuffer, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals, precMzLimits, 
       poisonedClusterJob.lowerPrecMz, poisonedClusterJob.upperPrecMz, resultTreeFN);
   
   // this is technically not necessary, but reduces the number of p-values that need to be kept in memory
-  if (poisonedClusterJob.startBatch == 0) {
+  if (poisonedClusterJob.startBatch == 0 && !clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.isFile()) {
     std::vector<PvalueTriplet> pvalBufferHead, pvalBufferKeep;
     BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals) {
       if (isSafeToWrite(precMzLimits[pt.scannr1], poisonedClusterJob.upperPrecMz)
@@ -679,13 +685,13 @@ void PvalueVectors::runPoisonedClusterJob(ClusterJob& poisonedClusterJob,
         pvalBufferKeep.push_back(pt);
       }
     }
-    clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.swap(pvalBufferKeep);
+    pvalBufferKeep.swap(clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.getVector());
     pvalues_.batchWrite(pvalBufferHead, ".head.dat");
   }
   
   if (poisonedClusterJob.endBatch + 1 == clusterJobs.size()) {
     std::vector<PvalueTriplet> pvalBufferHead, pvalBufferTail;
-    BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals) {
+    BOOST_FOREACH (const PvalueTriplet& pt, clusterJobs[poisonedClusterJob.endBatch].poisonedPvals) { // TODO: check if this works
       if (isInHead(precMzLimits[pt.scannr1])) {
         pvalBufferHead.push_back(pt);
       } else {
@@ -700,42 +706,37 @@ void PvalueVectors::runPoisonedClusterJob(ClusterJob& poisonedClusterJob,
   
   if (Globals::VERB > 2) {
     std::cerr << "Retained " << clusterJobs[poisonedClusterJob.endBatch].poisonedPvals.size() << " pvalues" << std::endl;
+    std::cerr << "Finished poisoned cluster job " << poisonedClusterJob.endBatch + 1 << "/" << clusterJobs.size() << std::endl;
   }
 }
 
-void PvalueVectors::clusterPvals(std::vector<PvalueTriplet>& pvalBuffer,
-    std::vector<PvalueTriplet>& pvalPoisonedBuffer,
+void PvalueVectors::clusterPvals(PvalBuffer& pvalBuffer,
+    PvalBuffer& pvalPoisonedBuffer,
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float lowerPrecMz, float upperPrecMz, const std::string& resultTreeFN) {
   if (Globals::VERB > 2) {
     std::cerr << "Clustering " << pvalBuffer.size() << " pvalues" << std::endl;
   }
   
-  PvalueFilterAndSort::filterAndSort(pvalBuffer);
+  pvalBuffer.filterAndSort();
   
   SparsePoisonedClustering matrix;
   markPoisoned(matrix, pvalBuffer, precMzLimits, lowerPrecMz, upperPrecMz);
   
-  std::string matrixFile = "";
-  if (pvalBuffer.size() > 100e6) {
-    matrixFile = resultTreeFN + "." + boost::lexical_cast<std::string>(lowerPrecMz) + "-" + boost::lexical_cast<std::string>(upperPrecMz) + ".dat";
-    bool append = false;
-    BinaryInterface::write<PvalueTriplet>(pvalBuffer, matrixFile, append);
-    matrix.initMatrix(matrixFile);
-    pvalBuffer.clear();
+  if (pvalBuffer.isFile()) {
+    matrix.initMatrix(pvalBuffer.getFileName());
   } else {
-    matrix.initPvals(pvalBuffer);
+    matrix.initPvals(pvalBuffer.getVector());
   }
   matrix.setClusterPairFN(resultTreeFN);
   matrix.doClustering(dbPvalThreshold_);
   
-  if (!matrixFile.empty()) remove(matrixFile.c_str());
-  
-  matrix.getPoisonedEdges(pvalPoisonedBuffer);
+  matrix.getPoisonedEdges(pvalPoisonedBuffer.getVector());
+  pvalBuffer.clear();
 }
 
 void PvalueVectors::markPoisoned(SparsePoisonedClustering& matrix, 
-    std::vector<PvalueTriplet>& pvalBuffer, 
+    PvalBuffer& pvalBuffer, 
     std::map<ScanId, std::pair<float, float> >& precMzLimits, 
     float lowerPrecMz, float upperPrecMz) {
   std::set<ScanId> scanIds;

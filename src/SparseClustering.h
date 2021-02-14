@@ -52,7 +52,12 @@ class SparseClustering {
   const std::map<ScanId, std::vector<ScanId> >& getClusters() const { 
     return clusters_; 
   }
+  
   void initMatrix(const std::string& matrixFN);
+  
+  void initPvals(std::vector<PvalueTriplet>& pvec) {
+    matrixLoader_.initVector(pvec);
+  }
   
   virtual void doClustering(double cutoff);
   
