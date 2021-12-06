@@ -126,7 +126,7 @@ if not exist "%PWIZ_DIR%\lib" (
                 /ext/boost//iostreams ^
                 /ext/boost//program_options ^
                 /ext/boost//nowide ^
-                /ext/boost//serialization > pwiz_installation.log 2>&1
+                /ext/boost//serialization
     
   echo Copying ProteoWizard libraries to lib folder
   mkdir lib
