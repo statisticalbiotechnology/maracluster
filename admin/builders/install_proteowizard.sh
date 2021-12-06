@@ -16,9 +16,9 @@ cd proteowizard
 
 toolset=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  wget --no-verbose https://github.com/boostorg/atomic/commit/6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
-  tar xf libraries/boost_1_67_0.tar.bz2 --directory libraries
-  patch libraries/boost_1_67_0/boost/atomic/detail/ops_gcc_x86_dcas.hpp < 6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
+  #wget --no-verbose https://github.com/boostorg/atomic/commit/6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
+  #tar xf libraries/boost_1_67_0.tar.bz2 --directory libraries
+  #patch libraries/boost_1_67_0/boost/atomic/detail/ops_gcc_x86_dcas.hpp < 6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
   toolset="toolset=clang"
 fi
 
@@ -29,6 +29,7 @@ echo "Building ProteoWizard and Boost, this may take some time.."
                 pwiz/data/common//pwiz_data_common \
                 pwiz/data/identdata//pwiz_data_identdata \
                 pwiz/data/identdata//pwiz_data_identdata_version \
+                pwiz/data/msdata//pwiz_data_msdata_core \
                 pwiz/data/msdata//pwiz_data_msdata \
                 pwiz/data/msdata//pwiz_data_msdata_version \
                 pwiz/data/proteome//pwiz_data_proteome \
@@ -54,7 +55,7 @@ find build-*-x86_64/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -
 
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
-rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_67_0/boost/ ../include/boost
+rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_76_0/boost/ ../include/boost
 
 cat ../pwiz_installation.log
 ls ../lib
@@ -66,6 +67,6 @@ done
 
 # copy the boost::asio library, which is not included by the ProteoWizard boost tar but is needed for maracluster
 cd ${tools_dir}
-wget --no-verbose https://sourceforge.net/projects/asio/files/asio/1.10.4%20%28Stable%29/boost_asio_1_10_4.tar.gz/download -O boost_asio.tar.gz
+wget --no-verbose https://sourceforge.net/projects/asio/files/asio/1.18.2%20%28Stable%29/boost_asio_1_18_2.tar.gz/download -O boost_asio.tar.gz
 tar -xzf boost_asio.tar.gz
 rsync -ap --include "*/" --include "*.hpp" --include '*.ipp' --exclude '*' boost_asio_1_10_4/boost/ include/boost

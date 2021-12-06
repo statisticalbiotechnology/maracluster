@@ -22,6 +22,7 @@ FIND_PATH(PWIZ_INCLUDE_DIR pwiz )
 MESSAGE( STATUS "Found pwiz include directory: ${PWIZ_INCLUDE_DIR}" )
 
 _pwiz_find_library(PWIZ_DATA_MSDATA_LIBRARY pwiz_data_msdata)
+_pwiz_find_library(PWIZ_DATA_MSDATA_CORE_LIBRARY pwiz_data_msdata_core)
 _pwiz_find_library(PWIZ_DATA_COMMON_LIBRARY pwiz_data_common)
 _pwiz_find_library(PWIZ_UTILITY_MISC_LIBRARY pwiz_utility_misc)
 _pwiz_find_library(PWIZ_UTILITY_MINIXML_LIBRARY pwiz_utility_minimxml)
