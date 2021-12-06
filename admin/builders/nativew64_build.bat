@@ -126,11 +126,11 @@ if not exist "%PWIZ_DIR%\lib" (
                 /ext/boost//iostreams ^
                 /ext/boost//program_options ^
                 /ext/boost//nowide ^
-                /ext/boost//serialization
+                /ext/boost//serialization > pwiz_installation.log 2>&1
     
   echo Copying ProteoWizard libraries to lib folder
   mkdir lib
-  for /r build-nt-x86_64 %%x in (*.lib) do copy "%%x" lib\ /Y > NUL
+  for /r build-nt-x86 %%x in (*.lib) do copy "%%x" lib\ /Y > NUL
   cd lib
   PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace '-vc%MSVC_VER%0-mt','' })"
   PowerShell "(Dir | Rename-Item -NewName { $_.Name -replace 'libpwiz_','pwiz_' })"
