@@ -86,6 +86,7 @@ if not exist "%PWIZ_DIR%\lib" (
                 pwiz/data/common//pwiz_data_common ^
                 pwiz/data/identdata//pwiz_data_identdata ^
                 pwiz/data/identdata//pwiz_data_identdata_version ^
+                pwiz/data/msdata//pwiz_data_msdata_core ^
                 pwiz/data/msdata//pwiz_data_msdata ^
                 pwiz/data/msdata//pwiz_data_msdata_version ^
                 pwiz/data/msdata/mz5//pwiz_data_msdata_mz5 ^
@@ -127,6 +128,7 @@ if not exist "%PWIZ_DIR%\lib" (
                 /ext/boost//nowide ^
                 /ext/boost//serialization > pwiz_installation.log 2>&1
     
+  echo Copying ProteoWizard libraries to lib folder
   mkdir lib
   for /r build-nt-x86_64 %%x in (*.lib) do copy "%%x" lib\ /Y > NUL
   cd lib
@@ -138,12 +140,15 @@ if not exist "%PWIZ_DIR%\lib" (
   Ren libSHA1.lib SHA1.lib
   Ren libsqlite3pp.lib sqlite3pp.lib
   Ren libsqlite3.lib sqlite3.lib
+  
   ::: these DLLs might not work, as they are for VS2013 :::
+  echo Copying vendor libraries to lib folder
   COPY ..\pwiz_aux\msrc\utility\vendor_api\Waters\vc12_x64\* . > NUL
   COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x64\baf2sql_c.* . > NUL
   COPY ..\pwiz_aux\msrc\utility\vendor_api\Bruker\x64\timsdata.* . > NUL
   
   ::: Generate lib from dll for cdt.dll
+  echo Generate lib from cdt.dll
   setlocal enableDelayedExpansion
   set DLL_BASE=cdt
   set DEF_FILE=!DLL_BASE!.def
@@ -154,14 +159,15 @@ if not exist "%PWIZ_DIR%\lib" (
   endlocal
   
   cd ..
-
+  
+  echo Copying ProteoWizard header files to include folder
   mkdir include
   for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y > NUL
   
   ::: copy the boost::asio library, which is not included by the ProteoWizard boost tar but is needed for maracluster
   call :downloadfile "%BOOST_ASIO_URL%" %INSTALL_DIR%\boost_asio.zip
   %ZIP_EXE% x "%INSTALL_DIR%\boost_asio.zip" -o"%INSTALL_DIR%" -aoa > NUL
-  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_67_0' -Recurse -Force"
+  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_76_0' -Recurse -Force"
 )
 
 set QT_DIR=%INSTALL_DIR%\%QT_BASE%
@@ -218,7 +224,7 @@ if not exist "%BUILD_DIR%" (md "%BUILD_DIR%")
 if not exist "%BUILD_DIR%\maracluster" (md "%BUILD_DIR%\maracluster")
 cd /D "%BUILD_DIR%\maracluster"
 echo cmake maracluster.....
-%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -A x64 -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%\maracluster"
+%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -A x64 -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_76_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%\maracluster"
 
 echo build maracluster.....
 msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m
@@ -231,7 +237,7 @@ if "%VENDOR%" == "true" (
   if not exist "%BUILD_DIR%\maracluster-vendor-support" (md "%BUILD_DIR%\maracluster-vendor-support")
   cd /D "%BUILD_DIR%\maracluster-vendor-support"
   echo cmake maracluster with vendor support.....
-  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -A x64 -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%\maracluster"
+  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -A x64 -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_76_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" -DVENDOR_SUPPORT=ON "%SRC_DIR%\maracluster"
 
   echo build maracluster with vendor support.....
   msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m
@@ -245,7 +251,7 @@ if not "%NO_GUI%" == "true" (
   if not exist "%BUILD_DIR%\maracluster-gui" (md "%BUILD_DIR%\maracluster-gui")
   cd /D "%BUILD_DIR%\maracluster-gui"
   echo cmake maracluster gui.....
-  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -A x64 -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_67_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
+  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -A x64 -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_76_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
 
   echo build maracluster gui.....
   msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m

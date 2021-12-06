@@ -21,8 +21,8 @@ set PWIZ_BASE=pwiz-src-without-t-%PWIZ_VERSION_STRING: =_%
 set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.tar.bz2
 
 ::: Boost asio library
-set BOOST_ASIO_BASE=boost_asio_1_10_4
-set BOOST_ASIO_URL=https://sourceforge.net/projects/asio/files/asio/1.10.4 (Stable)/%BOOST_ASIO_BASE%.zip/download
+set BOOST_ASIO_BASE=boost_asio_1_18_2
+set BOOST_ASIO_URL=https://sourceforge.net/projects/asio/files/asio/1.18.2 (Stable)/%BOOST_ASIO_BASE%.zip/download
 
 ::: Qt
 set QT_BASE=qtbase-opensource-src-5.9.9
