@@ -19,6 +19,9 @@ call :downloadfile %PWIZ_VERSION_URL% %INSTALL_DIR%\VERSION
 set /p PWIZ_VERSION_STRING=<%INSTALL_DIR%\VERSION
 set PWIZ_BASE=pwiz-src-without-t-%PWIZ_VERSION_STRING: =_%
 set PWIZ_URL=https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/%PWIZ_BASE%.tar.bz2
+::: remember to update the boost and zlib version when ProteoWizard updates their versions
+set BOOST_BASE=boost_1_76_0
+set ZLIB_BASE=zlib-1.2.3
 
 ::: Boost asio library
 set BOOST_ASIO_BASE=boost_asio_1_18_2

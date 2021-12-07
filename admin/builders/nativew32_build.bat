@@ -119,7 +119,7 @@ if not exist "%BUILD_DIR%" (md "%BUILD_DIR%")
 if not exist "%BUILD_DIR%\maracluster" (md "%BUILD_DIR%\maracluster")
 cd /D "%BUILD_DIR%\maracluster....."
 echo cmake maracluster.....
-%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_76_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%\maracluster"
+%CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\%BOOST_BASE%" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\%ZLIB_BASE%" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%" "%SRC_DIR%\maracluster"
 
 echo build maracluster.....
 msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m
@@ -132,7 +132,7 @@ if not "%NO_GUI%" == "true" (
   if not exist "%BUILD_DIR%\maracluster-gui" (md "%BUILD_DIR%\maracluster-gui")
   cd /D "%BUILD_DIR%\maracluster-gui"
   echo cmake maracluster gui.....
-  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\boost_1_76_0" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\zlib-1.2.3" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
+  %CMAKE_EXE% -G "Visual Studio %MSVC_VER%" -DBOOST_ROOT="%PWIZ_DIR%\libraries\%BOOST_BASE%" -DZLIB_INCLUDE_DIR="%PWIZ_DIR%\libraries\%ZLIB_BASE%" -DCMAKE_PREFIX_PATH="%PWIZ_DIR%;%INSTALL_DIR%\Qt-dynamic" -DVENDOR_SUPPORT=OFF "%SRC_DIR%\maracluster\src\qt-gui"
 
   echo build maracluster gui.....
   msbuild PACKAGE.vcxproj /p:Configuration=%BUILD_TYPE% /m

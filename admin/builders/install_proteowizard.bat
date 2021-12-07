@@ -108,6 +108,8 @@ if not exist "%PWIZ_DIR%\lib" (
   PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_76_0' -Recurse -Force"
 )
 
+EXIT /B
+
 
 :downloadfile
 PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
