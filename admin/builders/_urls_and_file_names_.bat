@@ -7,8 +7,8 @@ set ZIP_BASE=7zi
 set ZIP_URL=https://www.7-zip.org/a/7z1900.exe
 
 ::: CMake
-set CMAKE_VERSION=3.16.6
-set CMAKE_BASE=cmake-%CMAKE_VERSION%-win32-x86
+set CMAKE_VERSION=3.23.1
+set CMAKE_BASE=cmake-%CMAKE_VERSION%-windows-i386
 set CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v%CMAKE_VERSION%/%CMAKE_BASE%.zip
 
 ::: Proteowizard

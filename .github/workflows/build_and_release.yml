@@ -26,6 +26,35 @@ jobs:
         name: ubuntu-packages
         path: ../my_rel
   
+  build-centos:
+    runs-on: ubuntu-latest
+    container: 'centos:centos7'
+    - uses: actions/checkout@v2
+    - name: create_dirs
+      run: mkdir -p ../my_rel ../my_build
+    - name: configure_and_make
+      run: ./admin/builders/centos64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
+    - name: Upload packages
+      uses: actions/upload-artifact@v1
+      with:
+        name: centos-packages
+        path: ../my_rel
+
+  build-fedora:
+    runs-on: ubuntu-latest
+    container: 'fedora:35'
+    - uses: actions/checkout@v2
+    - name: create_dirs
+      run: mkdir -p ../my_rel ../my_build
+    - name: configure_and_make
+      run: ./admin/builders/fedora64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
+    - name: Upload packages
+      uses: actions/upload-artifact@v1
+      with:
+        name: fedora-packages
+        path: ../my_rel
+
+  
   build-tarball:
     runs-on: ubuntu-latest
     steps:
@@ -79,7 +108,7 @@ jobs:
   
   release:
     runs-on: ubuntu-latest
-    needs: [build-ubuntu, build-tarball, build-osx, build-windows]
+    needs: [build-ubuntu, build-centos, build-fedora, build-tarball, build-osx, build-windows]
     # if: startsWith(github.ref, 'refs/tags/rel-')
     steps:
     - name: Download artifacts
@@ -88,6 +117,8 @@ jobs:
         ls -R
         mkdir releases
         tar -czvf packages/ubuntu.tar.gz -C ubuntu-packages $(ls ubuntu-packages)
+        tar -czvf packages/centos.tar.gz -C centos-packages $(ls centos-packages)
+        tar -czvf packages/fedora.tar.gz -C fedora-packages $(ls fedora-packages)
         tar -czvf packages/tarball.tar.gz -C tarball-packages $(ls tarball-packages)
         zip -j -r packages/osx.zip osx-packages/*
         zip -j -r packages/win64.zip windows-packages/*

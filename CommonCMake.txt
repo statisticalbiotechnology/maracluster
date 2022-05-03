@@ -122,6 +122,9 @@ if(NOT APPLE)
   add_definitions(-DBOOST_NO_CXX11_VARIADIC_TEMPLATES)
 endif(NOT APPLE)
 
+add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
+add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
+
 ###############################################################################
 # SET SHARED DYNAMIC LINKING LIBRARIES
 ###############################################################################
@@ -151,6 +154,8 @@ endif ()
 ###############################################################################
 # SET COMPILER OPTIONS
 ###############################################################################
+
+set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 
 IF(APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9")
