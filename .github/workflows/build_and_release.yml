@@ -86,16 +86,17 @@ jobs:
       uses: actions/download-artifact@v3
     - run : |
         ls -R
-        tar -czvf ubuntu.tar.gz -C ubuntu-packages $(ls ubuntu-packages)
-        tar -czvf tarball.tar.gz -C tarball-packages $(ls tarball-packages)
-        zip -j -r osx.zip osx-packages/*
-        zip -j -r win64.zip windows-packages/*
+        mkdir releases
+        tar -czvf packages/ubuntu.tar.gz -C ubuntu-packages $(ls ubuntu-packages)
+        tar -czvf packages/tarball.tar.gz -C tarball-packages $(ls tarball-packages)
+        zip -j -r packages/osx.zip osx-packages/*
+        zip -j -r packages/win64.zip windows-packages/*
         rmdir *-packages
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: *.*
+        file: packages/*
         tag: ${{ github.ref }}
         overwrite: false
         file_glob: true
