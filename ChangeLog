@@ -1,3 +1,9 @@
+v1.02
+* Update to newest ProteoWizard version (using boost 1.76 instead of 1.67)
+* Add check for empty vector of spectra considered for clustering (#21)
+* Split overlap clustering in batches
+* Better fix for nativeId issue (#19)
+
 v1.01.1
 * Fixing several build issues
 * Added OpenMP in osx build

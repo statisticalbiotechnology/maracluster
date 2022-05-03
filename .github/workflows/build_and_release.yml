@@ -25,8 +25,23 @@ jobs:
       with:
         name: ubuntu-packages
         path: ../my_rel
+  
+  build-tarball:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: preinstall
+      run: sudo apt-get install libxml2-utils
+    - name: create_dirs
+      run: mkdir -p ../my_rel ../my_build
+    - name: configure_and_make
+      run: ./admin/builders/tarball64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
+    - name: Upload packages
+      uses: actions/upload-artifact@v1
+      with:
+        name: tarball-packages
+        path: ../my_rel
 
-# The OSX build is currently broken because of a problem with boost 1.67.0 https://sourceforge.net/p/proteowizard/mailman/message/36643056/
   build-osx:
     runs-on: macos-latest
     steps:
@@ -35,15 +50,11 @@ jobs:
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make
       run: admin/builders/osx64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
-# Skip tests for now
-#    - name: test
-#      run: cd ${HOME}/my_build/maracluster && sudo make install && make test ARGS="-V"
     - name: Upload packages
       uses: actions/upload-artifact@v1
       with:
         name: osx-packages
         path: ../my_rel
-
 
   build-windows:
     runs-on: windows-latest
@@ -65,3 +76,26 @@ jobs:
       with:
         name: windows-packages
         path: ..\my_rel
+  
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-ubuntu, build-tarball, build-osx, build-windows]
+    # if: startsWith(github.ref, 'refs/tags/rel-')
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+    - run : |
+        ls -R
+        tar -czvf ubuntu.tar.gz -C ubuntu-packages $(ls ubuntu-packages)
+        tar -czvf tarball.tar.gz -C tarball-packages $(ls tarball-packages)
+        zip -j -r osx.zip osx-packages/*
+        zip -j -r win64.zip windows-packages/*
+        rmdir *-packages
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: *
+        tag: ${{ github.ref }}
+        overwrite: false
+        file_glob: true
