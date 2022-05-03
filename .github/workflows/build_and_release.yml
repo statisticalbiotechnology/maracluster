@@ -29,6 +29,7 @@ jobs:
   build-centos:
     runs-on: ubuntu-latest
     container: 'centos:centos7'
+    steps:
     - uses: actions/checkout@v2
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
@@ -43,6 +44,7 @@ jobs:
   build-fedora:
     runs-on: ubuntu-latest
     container: 'fedora:35'
+    steps:
     - uses: actions/checkout@v2
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
