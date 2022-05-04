@@ -29,7 +29,7 @@ fi
 
 rm -f $build_dir/{maracluster,maracluster-gui}/mar*.deb
 
-# skip apt-upgrade if this is a github actions ci job
+# skip apt-get upgrade if this is a github actions ci job
 sudo apt-get update;
 if [ -z "$CI" ]; then
   # trap 'echo "EXIT (rc: $?)" && exit 1' ERR
@@ -41,9 +41,13 @@ CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is neede
 mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
+gcc -v
+
 if [ ! -d ${build_dir}/tools/proteowizard ]; then
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
+
+readelf --relocs ${build_dir}/tools/lib/libpwiz_data_msdata.a | egrep '(GOT|PLT|JU?MP_SLOT)'
 
 #-----MaRaCluster-GUI dependencies-------
 

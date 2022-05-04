@@ -31,6 +31,8 @@ jobs:
     container: 'centos:centos7'
     steps:
     - uses: actions/checkout@v2
+    - name: preinstall
+      run: yum install sudo scl-utils wget
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make
@@ -46,6 +48,8 @@ jobs:
     container: 'fedora:35'
     steps:
     - uses: actions/checkout@v2
+    - name: preinstall
+      run: dnf install wget rsync
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make

@@ -16,9 +16,6 @@ cd proteowizard
 
 toolset=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  #wget --no-verbose https://github.com/boostorg/atomic/commit/6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
-  #tar xf libraries/boost_1_67_0.tar.bz2 --directory libraries
-  #patch libraries/boost_1_67_0/boost/atomic/detail/ops_gcc_x86_dcas.hpp < 6e14ca24dab50ad4c1fa8c27c7dd6f1cb791b534.patch
   toolset="toolset=clang"
 fi
 
