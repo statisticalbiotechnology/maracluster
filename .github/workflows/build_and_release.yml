@@ -2,9 +2,7 @@ name: Build and release
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ fix/github-actions-linux ]
 
 jobs:
   build-ubuntu:
@@ -26,94 +24,9 @@ jobs:
         name: ubuntu-packages
         path: ../my_rel
 
-  build-centos:
-    runs-on: ubuntu-latest
-    container: 'centos:centos7'
-    steps:
-    - uses: actions/checkout@v2
-    - name: preinstall
-      run: yum install -y sudo scl-utils wget
-    - name: create_dirs
-      run: mkdir -p ../my_rel ../my_build
-    - name: configure_and_make
-      run: ./admin/builders/centos64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
-    - name: Upload packages
-      uses: actions/upload-artifact@v1
-      with:
-        name: centos-packages
-        path: ../my_rel
-
-  build-fedora:
-    runs-on: ubuntu-latest
-    container: 'fedora:35'
-    steps:
-    - uses: actions/checkout@v2
-    - name: preinstall
-      run: dnf install -y wget rsync
-    - name: create_dirs
-      run: mkdir -p ../my_rel ../my_build
-    - name: configure_and_make
-      run: ./admin/builders/fedora64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
-    - name: Upload packages
-      uses: actions/upload-artifact@v1
-      with:
-        name: fedora-packages
-        path: ../my_rel
-
-  build-tarball:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: preinstall
-      run: sudo apt-get install libxml2-utils
-    - name: create_dirs
-      run: mkdir -p ../my_rel ../my_build
-    - name: configure_and_make
-      run: ./admin/builders/tarball64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
-    - name: Upload packages
-      uses: actions/upload-artifact@v1
-      with:
-        name: tarball-packages
-        path: ../my_rel
-
-  build-osx:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: create_dirs
-      run: mkdir -p ../my_rel ../my_build
-    - name: configure_and_make
-      run: admin/builders/osx64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
-    - name: Upload packages
-      uses: actions/upload-artifact@v1
-      with:
-        name: osx-packages
-        path: ../my_rel
-
-  build-windows:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: cmd
-    steps:
-    - uses: actions/checkout@v2
-    - name: create_dirs
-      run: CD .. || MKDIR my_rel my_build
-    - name: configure_and_make
-      run: |
-        CD ..
-        SET base_dir=%cd%
-        ECHO %base_dir%
-        CALL maracluster\admin\builders\nativew64_build.bat -s %base_dir% -r %base_dir%\my_rel -b %base_dir%\my_build -g
-    - name: Upload packages
-      uses: actions/upload-artifact@v1
-      with:
-        name: windows-packages
-        path: ..\my_rel
-
   release:
     runs-on: ubuntu-latest
-    needs: [build-ubuntu, build-centos, build-fedora, build-tarball, build-osx, build-windows]
+    needs: build-ubuntu
     # if: startsWith(github.ref, 'refs/tags/rel-')
     steps:
     - name: Download artifacts
@@ -122,11 +35,6 @@ jobs:
         ls -R
         mkdir releases
         tar -czvf packages/ubuntu.tar.gz -C ubuntu-packages $(ls ubuntu-packages)
-        tar -czvf packages/centos.tar.gz -C centos-packages $(ls centos-packages)
-        tar -czvf packages/fedora.tar.gz -C fedora-packages $(ls fedora-packages)
-        tar -czvf packages/tarball.tar.gz -C tarball-packages $(ls tarball-packages)
-        zip -j -r packages/osx.zip osx-packages/*
-        zip -j -r packages/win64.zip windows-packages/*
         rmdir *-packages
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
