@@ -32,7 +32,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: yum install sudo scl-utils wget
+      run: yum install -y sudo scl-utils wget
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make
@@ -49,7 +49,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: dnf install wget rsync
+      run: dnf install -y wget rsync
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make
