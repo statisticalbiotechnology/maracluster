@@ -45,8 +45,6 @@ if [ ! -d ${build_dir}/tools/proteowizard ]; then
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 
-readelf --relocs ${build_dir}/tools/lib/libpwiz_data_msdata.a
-
 #-----MaRaCluster-GUI dependencies-------
 
 if [ "$no_gui" != true ] ; then

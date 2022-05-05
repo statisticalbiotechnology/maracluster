@@ -3,8 +3,10 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8)
 
-# https://gitlab.kitware.com/cmake/cmake/issues/19067
-cmake_policy(SET CMP0025 NEW)
+if(APPLE)
+  # https://gitlab.kitware.com/cmake/cmake/issues/19067
+  cmake_policy(SET CMP0025 NEW)
+endif()
 
 project(MARACLUSTER)
 if (NOT DEFINED MARACLUSTER_SOURCE_DIR)

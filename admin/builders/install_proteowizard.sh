@@ -14,6 +14,10 @@ mkdir proteowizard
 tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
 cd proteowizard
 
+# undo position independent code fix introduced here: https://github.com/ProteoWizard/pwiz/pull/1980
+sed -i 's/ -no-pie -fno-pie//g' Jamroot.jam
+
+
 toolset=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
   toolset="toolset=clang"
@@ -22,6 +26,7 @@ fi
 echo "Building ProteoWizard and Boost, this may take some time.."
 
 # if you have more than 4GB of memory available, you could try to use more than 2 cores to speed things up
+# add -d2 flag to get verbose output with compiler and linker commands
 ./quickbuild.sh ${toolset} -j2 --without-binary-msdata --prefix=../ \
                 pwiz/data/common//pwiz_data_common \
                 pwiz/data/identdata//pwiz_data_identdata \
