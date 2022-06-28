@@ -4,11 +4,11 @@ tools_dir=$1
 cd ${tools_dir}
 
 echo "Download source code for ProteoWizard from their TeamCity server"
-wget --no-verbose https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
+wget --no-check-certificate --no-verbose https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/VERSION
 linux_pwiz=pwiz-src-without-tv-$(cat VERSION | sed 's/ /_/g')
 # https://teamcity.labkey.org/viewType.html?buildTypeId=bt81
 # without-tv: without tests and vendor reader
-wget --no-verbose https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/${linux_pwiz}.tar.bz2
+wget --no-check-certificate --no-verbose https://teamcity.labkey.org/guestAuth/repository/download/bt81/.lastSuccessful/${linux_pwiz}.tar.bz2
 
 mkdir proteowizard
 tar xf ${linux_pwiz}.tar.bz2 --directory proteowizard
@@ -69,6 +69,5 @@ done
 
 # copy the boost::asio library, which is not included by the ProteoWizard boost tar but is needed for maracluster
 cd ${tools_dir}
-wget --no-verbose --no-check-certificate https://sourceforge.net/projects/asio/files/asio/1.18.2%20%28Stable%29/boost_asio_1_18_2.tar.gz/download -O boost_asio.tar.gz
 tar -xzf boost_asio.tar.gz
 rsync -ap --include "*/" --include "*.hpp" --include '*.ipp' --exclude '*' boost_asio_1_18_2/boost/ include/boost

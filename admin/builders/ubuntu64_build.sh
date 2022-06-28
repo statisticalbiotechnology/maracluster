@@ -52,7 +52,7 @@ if [ "$no_gui" != true ] ; then
   sudo apt -y install patchelf || missing_patchelf=true
   if [ "$missing_patchelf" == true ] ; then
     if [ ! -d ${build_dir}/tools/patchelf-0.8 ]; then
-      wget http://nixos.org/releases/patchelf/patchelf-0.8/patchelf-0.8.tar.bz2
+      wget --no-check-certificate http://nixos.org/releases/patchelf/patchelf-0.8/patchelf-0.8.tar.bz2
       tar xf patchelf-0.8.tar.bz2
       cd patchelf-0.8/
       ./configure --prefix="${build_dir}/tools"
