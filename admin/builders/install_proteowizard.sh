@@ -69,5 +69,6 @@ done
 
 # copy the boost::asio library, which is not included by the ProteoWizard boost tar but is needed for maracluster
 cd ${tools_dir}
+wget --no-verbose --no-check-certificate https://sourceforge.net/projects/asio/files/asio/1.18.2%20%28Stable%29/boost_asio_1_18_2.tar.gz/download -O boost_asio.tar.gz
 tar -xzf boost_asio.tar.gz
 rsync -ap --include "*/" --include "*.hpp" --include '*.ipp' --exclude '*' boost_asio_1_18_2/boost/ include/boost

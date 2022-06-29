@@ -127,7 +127,6 @@ jobs:
         tar -czvf packages/tarball.tar.gz -C tarball-packages $(ls tarball-packages)
         zip -j -r packages/osx.zip osx-packages/*
         zip -j -r packages/win64.zip win64-packages/*
-        rmdir *-packages
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
