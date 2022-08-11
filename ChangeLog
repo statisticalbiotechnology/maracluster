@@ -1,3 +1,6 @@
+v1.02.1
+* Fix file_list.txt reading to not split on spaces in file paths
+
 v1.02
 * Update to newest ProteoWizard version (using boost 1.76 instead of 1.67)
 * Add check for empty vector of spectra considered for clustering (#21)
