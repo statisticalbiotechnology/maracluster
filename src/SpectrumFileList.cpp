@@ -29,11 +29,11 @@ void SpectrumFileList::initFromFile(const std::string& fileListFN) {
   std::ifstream specListFN(fileListFN.c_str());
   std::string line;
   if (specListFN.is_open()) {
-    while (getline(specListFN, line)) {
+    while (std::getline(specListFN, line)) {
       std::string filePath;
       
       std::istringstream iss(line);
-      iss >> filePath;
+      std::getline(iss, filePath, '\t');
       if (filePath.size() > 0) {
         if (!Globals::fileExists(filePath)) {
           if (Globals::VERB > 0) {
