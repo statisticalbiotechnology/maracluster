@@ -4,7 +4,7 @@
 
 ::: 7-zip
 set ZIP_BASE=7zi
-set ZIP_URL=https://www.7-zip.org/a/7z1900.exe
+set ZIP_URL=https://kumisystems.dl.sourceforge.net/project/sevenzip/7-Zip/19.00/7z1900.exe
 
 ::: CMake
 set CMAKE_VERSION=3.23.1

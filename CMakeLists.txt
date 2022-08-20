@@ -23,7 +23,7 @@ my_set(CMAKE_BUILD_TYPE "Debug" "Choose the type of build, options are: None Deb
 
 option(TARBALL_BUILD "Create a tarball instead of an installer package." OFF)
 if(TARBALL_BUILD)
-  add_definitions(-DTARBALL_BUILD) # triggers ifdef statements in the C++ code
+  add_definitions(-DTARBALL_BUILD) # triggers if statements in CPack.txt
 endif(TARBALL_BUILD)
 
 option(FINGERPRINT_FILTER "Use pre-filtering of spectrum pairs by their fragment fingerprints." OFF)
