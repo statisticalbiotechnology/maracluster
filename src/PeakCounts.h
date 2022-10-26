@@ -202,6 +202,9 @@ class PeakCounts {
 		inline SpectrumCountVector& getSpecCountVector(const unsigned int charge) { return specCountVectors.at(getChargeBin(charge)); }
 		inline unsigned int getNumTotalPeaks() { return nTotalPeaks; }
 		
+		void addSpectrum(std::vector<unsigned int>& peakBins, 
+		    const double precMz, const unsigned int charge, double precMass, 
+		    const unsigned int numQueryPeaks);
 		void addSpectrum(std::vector<MZIntensityPair>& mziPairs, 
 		    const double precMz, const unsigned int charge, double precMass, 
 		    const unsigned int numQueryPeaks);

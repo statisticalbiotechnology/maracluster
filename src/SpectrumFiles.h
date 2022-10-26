@@ -23,6 +23,7 @@
 #include <string>
 
 #include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include "Globals.h"
@@ -37,6 +38,7 @@
 #include "MSFileHandler.h"
 #include "BinSpectra.h"
 #include "BinaryInterface.h"
+#include "MyException.h"
 
 namespace maracluster {
 
@@ -63,14 +65,20 @@ struct ScanInfo {
 
 class SpectrumFiles {
  public:
-  SpectrumFiles() : precMzFileFolder_(""), chargeUncertainty_(0) {}
-  SpectrumFiles(const std::string& precMzFileFolder) : 
-      precMzFileFolder_(precMzFileFolder), chargeUncertainty_(0) {}
+  SpectrumFiles() : outputFolder_(""), chargeUncertainty_(0) {}
+  SpectrumFiles(const std::string& precMzFileFolder,
+                const std::string& datFolder) : 
+      outputFolder_(precMzFileFolder), 
+      datFolder_(datFolder), 
+      chargeUncertainty_(0) {}
   SpectrumFiles(const std::string& precMzFileFolder, 
-                     const int chargeUncertainty) : 
-      precMzFileFolder_(precMzFileFolder), 
+                const std::string& datFolder,
+                const int chargeUncertainty) : 
+      outputFolder_(precMzFileFolder),
+      datFolder_(datFolder),
       chargeUncertainty_(chargeUncertainty) {}
   
+  void convertToDat(SpectrumFileList& fileList);
   void splitByPrecursorMz(SpectrumFileList& fileList,
       std::vector<std::string>& datFNs, const std::string& peakCountFN,
       const std::string& scanInfoFN, double precursorTolerance, 
@@ -102,7 +110,8 @@ class SpectrumFiles {
   static bool limitsUnitTest();
   
  protected:
-  std::string precMzFileFolder_;
+  std::string outputFolder_;
+  std::string datFolder_;
   int chargeUncertainty_;
   
   virtual void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
@@ -124,11 +133,24 @@ class SpectrumFiles {
   void appendBatchSpectra(
     std::vector< std::vector<Spectrum> >& batchSpectra,
     std::vector<std::string>& datFNs);
+
   void writePeakCounts(PeakCounts& peakCountsAccumulated, const std::string& peakCountFN);
+  
+  void convertAndWriteDatFiles(
+    SpectrumFileList& fileList,
+    const std::string& spectrumFN);
+  void loadDatFiles(
+    const std::string& spectrumFN,
+    std::vector<Spectrum>& localSpectra,
+    std::vector<ScanInfo>& scanInfos);
   
   static std::string getFilename(const std::string& filepath);
   static std::string getDirectory(const std::string& filepath);
-  
+  static std::string getOutputFile(const std::string& filepath, 
+                                   const std::string& outputFolder, 
+                                   const std::string& newExtension);
+  static void createDirectory(const boost::filesystem::path& dirPath);
+
 };
 
 } /* namespace maracluster */

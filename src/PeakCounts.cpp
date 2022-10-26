@@ -120,14 +120,12 @@ bool PeakCounts::equalParams(const PeakCounts& otherPeakCounts) const {
            && otherPeakCounts.isRelativeToPrecMz() == relativeToPrecMz);
 }
 
-void PeakCounts::addSpectrum(std::vector<MZIntensityPair>& mziPairs, const double precMz, const unsigned int charge, const double precMass, const unsigned int numQueryPeaks) {
+void PeakCounts::addSpectrum(std::vector<unsigned int>& peakBins, const double precMz, const unsigned int charge, const double precMass, const unsigned int numQueryPeaks) {
   unsigned int nSpectrumPeaks = 0;
   unsigned int chargeBin = getChargeBin(charge);
   unsigned int precursorBin = getPrecBin(precMz);
   specCountVectors.at(chargeBin).add(precursorBin, 1);
   
-  std::vector<unsigned int> peakBins;
-  BinSpectra::binBinaryTruncated(mziPairs, peakBins, numQueryPeaks, precMass);
   BOOST_FOREACH (const unsigned int bin, peakBins) {
     if (relativeToPrecMz) {
       peakCountMatrices.at(chargeBin).add(0, getRelPeakBin(bin, precMz, peakBinWidth), 1);
@@ -138,6 +136,12 @@ void PeakCounts::addSpectrum(std::vector<MZIntensityPair>& mziPairs, const doubl
   }
   
   nTotalPeaks += nSpectrumPeaks;
+}
+
+void PeakCounts::addSpectrum(std::vector<MZIntensityPair>& mziPairs, const double precMz, const unsigned int charge, const double precMass, const unsigned int numQueryPeaks) {
+  std::vector<unsigned int> peakBins;
+  BinSpectra::binBinaryTruncated(mziPairs, peakBins, numQueryPeaks, precMass);
+  addSpectrum(peakBins, precMz, charge, precMass, numQueryPeaks);
 }
 
 void PeakCounts::addSpectrum(std::vector<BinnedMZIntensityPair>& mziPairs, const double precMz, const unsigned int charge, const unsigned int numQueryPeaks) {

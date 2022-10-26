@@ -112,6 +112,7 @@ class MaRaCluster {
   unsigned int overlapBatchIdx_;
   boost::filesystem::path outputPath;
   std::string outputFolder_;
+  std::string datFolder_;
   std::string spectrumBatchFileFN_;
   std::string spectrumInFN_;
   std::string spectrumOutFN_;

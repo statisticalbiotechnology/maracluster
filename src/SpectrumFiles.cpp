@@ -22,6 +22,26 @@ using pwiz::msdata::SpectrumListPtr;
 using pwiz::msdata::MSDataFile;
 using pwiz::msdata::SpectrumPtr;
 
+void SpectrumFiles::convertToDat(
+    SpectrumFileList& fileList) {
+  if (Globals::VERB > 1) {
+    std::cerr << "Converting input files to .dat binary format" << std::endl;
+  }
+  
+  SpectrumFiles::createDirectory(datFolder_);
+  
+  std::vector<std::string> spectrumFNs = fileList.getFilePaths();
+#pragma omp parallel for schedule(dynamic, 1)                
+  for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
+    std::string spectrumFN = spectrumFNs[fileIdx];
+    if (Globals::VERB > 1) {
+      std::cerr << "  Processing " << spectrumFN << 
+          " (" << (fileIdx+1)*100/spectrumFNs.size() << "%)." << std::endl;
+    }
+    convertAndWriteDatFiles(fileList, spectrumFN);
+  }
+}
+
 void SpectrumFiles::splitByPrecursorMz(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
     const std::string& peakCountFN, const std::string& scanInfoFN,
@@ -68,45 +88,36 @@ void SpectrumFiles::getPeakCountsAndPrecursorMzs(
 #pragma omp parallel for schedule(dynamic, 1)  
   for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
-    if (Globals::VERB > 1) {
-      std::cerr << "  Processing " << spectrumFN << 
+    if (Globals::VERB > 1 && fileIdx % 100 == 0) {
+      std::cerr << "  Processing file " << fileIdx+1 << "/" << spectrumFNs.size() << 
           " (" << (fileIdx+1)*100/spectrumFNs.size() << "%)." << std::endl;
     }
-    
-    SpectrumListPtr specList;    
-    MSReaderList readerList;
-    MSDataFile msd(spectrumFN, &readerList);
-    specList = msd.run.spectrumListPtr;
-    
+
     PeakCounts peakCounts;
     std::vector<double> precMzs;
     
-    size_t numSpectra = specList->size();
-    //size_t numSpectra = 2;
-    for (size_t i = 0; i < numSpectra; ++i) {
-      SpectrumPtr s = specList->spectrum(i, true);
-      if (!SpectrumHandler::isMs2Scan(s)) continue;
+    std::vector<Spectrum> localSpectra;
+    std::vector<ScanInfo> scanInfos;
+    loadDatFiles(spectrumFN, localSpectra, scanInfos);
+    
+    unsigned int lastCharge = 0;
+    ScanId lastScannr;
+    BOOST_FOREACH (Spectrum& spectrum, localSpectra) {
+      precMzs.push_back(spectrum.precMz);
+      unsigned int charge = (std::min)(spectrum.charge, peakCounts.getMaxCharge());
+      double mass = SpectrumHandler::calcMass(spectrum.precMz, spectrum.charge);
       
-      std::vector<MZIntensityPair> mziPairs;
-      SpectrumHandler::getMZIntensityPairs(s, mziPairs); 
-      
-      unsigned int scannr = SpectrumHandler::getScannr(s);
-      ScanId scanId(fileList.getScanId(spectrumFN, scannr));
-      
-      std::vector<MassChargeCandidate> mccs;
-      getMassChargeCandidates(s, mccs, scanId); // returns mccs sorted by charge
-      unsigned int lastCharge = 0;
-      BOOST_FOREACH (MassChargeCandidate& mcc, mccs) {
-        precMzs.push_back(mcc.precMz);
-        unsigned int charge = (std::min)(mcc.charge, peakCounts.getMaxCharge());
-        if (charge != lastCharge) {
-          // in the last bin we do not truncate the spectrum
-          if (charge == peakCounts.getMaxCharge()) charge = 100u;
-          unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(mcc.mass);
-          peakCounts.addSpectrum(mziPairs, mcc.precMz, charge, mcc.mass, numScoringPeaks);
-          lastCharge = charge;
-        }
+      // only count each spectrum once per charge state
+      if (charge == lastCharge && spectrum.scannr == lastScannr) {
+        continue;
       }
+      
+      unsigned int numScoringPeaks = PvalueCalculator::getMaxScoringPeaks(mass);
+      std::vector<unsigned int> peakBins(spectrum.fragBins, spectrum.fragBins + SPECTRUM_NUM_STORED_PEAKS);
+      peakCounts.addSpectrum(peakBins, spectrum.precMz, charge, mass, numScoringPeaks);
+      
+      lastCharge = charge;
+      lastScannr = spectrum.scannr;
     }
   #pragma omp critical (add_to_peakcount)  
     {
@@ -133,14 +144,14 @@ void SpectrumFiles::writeSplittedPrecursorMzFiles(
 #pragma omp parallel for schedule(dynamic, 1)                
   for (int fileIdx = 0; fileIdx < static_cast<int>(spectrumFNs.size()); ++fileIdx) {
     std::string spectrumFN = spectrumFNs[fileIdx];
-    if (Globals::VERB > 1) {
-      std::cerr << "  Processing " << spectrumFN << 
+    if (Globals::VERB > 1 && fileIdx % 100 == 0) {
+      std::cerr << "  Processing file " << fileIdx+1 << "/" << spectrumFNs.size() << 
           " (" << (fileIdx+1)*100/spectrumFNs.size() << "%)." << std::endl;
     }
     
     std::vector<Spectrum> localSpectra;
     std::vector<ScanInfo> scanInfos;
-    getBatchSpectra(spectrumFN, fileList, localSpectra, scanInfos);
+    loadDatFiles(spectrumFN, localSpectra, scanInfos);
     
     std::vector< std::vector<Spectrum> > batchSpectra(limits.size());
     BOOST_FOREACH (Spectrum& bs, localSpectra) {
@@ -236,7 +247,7 @@ void SpectrumFiles::getDatFNs(std::vector<double>& limits,
   int counter = 0;
   BOOST_FOREACH (double limit, limits) {
     int intLimit = static_cast<int>(limit);
-    std::string filepath = precMzFileFolder_ + "/" + 
+    std::string filepath = outputFolder_ + "/" + 
         boost::lexical_cast<std::string>(intLimit);
     if (intLimit == lastLimit) {
       filepath += "_" + boost::lexical_cast<std::string>(++counter);
@@ -247,6 +258,41 @@ void SpectrumFiles::getDatFNs(std::vector<double>& limits,
     filepath += ".dat";
     datFNs.push_back(filepath);
   }
+}
+
+void SpectrumFiles::loadDatFiles(
+    const std::string& spectrumFN, 
+    std::vector<Spectrum>& localSpectra,
+    std::vector<ScanInfo>& scanInfos) {
+  std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
+  std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
+  if (!boost::filesystem::exists(datFile) || !boost::filesystem::exists(scanInfoFile)) {
+    std::stringstream ss;
+    ss << "(SpectrumFiles.cpp) missing dat file " << datFile
+       << " and/or " <<  scanInfoFile << std::endl;
+    throw MyException(ss);
+  }
+  
+  BinaryInterface::read<Spectrum>(datFile, localSpectra);
+  BinaryInterface::read<ScanInfo>(scanInfoFile, scanInfos);
+}
+
+void SpectrumFiles::convertAndWriteDatFiles(
+    SpectrumFileList& fileList,
+    const std::string& spectrumFN) {
+  std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
+  std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
+  if (boost::filesystem::exists(datFile) && boost::filesystem::exists(scanInfoFile)) {
+    return;
+  }
+  
+  std::vector<Spectrum> localSpectra;
+  std::vector<ScanInfo> scanInfos;
+  getBatchSpectra(spectrumFN, fileList, localSpectra, scanInfos);
+  
+  bool append = false;
+  BinaryInterface::write<Spectrum>(localSpectra, datFile, append);
+  BinaryInterface::write<ScanInfo>(scanInfos, scanInfoFile, append);
 }
 
 void SpectrumFiles::readDatFNsFromFile(const std::string& datFNFile,
@@ -379,6 +425,26 @@ std::string SpectrumFiles::getFilename(const std::string& filepath) {
   return filepath.substr(found+1);
 }
 
+std::string SpectrumFiles::getOutputFile(const std::string& filepath, 
+    const std::string& outputFolder, const std::string& newExtension) {
+  std::string filename = getFilename(filepath);
+  unsigned found = filename.find_last_of(".");
+  return outputFolder + "/" + filename.substr(0,found) + newExtension;
+}
+
+void SpectrumFiles::createDirectory(const boost::filesystem::path& dirPath) {
+  if (boost::filesystem::exists(dirPath)) return;
+  
+  boost::system::error_code returnedError;
+  boost::filesystem::create_directories(dirPath, returnedError );
+  if (!boost::filesystem::exists(dirPath)) {
+    std::stringstream ss;
+    ss << "(SpectrumFiles.cpp) error creating folder " << dirPath 
+       << " (" << returnedError.message() << ")" << std::endl;
+    throw MyException(ss);
+  }
+}
+
 /* MT: scanId parameter is only used in subclassed version of this class which uses feature lists */
 void SpectrumFiles::getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
     std::vector<MassChargeCandidate>& mccs, ScanId scanId) {
@@ -391,7 +457,7 @@ bool SpectrumFiles::limitsUnitTest() {
   std::vector<double> precMzsAccumulated;
   std::vector<double> limits;
   
-  SpectrumFiles spectrumFiles("");
+  SpectrumFiles spectrumFiles("", "");
   
   spectrumFiles.readPrecMzs(precMzFN, precMzsAccumulated);
   spectrumFiles.getPrecMzLimits(precMzsAccumulated, limits, 20.0, false);

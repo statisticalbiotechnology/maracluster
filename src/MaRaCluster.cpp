@@ -31,6 +31,9 @@ MaRaCluster::MaRaCluster() :
 {
   boost::filesystem::path outputPath = boost::filesystem::current_path() / boost::filesystem::path("maracluster_output");
   outputFolder_ = outputPath.string();
+  
+  boost::filesystem::path outputDatPath = outputPath / boost::filesystem::path("dat_files");
+  datFolder_ = outputDatPath.string();
 }
 
 MaRaCluster::~MaRaCluster() {}
@@ -99,6 +102,10 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       "verbatim",
       "Set the verbatim level (lowest: 0, highest: 5, default: 3).",
       "int");
+  cmd.defineOption("D",
+      "dat-folder",
+      "Writable folder for converted .dat binary files. Can be used to re-use already converted spectrum files (default: ./maracluster_output/dat_files).",
+      "path");
   cmd.defineOption("a",
       "prefix",
       "Output files will be prefixed as e.g. <prefix>.clusters_p10.tsv (default: 'MaRaCluster')",
@@ -215,6 +222,7 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   // file input for maracluster batch and index (also for some other methods)
   if (cmd.optionSet("batch")) spectrumBatchFileFN_ = cmd.options["batch"];
   if (cmd.optionSet("output-folder")) outputFolder_ = cmd.options["output-folder"];
+  if (cmd.optionSet("dat-folder")) datFolder_ = cmd.options["dat-folder"];
   if (cmd.optionSet("prefix")) fnPrefix_ = cmd.options["prefix"];
   
   // file output for maracluster batch and index (also for some other methods)
@@ -306,7 +314,8 @@ int MaRaCluster::createIndex() {
   fileList.initFromFile(spectrumBatchFileFN_);
   
   if (!Globals::fileExists(datFNFile_) || !Globals::fileExists(scanInfoFN_)) {    
-    SpectrumFiles spectrumFiles(outputFolder_, chargeUncertainty_);
+    SpectrumFiles spectrumFiles(outputFolder_, datFolder_, chargeUncertainty_);
+    spectrumFiles.convertToDat(fileList);
     spectrumFiles.splitByPrecursorMz(fileList, datFNFile_, peakCountFN_, 
         scanInfoFN_, precursorTolerance_, precursorToleranceDa_);
   } else {
@@ -913,7 +922,7 @@ int MaRaCluster::run() {
         if (peakCountFN_.empty()) {
           peakCountFN_ = outputFolder_ + "/" + fnPrefix_ + ".peak_counts.dat";
           
-          SpectrumFiles spectrumFiles(outputFolder_);
+          SpectrumFiles spectrumFiles(outputFolder_, datFolder_);
           std::vector<double> precMzsAccumulated;
           spectrumFiles.getPeakCountsAndPrecursorMzs(fileList, precMzsAccumulated, peakCountFN_);
         }
