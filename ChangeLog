@@ -1,3 +1,6 @@
+v1.03
+* Reuse converted raw to internal binary format files
+
 v1.02.1
 * Fix file_list.txt reading to not split on spaces in file paths
 
