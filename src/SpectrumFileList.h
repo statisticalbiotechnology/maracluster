@@ -64,6 +64,10 @@ class SpectrumFileList {
       return scanId.fileIdx; 
     }
     
+    inline unsigned int getFileIdx(const std::string& filePath) {
+      return fileIndexMap_[filePath];
+    }
+    
     inline const std::vector<std::string>& getFilePaths() const {
       return fileIndexVector_;
     }

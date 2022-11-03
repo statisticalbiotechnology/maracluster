@@ -98,7 +98,7 @@ void SpectrumFiles::getPeakCountsAndPrecursorMzs(
     
     std::vector<Spectrum> localSpectra;
     std::vector<ScanInfo> scanInfos;
-    loadDatFiles(spectrumFN, localSpectra, scanInfos);
+    loadDatFiles(fileList, spectrumFN, localSpectra, scanInfos);
     
     unsigned int lastCharge = 0;
     ScanId lastScannr;
@@ -151,7 +151,7 @@ void SpectrumFiles::writeSplittedPrecursorMzFiles(
     
     std::vector<Spectrum> localSpectra;
     std::vector<ScanInfo> scanInfos;
-    loadDatFiles(spectrumFN, localSpectra, scanInfos);
+    loadDatFiles(fileList, spectrumFN, localSpectra, scanInfos);
     
     std::vector< std::vector<Spectrum> > batchSpectra(limits.size());
     BOOST_FOREACH (Spectrum& bs, localSpectra) {
@@ -261,6 +261,7 @@ void SpectrumFiles::getDatFNs(std::vector<double>& limits,
 }
 
 void SpectrumFiles::loadDatFiles(
+    SpectrumFileList& fileList,
     const std::string& spectrumFN, 
     std::vector<Spectrum>& localSpectra,
     std::vector<ScanInfo>& scanInfos) {
@@ -275,6 +276,16 @@ void SpectrumFiles::loadDatFiles(
   
   BinaryInterface::read<Spectrum>(datFile, localSpectra);
   BinaryInterface::read<ScanInfo>(scanInfoFile, scanInfos);
+  
+  // we need to update the file index, because we cannot guarantee that the 
+  // input files are in the same order or if new files were added in between!
+  unsigned int fileIdx = fileList.getFileIdx(spectrumFN);
+  BOOST_FOREACH (ScanInfo& si, scanInfos) {
+    si.scanId.fileIdx = fileIdx;
+  }
+  BOOST_FOREACH (Spectrum& s, localSpectra) {
+    s.scannr.fileIdx = fileIdx;
+  }
 }
 
 void SpectrumFiles::convertAndWriteDatFiles(

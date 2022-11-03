@@ -140,6 +140,7 @@ class SpectrumFiles {
     SpectrumFileList& fileList,
     const std::string& spectrumFN);
   void loadDatFiles(
+    SpectrumFileList& fileList,
     const std::string& spectrumFN,
     std::vector<Spectrum>& localSpectra,
     std::vector<ScanInfo>& scanInfos);
