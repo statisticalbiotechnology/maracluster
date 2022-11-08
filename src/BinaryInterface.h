@@ -20,6 +20,7 @@
 #include <vector>
 #include <cerrno>
 #include <fstream>
+#include <iostream>
 
 #include "MyException.h"
 #include <boost/iostreams/device/mapped_file.hpp>
@@ -44,6 +45,8 @@ class BinaryInterface {
         size_t bytes = vec.size() * sizeof(vec[0]);
         outfile.write(pointer, bytes);
       }
+    } else {
+      std::cerr << "(BinaryInterface.h) could not open file " << outputFN << std::endl;
     }
   }
   

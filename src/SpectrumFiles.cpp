@@ -45,7 +45,8 @@ void SpectrumFiles::convertToDat(
 void SpectrumFiles::splitByPrecursorMz(
     SpectrumFileList& fileList, std::vector<std::string>& datFNs,
     const std::string& peakCountFN, const std::string& scanInfoFN,
-    double precursorTolerance, bool precursorToleranceDa) {
+    const std::string& scanTitleFN, double precursorTolerance, 
+    bool precursorToleranceDa) {
   if (Globals::VERB > 1) {
     std::cerr << "Splitting spectra by precursor Mz" << std::endl;
   }
@@ -53,25 +54,26 @@ void SpectrumFiles::splitByPrecursorMz(
   std::vector<double> precMzsAccumulated;
   getPeakCountsAndPrecursorMzs(fileList, precMzsAccumulated, peakCountFN);
   
-  //writePrecMzs(precMzsAccumulated);
-  //readPrecMzs(peakCountFN_, precMzsAccumulated);
+  //TsvInterface::write<double>(precMzsAccumulated, peakCountFN_, false);
+  //TsvInterface::read<double>(peakCountFN_, precMzsAccumulated);
   
   std::vector<double> limits;
   getPrecMzLimits(precMzsAccumulated, limits, precursorTolerance, 
                     precursorToleranceDa);
   getDatFNs(limits, datFNs);
-  writeSplittedPrecursorMzFiles(fileList, limits, datFNs, scanInfoFN);
+  writeSplittedPrecursorMzFiles(fileList, limits, datFNs, scanInfoFN, scanTitleFN);
 }
 
 void SpectrumFiles::splitByPrecursorMz(SpectrumFileList& fileList,
     const std::string& datFNFile, const std::string& peakCountFN,
-    const std::string& scanInfoFN, double precursorTolerance, 
-    bool precursorToleranceDa) {  
+    const std::string& scanInfoFN, const std::string& scanTitleFN, 
+    double precursorTolerance, bool precursorToleranceDa) {  
   std::vector<std::string> datFNs;
-  splitByPrecursorMz(fileList, datFNs, peakCountFN, scanInfoFN, 
+  splitByPrecursorMz(fileList, datFNs, peakCountFN, scanInfoFN, scanTitleFN, 
                        precursorTolerance, precursorToleranceDa);
   
-  writeDatFNsToFile(datFNs, datFNFile);
+  bool append = false;
+  TsvInterface::write<std::string>(datFNs, datFNFile, append);
 }
 
 void SpectrumFiles::getPeakCountsAndPrecursorMzs(
@@ -98,7 +100,8 @@ void SpectrumFiles::getPeakCountsAndPrecursorMzs(
     
     std::vector<Spectrum> localSpectra;
     std::vector<ScanInfo> scanInfos;
-    loadDatFiles(fileList, spectrumFN, localSpectra, scanInfos);
+    std::vector<ScanIdExtended> scanTitles;
+    loadDatFiles(fileList, spectrumFN, localSpectra, scanInfos, scanTitles);
     
     unsigned int lastCharge = 0;
     ScanId lastScannr;
@@ -134,7 +137,8 @@ void SpectrumFiles::writeSplittedPrecursorMzFiles(
     SpectrumFileList& fileList, 
     std::vector<double>& limits,
     std::vector<std::string>& datFNs,
-    const std::string& scanInfoFN) {
+    const std::string& scanInfoFN,
+    const std::string& scanTitleFN) {
   if (Globals::VERB > 1) {
     std::cerr << "Dividing spectra in " << limits.size() << 
                  " bins of ~2 CPU hours each." << std::endl;
@@ -151,7 +155,8 @@ void SpectrumFiles::writeSplittedPrecursorMzFiles(
     
     std::vector<Spectrum> localSpectra;
     std::vector<ScanInfo> scanInfos;
-    loadDatFiles(fileList, spectrumFN, localSpectra, scanInfos);
+    std::vector<ScanIdExtended> scanTitles;
+    loadDatFiles(fileList, spectrumFN, localSpectra, scanInfos, scanTitles);
     
     std::vector< std::vector<Spectrum> > batchSpectra(limits.size());
     BOOST_FOREACH (Spectrum& bs, localSpectra) {
@@ -167,6 +172,9 @@ void SpectrumFiles::writeSplittedPrecursorMzFiles(
     {
       bool append = true;
       BinaryInterface::write<ScanInfo>(scanInfos, scanInfoFN, append);
+      if (addSpecIds_) {
+        TsvInterface::write<ScanIdExtended>(scanTitles, scanTitleFN, append);
+      }
     }
   }
 }
@@ -272,9 +280,11 @@ void SpectrumFiles::loadDatFiles(
     SpectrumFileList& fileList,
     const std::string& spectrumFN, 
     std::vector<Spectrum>& localSpectra,
-    std::vector<ScanInfo>& scanInfos) {
+    std::vector<ScanInfo>& scanInfos,
+    std::vector<ScanIdExtended>& scanTitles) {
   std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
   std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
+  std::string scanTitleFN = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
   if (!boost::filesystem::exists(datFile) || !boost::filesystem::exists(scanInfoFile)) {
     std::stringstream ss;
     ss << "(SpectrumFiles.cpp) missing dat file " << datFile
@@ -284,6 +294,9 @@ void SpectrumFiles::loadDatFiles(
   
   BinaryInterface::read<Spectrum>(datFile, localSpectra);
   BinaryInterface::read<ScanInfo>(scanInfoFile, scanInfos);
+  if (addSpecIds_) {
+    TsvInterface::read<ScanIdExtended>(scanTitleFN, scanTitles);
+  }
   
   // we need to update the file index, because we cannot guarantee that the 
   // input files are in the same order or if new files were added in between!
@@ -294,6 +307,11 @@ void SpectrumFiles::loadDatFiles(
   BOOST_FOREACH (Spectrum& s, localSpectra) {
     s.scannr.fileIdx = fileIdx;
   }
+  if (addSpecIds_) {
+    BOOST_FOREACH (ScanIdExtended& s, scanTitles) {
+      s.scanId.fileIdx = fileIdx;
+    }
+  }
 }
 
 void SpectrumFiles::convertAndWriteDatFiles(
@@ -301,7 +319,7 @@ void SpectrumFiles::convertAndWriteDatFiles(
     const std::string& spectrumFN) {
   std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
   std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
-  std::string scanTitleFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
+  std::string scanTitleFN = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
   if (boost::filesystem::exists(datFile) && boost::filesystem::exists(scanInfoFile)) {
     return;
   }
@@ -315,64 +333,7 @@ void SpectrumFiles::convertAndWriteDatFiles(
   BinaryInterface::write<Spectrum>(localSpectra, datFile, append);
   BinaryInterface::write<ScanInfo>(scanInfos, scanInfoFile, append);
   if (addSpecIds_) {
-    writeScanTitlesToFile(scanTitles, scanTitleFile);
-  }
-}
-
-void SpectrumFiles::readDatFNsFromFile(const std::string& datFNFile,
-    std::vector<std::string>& datFNs) {
-  std::ifstream infile(datFNFile.c_str(), std::ios_base::in);
-  if (infile.is_open()) {
-    std::string datFN;
-    while (getline(infile, datFN)) {
-      datFNs.push_back(datFN);
-    }
-  } else {
-    std::cerr << "Could not read list of dat files" << std::endl;
-  }
-}
-
-void SpectrumFiles::writeDatFNsToFile(std::vector<std::string>& datFNs,
-    const std::string& datFNFile) {
-  std::ofstream outfile(datFNFile.c_str(), std::ios_base::out);
-  if (outfile.is_open()) {
-    BOOST_FOREACH (std::string& datFN, datFNs) {
-      outfile << datFN << "\n";
-    }
-  } else {
-    std::cerr << "Could not write list of dat files" << std::endl;
-  }
-}
-
-void SpectrumFiles::writeScanTitlesToFile(std::vector<ScanIdExtended>& scanTitles,
-    const std::string& scanTitlesFile) {
-  std::ofstream outfile(scanTitlesFile.c_str(), std::ios_base::out);
-  if (outfile.is_open()) {
-    BOOST_FOREACH (const ScanIdExtended& scanTitle, scanTitles) {
-      outfile << scanTitle << "\n";
-    }
-  } else {
-    std::cerr << "Could not write scan titles to file" << std::endl;
-  }
-}
-
-void SpectrumFiles::writePrecMzs(const std::vector<double>& precMzs) {
-  BOOST_FOREACH (const double precMz, precMzs) {
-    std::cout << precMz << std::endl;
-  }
-}
-
-void SpectrumFiles::readPrecMzs(const std::string& precMzFN,
-    std::vector<double>& precMzs) {
-  std::ifstream precMzStream;
-  precMzStream.open(precMzFN.c_str(), std::ios::in | std::ios::binary);
-  if (!precMzStream.is_open()) {
-    std::cerr << "Could not open file " << precMzFN << std::endl;
-  } else {
-    std::string line;
-    while (getline(precMzStream, line)) {
-      precMzs.push_back(boost::lexical_cast<double>(line));
-    }
+    TsvInterface::write<ScanIdExtended>(scanTitles, scanTitleFN, append);
   }
 }
 
@@ -495,7 +456,7 @@ bool SpectrumFiles::limitsUnitTest() {
   
   SpectrumFiles spectrumFiles("", "");
   
-  spectrumFiles.readPrecMzs(precMzFN, precMzsAccumulated);
+  TsvInterface::read<double>(precMzFN, precMzsAccumulated);
   spectrumFiles.getPrecMzLimits(precMzsAccumulated, limits, 20.0, false);
   /*
   BOOST_FOREACH (double l, limits) {

@@ -20,14 +20,14 @@ namespace maracluster {
 
 MaRaCluster::MaRaCluster() :
     mode_(NONE), call_(""), percOutFN_(""), fnPrefix_("MaRaCluster"), 
-    peakCountFN_(""), datFNFile_(""), scanInfoFN_(""), addSpecIds_(false),
-    pvaluesFN_(""), clusterFileFN_(""), pvalVecInFileFN_(""), 
-    pvalueVectorsBaseFN_(""), overlapBatchFileFN_(""), overlapBatchIdx_(0u), 
-    spectrumBatchFileFN_(""), spectrumInFN_(""), spectrumOutFN_(""),
-    spectrumLibraryFN_(""), matrixFN_(""), resultTreeFN_(""),
-    skipFilterAndSort_(false), writeAll_(false), precursorTolerance_(20),
-    precursorToleranceDa_(false), dbPvalThreshold_(-5.0), 
-    chargeUncertainty_(0), minConsensusClusterSize_(1u)
+    peakCountFN_(""), datFNFile_(""), scanInfoFN_(""), scanTitleFN_(""), 
+    addSpecIds_(false), pvaluesFN_(""), clusterFileFN_(""), 
+    pvalVecInFileFN_(""), pvalueVectorsBaseFN_(""), overlapBatchFileFN_(""), 
+    overlapBatchIdx_(0u), spectrumBatchFileFN_(""), spectrumInFN_(""), 
+    spectrumOutFN_(""), spectrumLibraryFN_(""), matrixFN_(""), 
+    resultTreeFN_(""), skipFilterAndSort_(false), writeAll_(false), 
+    precursorTolerance_(20), precursorToleranceDa_(false), 
+    dbPvalThreshold_(-5.0), chargeUncertainty_(0), minConsensusClusterSize_(1u)
 {
   boost::filesystem::path outputPath = boost::filesystem::current_path() / boost::filesystem::path("maracluster_output");
   outputFolder_ = outputPath.string();
@@ -169,6 +169,10 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       "scanInfoFN",
       "File to write/read scan number list binary file",
       "filename");
+  cmd.defineOption("T",
+      "scanTitleFN",
+      "File to write/read scan title list tab-separated file",
+      "filename");
   cmd.defineOption("j",
       "datFNfile",
       "File with a list of binary spectrum files, one per line",
@@ -237,6 +241,7 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   if (cmd.optionSet("datFNfile")) datFNFile_ = cmd.options["datFNfile"];
   if (cmd.optionSet("peakCountsFN")) peakCountFN_ = cmd.options["peakCountsFN"];
   if (cmd.optionSet("scanInfoFN")) scanInfoFN_ = cmd.options["scanInfoFN"];
+  if (cmd.optionSet("scanTitleFN")) scanTitleFN_ = cmd.options["scanTitleFN"];
   if (cmd.optionSet("addSpecIds")) addSpecIds_ = true;
   
   // file input options for maracluster pvalue
@@ -316,6 +321,8 @@ int MaRaCluster::createIndex() {
     peakCountFN_ = outputFolder_ + "/" + fnPrefix_ + ".peak_counts.dat";
   if (scanInfoFN_.empty())
     scanInfoFN_ = outputFolder_ + "/" + fnPrefix_ + ".scan_info.dat";
+  if (scanTitleFN_.empty())
+    scanTitleFN_ = outputFolder_ + "/" + fnPrefix_ + ".scan_titles.txt";
   if (datFNFile_.empty())
     datFNFile_ = outputFolder_ + "/" + fnPrefix_ + ".dat_file_list.txt";
   
@@ -326,7 +333,7 @@ int MaRaCluster::createIndex() {
     SpectrumFiles spectrumFiles(outputFolder_, datFolder_, chargeUncertainty_, addSpecIds_);
     spectrumFiles.convertToDat(fileList);
     spectrumFiles.splitByPrecursorMz(fileList, datFNFile_, peakCountFN_, 
-        scanInfoFN_, precursorTolerance_, precursorToleranceDa_);
+        scanInfoFN_, scanTitleFN_, precursorTolerance_, precursorToleranceDa_);
   } else {
     std::cerr << "Read dat-files from " << datFNFile_ << 
         " and scan numbers from " << scanInfoFN_ <<
@@ -703,7 +710,7 @@ int MaRaCluster::run() {
        ************************************************************************/
       
       std::vector<std::string> datFNs;
-      SpectrumFiles::readDatFNsFromFile(datFNFile_, datFNs);
+      TsvInterface::read<std::string>(datFNFile_, datFNs);
       
       if (datFNs.empty()) {
         std::cerr << "Error: could not find any ms2 spectra in the input files." << std::endl;
@@ -851,7 +858,7 @@ int MaRaCluster::run() {
     case OVERLAP:
     {
       std::vector<std::string> datFNs;
-      SpectrumFiles::readDatFNsFromFile(datFNFile_, datFNs);
+      TsvInterface::read<std::string>(datFNFile_, datFNs);
       
       SpectrumFileList fileList;
       fileList.initFromFile(spectrumBatchFileFN_);

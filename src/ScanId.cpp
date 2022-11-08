@@ -15,6 +15,7 @@
  ******************************************************************************/
 
 #include "ScanId.h"
+#include "TsvInterface.h" // contains TabReader
 
 namespace maracluster {
 
@@ -34,7 +35,18 @@ std::size_t hash_value(ScanId const& si) {
 }
 
 std::ostream& operator<<(std::ostream& stream, const ScanIdExtended& si) {
-  stream << si.scanId.fileIdx << " " << si.scanId.scannr << " " << si.title;
+  stream << si.scanId.fileIdx << '\t' << si.scanId.scannr << '\t' << si.title;
+  return stream;
+}
+
+std::istream& operator>>(std::istream& stream, ScanIdExtended& si) {
+  std::string line;
+  std::getline(stream, line);
+  
+  TabReader reader(line);
+  si.scanId.fileIdx = reader.readInt();
+  si.scanId.scannr = reader.readInt();
+  si.title = reader.readString();
   return stream;
 }
 

@@ -53,6 +53,7 @@ struct ScanIdExtended {
 };
 
 std::ostream& operator<<(std::ostream& stream, const ScanIdExtended& si);
+std::istream& operator>>(std::istream& stream, ScanIdExtended& si);
 
 } /* namespace maracluster */
 

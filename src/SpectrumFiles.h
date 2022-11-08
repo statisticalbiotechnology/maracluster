@@ -24,7 +24,6 @@
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
 
 #include "Globals.h"
 #include "Pvalues.h"
@@ -38,6 +37,7 @@
 #include "MSFileHandler.h"
 #include "BinSpectra.h"
 #include "BinaryInterface.h"
+#include "TsvInterface.h"
 #include "MyException.h"
 
 namespace maracluster {
@@ -84,12 +84,12 @@ class SpectrumFiles {
   void convertToDat(SpectrumFileList& fileList);
   void splitByPrecursorMz(SpectrumFileList& fileList,
       std::vector<std::string>& datFNs, const std::string& peakCountFN,
-      const std::string& scanInfoFN, double precursorTolerance, 
-      bool precursorToleranceDa);
+      const std::string& scanInfoFN, const std::string& scanTitleFN, 
+      double precursorTolerance, bool precursorToleranceDa);
   void splitByPrecursorMz(SpectrumFileList& fileList,
       const std::string& datFNFile, const std::string& peakCountFN,
-      const std::string& scanInfoFN, double precursorTolerance, 
-      bool precursorToleranceDa);
+      const std::string& scanInfoFN, const std::string& scanTitleFN, 
+      double precursorTolerance, bool precursorToleranceDa);
   
   void getPeakCountsAndPrecursorMzs(SpectrumFileList& fileList,
     std::vector<double>& precMzsAccumulated, const std::string& peakCountFN);
@@ -101,14 +101,7 @@ class SpectrumFiles {
   
   void getDatFNs(std::vector<double>& limits, 
     std::vector<std::string>& datFNs);
-  static void writeDatFNsToFile(std::vector<std::string>& datFNs,
-    const std::string& datFNFile);
-  static void readDatFNsFromFile(const std::string& datFNFile,
-    std::vector<std::string>& datFNs);
   
-  static void writeScanTitlesToFile(std::vector<ScanIdExtended>& scanTitles,
-    const std::string& scanTitlesFile);
-    
   static void readPrecMzLimits(const std::string& scanInfoFN,
     std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
@@ -122,11 +115,7 @@ class SpectrumFiles {
   
   virtual void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
     std::vector<MassChargeCandidate>& mccs, ScanId scanId);
-  
-  void writePrecMzs(const std::vector<double>& precMzs);
-  void readPrecMzs(const std::string& precMzFN,
-                             std::vector<double>& precMzs);
-  
+ 
   void getPrecMzLimits(std::vector<double>& precMzs, 
     std::vector<double>& limits, double precursorTolerance, 
     bool precursorToleranceDa);
@@ -134,7 +123,7 @@ class SpectrumFiles {
   
   void writeSplittedPrecursorMzFiles(SpectrumFileList& fileList, 
     std::vector<double>& limits, std::vector<std::string>& datFNs,
-    const std::string& scanInfoFN);
+    const std::string& scanInfoFN, const std::string& scanTitleFN);
   
   void appendBatchSpectra(
     std::vector< std::vector<Spectrum> >& batchSpectra,
@@ -149,7 +138,8 @@ class SpectrumFiles {
     SpectrumFileList& fileList,
     const std::string& spectrumFN,
     std::vector<Spectrum>& localSpectra,
-    std::vector<ScanInfo>& scanInfos);
+    std::vector<ScanInfo>& scanInfos,
+    std::vector<ScanIdExtended>& scanTitles);
   
   static std::string getFilename(const std::string& filepath);
   static std::string getDirectory(const std::string& filepath);

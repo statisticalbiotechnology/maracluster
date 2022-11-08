@@ -104,6 +104,7 @@ class MaRaCluster {
   std::string peakCountFN_;
   std::string datFNFile_;
   std::string scanInfoFN_;
+  std::string scanTitleFN_;
   bool addSpecIds_;
   std::string pvaluesFN_;
   std::string clusterFileFN_;
