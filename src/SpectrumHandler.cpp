@@ -38,7 +38,7 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
     if (tmp.substr(0,9) == "spectrum=")
       return atoi(tmp.substr(9).c_str());
   }
-  std::cerr << "Warning: could not extract scannr. Returning index " << s->index << " (" << s->id << ")" << std::endl;
+  //std::cerr << "Warning: could not extract scannr. Returning index " << s->index << " (" << s->id << ")" << std::endl;
 
   // using the spectrum index should be more robust and
   // independent of the input format's indexing system,
