@@ -42,12 +42,14 @@ class SpectrumClusters {
  public:
   void printClusters(const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
-    const std::string& scanInfoFN, const std::string& resultBaseFN);
+    const std::string& scanInfoFN, const std::string& resultBaseFN,
+    const std::string& scanTitleFN, bool addSpecIds);
   
   static std::string getClusterFN(const std::string resultBaseFN, double threshold);
   
  private:
   std::vector<ScanInfo> scanInfos_;
+  std::map<ScanId, std::string> scanTitleMap_;
   
   void readPvalTree(const std::string& pvalTreeFN,
     std::vector<PvalueTriplet>& pvals);

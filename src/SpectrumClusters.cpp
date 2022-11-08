@@ -21,7 +21,8 @@ namespace maracluster {
 void SpectrumClusters::printClusters(
     const std::vector<std::string>& pvalTreeFNs,
     const std::vector<double>& clusterThresholds, SpectrumFileList& fileList, 
-    const std::string& scanInfoFN, const std::string& resultBaseFN) {
+    const std::string& scanInfoFN, const std::string& resultBaseFN,
+    const std::string& scanTitleFN, bool addSpecIds) {
   std::vector<PvalueTriplet> pvals;
   BOOST_FOREACH (const std::string& pvalTreeFN, pvalTreeFNs) {
     readPvalTree(pvalTreeFN, pvals);
@@ -33,6 +34,18 @@ void SpectrumClusters::printClusters(
     std::sort(scanInfos_.begin(), scanInfos_.end());
   } else if (Globals::VERB > 1) {
     std::cerr << "WARNING: Could not find scanInfo file." << std::endl;
+  }
+  
+  if (addSpecIds) {
+    if (Globals::fileExists(scanTitleFN)) {
+      std::vector<ScanIdExtended> scanTitles;
+      TsvInterface::read<ScanIdExtended>(scanTitleFN, scanTitles);
+      BOOST_FOREACH (const ScanIdExtended st, scanTitles) {
+        scanTitleMap_[st.scanId] = st.title;
+      }
+    } else if (Globals::VERB > 1) {
+      std::cerr << "WARNING: Could not find scanTitles file." << std::endl;
+    }
   }
   
   createClusterings(pvals, clusterThresholds, fileList, resultBaseFN);
@@ -162,8 +175,13 @@ void SpectrumClusters::writeClusters(
         unsigned int localScannr = fileList.getScannr(globalScannr);
         std::string filePath = fileList.getFilePath(globalScannr);
         
-        resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx
-                     << '\n';
+        resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx;
+        
+        if (scanTitleMap_.size() > 0) {
+          std::string scanTitle = scanTitleMap_.at(globalScannr);
+          resultStream << '\t' << scanTitle;
+        }
+        resultStream << '\n';
       }
       clusterIdx++;
       resultStream << std::endl;
@@ -215,8 +233,12 @@ size_t SpectrumClusters::writeSingletonClusters(
       
       unsigned int localScannr = fileList.getScannr(globalScannr);
       std::string filePath = fileList.getFilePath(globalScannr);
-      resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx++
-                   << '\n' << '\n';
+      resultStream << filePath << '\t' << localScannr << '\t' << clusterIdx++;
+      if (scanTitleMap_.size() > 0) {
+        std::string scanTitle = scanTitleMap_.at(globalScannr);
+        resultStream << '\t' << scanTitle;
+      }
+      resultStream << '\n' << '\n';
     }
   }
   return addedSingletonClusters;

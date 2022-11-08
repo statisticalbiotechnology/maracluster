@@ -728,7 +728,7 @@ int MaRaCluster::run() {
       SpectrumClusters clustering;
       std::string clusterBaseFN = outputFolder_ + "/" + fnPrefix_ + ".clusters_";
       clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, 
-                               scanInfoFN_, clusterBaseFN);
+                               scanInfoFN_, clusterBaseFN, scanTitleFN_, addSpecIds_);
       
       /*************************************************************************
         Step 5: Create and write consensus spectra
@@ -885,7 +885,8 @@ int MaRaCluster::run() {
       
       SpectrumClusters clustering;
       std::string clusterBaseFN = outputFolder_ + "/" + fnPrefix_ + ".clusters_";
-      clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, scanInfoFN_, clusterBaseFN);
+      clustering.printClusters(pvalTreeFNs, clusterThresholds_, fileList, 
+                               scanInfoFN_, clusterBaseFN, scanTitleFN_, addSpecIds_);
       
       return EXIT_SUCCESS;
     }
