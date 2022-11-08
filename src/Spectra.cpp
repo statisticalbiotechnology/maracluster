@@ -36,7 +36,8 @@ void Spectra::convertToBatchSpectra(const std::string& spectrumFN,
   SpectrumFiles specFiles;
   std::vector<Spectrum> localSpectra;
   std::vector<ScanInfo> localScanInfos;
-  specFiles.getBatchSpectra(spectrumFN, fileList, localSpectra, localScanInfos);
+  std::vector<ScanIdExtended> localScanTitles;
+  specFiles.getBatchSpectra(spectrumFN, fileList, localSpectra, localScanInfos, localScanTitles);
   
 #pragma omp critical(append_spectra)
   {

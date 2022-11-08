@@ -24,7 +24,8 @@ unsigned int SpectrumHandler::getScannr(pwiz::msdata::SpectrumPtr s) {
     std::string mgfScansField = s->cvParam(pwiz::cv::MS_peak_list_scans).valueAs<std::string>();
     return atoi(mgfScansField.c_str());
   }
-  std::stringstream ss(s->id);
+  std::string scanTitle = SpectrumHandler::getScanTitle(s);
+  std::stringstream ss(scanTitle);
   while (ss.good()) {
     std::string tmp;
     ss >> tmp;
@@ -54,6 +55,15 @@ void SpectrumHandler::setScannr(pwiz::msdata::SpectrumPtr s, unsigned int scanNr
 
 void SpectrumHandler::setScannr(pwiz::msdata::SpectrumPtr s, const ScanId& scanId) {
   setScannr(s, hash_value(scanId));
+}
+
+std::string SpectrumHandler::getScanTitle(pwiz::msdata::SpectrumPtr s) {
+  // special check for the TITLE field in mgf files
+  if (s->hasCVParam(pwiz::msdata::MS_spectrum_title)) {
+    std::string mgfScanTitle = s->cvParam(pwiz::msdata::MS_spectrum_title).valueAs<std::string>();
+    return mgfScanTitle;
+  }
+  return s->id;
 }
 
 double SpectrumHandler::interpolateIntensity(MZIntensityPair p1, MZIntensityPair p2, double mz) {

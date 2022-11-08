@@ -70,6 +70,8 @@ class SpectrumHandler {
   static void setScannr(pwiz::msdata::SpectrumPtr s, unsigned int scanNr);
   static void setScannr(pwiz::msdata::SpectrumPtr s, const ScanId& scanId);
   
+  static std::string getScanTitle(pwiz::msdata::SpectrumPtr s);
+  
   static double interpolateIntensity(MZIntensityPair p1, MZIntensityPair p2, double mz);
   static void scaleIntensities(std::vector<MZIntensityPair>& mziPairs, double scaling);
   

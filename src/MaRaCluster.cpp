@@ -20,9 +20,9 @@ namespace maracluster {
 
 MaRaCluster::MaRaCluster() :
     mode_(NONE), call_(""), percOutFN_(""), fnPrefix_("MaRaCluster"), 
-    peakCountFN_(""), datFNFile_(""), scanInfoFN_(""), pvaluesFN_(""), 
-    clusterFileFN_(""), pvalVecInFileFN_(""), pvalueVectorsBaseFN_(""), 
-    overlapBatchFileFN_(""), overlapBatchIdx_(0u), 
+    peakCountFN_(""), datFNFile_(""), scanInfoFN_(""), addSpecIds_(false),
+    pvaluesFN_(""), clusterFileFN_(""), pvalVecInFileFN_(""), 
+    pvalueVectorsBaseFN_(""), overlapBatchFileFN_(""), overlapBatchIdx_(0u), 
     spectrumBatchFileFN_(""), spectrumInFN_(""), spectrumOutFN_(""),
     spectrumLibraryFN_(""), matrixFN_(""), resultTreeFN_(""),
     skipFilterAndSort_(false), writeAll_(false), precursorTolerance_(20),
@@ -106,6 +106,11 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
       "dat-folder",
       "Writable folder for converted .dat binary files. Can be used to re-use already converted spectrum files (default: ./maracluster_output/dat_files).",
       "path");
+  cmd.defineOption("I",
+      "addSpecIds",
+      "Add column with spectrum id/title to clustering file output.",
+      "",
+      TRUE_IF_SET);
   cmd.defineOption("a",
       "prefix",
       "Output files will be prefixed as e.g. <prefix>.clusters_p10.tsv (default: 'MaRaCluster')",
@@ -221,7 +226,10 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   
   // file input for maracluster batch and index (also for some other methods)
   if (cmd.optionSet("batch")) spectrumBatchFileFN_ = cmd.options["batch"];
-  if (cmd.optionSet("output-folder")) outputFolder_ = cmd.options["output-folder"];
+  if (cmd.optionSet("output-folder")) {
+    outputFolder_ = cmd.options["output-folder"];
+    datFolder_ = outputFolder_ + "/dat_files";
+  }
   if (cmd.optionSet("dat-folder")) datFolder_ = cmd.options["dat-folder"];
   if (cmd.optionSet("prefix")) fnPrefix_ = cmd.options["prefix"];
   
@@ -229,6 +237,7 @@ bool MaRaCluster::parseOptions(int argc, char **argv) {
   if (cmd.optionSet("datFNfile")) datFNFile_ = cmd.options["datFNfile"];
   if (cmd.optionSet("peakCountsFN")) peakCountFN_ = cmd.options["peakCountsFN"];
   if (cmd.optionSet("scanInfoFN")) scanInfoFN_ = cmd.options["scanInfoFN"];
+  if (cmd.optionSet("addSpecIds")) addSpecIds_ = true;
   
   // file input options for maracluster pvalue
   if (cmd.optionSet("specIn")) spectrumInFN_ = cmd.options["specIn"];
@@ -314,7 +323,7 @@ int MaRaCluster::createIndex() {
   fileList.initFromFile(spectrumBatchFileFN_);
   
   if (!Globals::fileExists(datFNFile_) || !Globals::fileExists(scanInfoFN_)) {    
-    SpectrumFiles spectrumFiles(outputFolder_, datFolder_, chargeUncertainty_);
+    SpectrumFiles spectrumFiles(outputFolder_, datFolder_, chargeUncertainty_, addSpecIds_);
     spectrumFiles.convertToDat(fileList);
     spectrumFiles.splitByPrecursorMz(fileList, datFNFile_, peakCountFN_, 
         scanInfoFN_, precursorTolerance_, precursorToleranceDa_);

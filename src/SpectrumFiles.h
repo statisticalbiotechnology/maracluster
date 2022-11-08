@@ -65,18 +65,21 @@ struct ScanInfo {
 
 class SpectrumFiles {
  public:
-  SpectrumFiles() : outputFolder_(""), chargeUncertainty_(0) {}
+  SpectrumFiles() : outputFolder_(""), chargeUncertainty_(0), datFolder_(""), addSpecIds_(false) {}
   SpectrumFiles(const std::string& precMzFileFolder,
                 const std::string& datFolder) : 
       outputFolder_(precMzFileFolder), 
       datFolder_(datFolder), 
-      chargeUncertainty_(0) {}
+      chargeUncertainty_(0),
+      addSpecIds_(false) {}
   SpectrumFiles(const std::string& precMzFileFolder, 
                 const std::string& datFolder,
-                const int chargeUncertainty) : 
+                const int chargeUncertainty,
+                const bool addSpecIds) : 
       outputFolder_(precMzFileFolder),
       datFolder_(datFolder),
-      chargeUncertainty_(chargeUncertainty) {}
+      chargeUncertainty_(chargeUncertainty),
+      addSpecIds_(addSpecIds) {}
   
   void convertToDat(SpectrumFileList& fileList);
   void splitByPrecursorMz(SpectrumFileList& fileList,
@@ -93,17 +96,19 @@ class SpectrumFiles {
   
   void getBatchSpectra(const std::string& spectrumFN, 
     SpectrumFileList& fileList, std::vector<Spectrum>& localSpectra,
-    std::vector<ScanInfo>& localScanInfos);
+    std::vector<ScanInfo>& localScanInfos,
+    std::vector<ScanIdExtended>& scanTitles);
   
   void getDatFNs(std::vector<double>& limits, 
     std::vector<std::string>& datFNs);
-    
   static void writeDatFNsToFile(std::vector<std::string>& datFNs,
     const std::string& datFNFile);
-  
   static void readDatFNsFromFile(const std::string& datFNFile,
     std::vector<std::string>& datFNs);
   
+  static void writeScanTitlesToFile(std::vector<ScanIdExtended>& scanTitles,
+    const std::string& scanTitlesFile);
+    
   static void readPrecMzLimits(const std::string& scanInfoFN,
     std::map<ScanId, std::pair<float, float> >& precMzLimits);
   
@@ -113,6 +118,7 @@ class SpectrumFiles {
   std::string outputFolder_;
   std::string datFolder_;
   int chargeUncertainty_;
+  bool addSpecIds_;
   
   virtual void getMassChargeCandidates(pwiz::msdata::SpectrumPtr s, 
     std::vector<MassChargeCandidate>& mccs, ScanId scanId);

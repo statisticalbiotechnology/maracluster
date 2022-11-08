@@ -175,7 +175,8 @@ void SpectrumFiles::writeSplittedPrecursorMzFiles(
 void SpectrumFiles::getBatchSpectra(
     const std::string& spectrumFN, SpectrumFileList& fileList,
     std::vector<Spectrum>& localSpectra, 
-    std::vector<ScanInfo>& scanInfos) {
+    std::vector<ScanInfo>& scanInfos,
+    std::vector<ScanIdExtended>& scanTitles) {
   if ( !boost::filesystem::exists( spectrumFN ) ) {
     std::cerr << "Ignoring missing file " << spectrumFN << std::endl;
     return;
@@ -198,6 +199,13 @@ void SpectrumFiles::getBatchSpectra(
     unsigned int scannr = SpectrumHandler::getScannr(s);
     ScanInfo scanInfo;
     scanInfo.scanId = fileList.getScanId(spectrumFN, scannr);
+    
+    if (addSpecIds_) {
+      ScanIdExtended scanTitle;
+      scanTitle.scanId = scanInfo.scanId;
+      scanTitle.title = SpectrumHandler::getScanTitle(s);
+      scanTitles.push_back(scanTitle);
+    }
     
     std::vector<MassChargeCandidate> mccs;
     getMassChargeCandidates(s, mccs, scanInfo.scanId);
@@ -293,17 +301,22 @@ void SpectrumFiles::convertAndWriteDatFiles(
     const std::string& spectrumFN) {
   std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
   std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
+  std::string scanTitleFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
   if (boost::filesystem::exists(datFile) && boost::filesystem::exists(scanInfoFile)) {
     return;
   }
   
   std::vector<Spectrum> localSpectra;
   std::vector<ScanInfo> scanInfos;
-  getBatchSpectra(spectrumFN, fileList, localSpectra, scanInfos);
+  std::vector<ScanIdExtended> scanTitles;
+  getBatchSpectra(spectrumFN, fileList, localSpectra, scanInfos, scanTitles);
   
   bool append = false;
   BinaryInterface::write<Spectrum>(localSpectra, datFile, append);
   BinaryInterface::write<ScanInfo>(scanInfos, scanInfoFile, append);
+  if (addSpecIds_) {
+    writeScanTitlesToFile(scanTitles, scanTitleFile);
+  }
 }
 
 void SpectrumFiles::readDatFNsFromFile(const std::string& datFNFile,
@@ -328,6 +341,18 @@ void SpectrumFiles::writeDatFNsToFile(std::vector<std::string>& datFNs,
     }
   } else {
     std::cerr << "Could not write list of dat files" << std::endl;
+  }
+}
+
+void SpectrumFiles::writeScanTitlesToFile(std::vector<ScanIdExtended>& scanTitles,
+    const std::string& scanTitlesFile) {
+  std::ofstream outfile(scanTitlesFile.c_str(), std::ios_base::out);
+  if (outfile.is_open()) {
+    BOOST_FOREACH (const ScanIdExtended& scanTitle, scanTitles) {
+      outfile << scanTitle << "\n";
+    }
+  } else {
+    std::cerr << "Could not write scan titles to file" << std::endl;
   }
 }
 

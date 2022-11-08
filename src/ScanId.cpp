@@ -33,4 +33,9 @@ std::size_t hash_value(ScanId const& si) {
   return hasher((si.fileIdx+1) * 1000000 + si.scannr);
 }
 
+std::ostream& operator<<(std::ostream& stream, const ScanIdExtended& si) {
+  stream << si.scanId.fileIdx << " " << si.scanId.scannr << " " << si.title;
+  return stream;
+}
+
 } /* namespace maracluster */

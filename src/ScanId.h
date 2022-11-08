@@ -47,6 +47,13 @@ struct ScanId {
 std::ostream& operator<<(std::ostream& stream, const ScanId& si);
 std::size_t hash_value(ScanId const& si);
 
+struct ScanIdExtended {
+  ScanId scanId;
+  std::string title;
+};
+
+std::ostream& operator<<(std::ostream& stream, const ScanIdExtended& si);
+
 } /* namespace maracluster */
 
 #endif /* MARACLUSTER_SCANID_H_ */
