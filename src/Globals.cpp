@@ -35,6 +35,36 @@ bool Globals::fileIsEmpty(const std::string& fileName) {
   }
 }
 
+std::string Globals::getDirectory(const std::string& filepath) {
+  unsigned found = filepath.find_last_of("/\\");
+  return filepath.substr(0,found);
+}
+
+std::string Globals::getFilename(const std::string& filepath) {
+  unsigned found = filepath.find_last_of("/\\");
+  return filepath.substr(found+1);
+}
+
+std::string Globals::getOutputFile(const std::string& filepath, 
+    const std::string& outputFolder, const std::string& newExtension) {
+  std::string filename = getFilename(filepath);
+  unsigned found = filename.find_last_of(".");
+  return outputFolder + "/" + filename.substr(0,found) + newExtension;
+}
+
+void Globals::createDirectory(const boost::filesystem::path& dirPath) {
+  if (boost::filesystem::exists(dirPath)) return;
+  
+  boost::system::error_code returnedError;
+  boost::filesystem::create_directories(dirPath, returnedError );
+  if (!boost::filesystem::exists(dirPath)) {
+    std::stringstream ss;
+    ss << "(SpectrumFiles.cpp) error creating folder " << dirPath 
+       << " (" << returnedError.message() << ")" << std::endl;
+    throw MyException(ss);
+  }
+}
+
 void Globals::reportProgress(time_t& startTime, clock_t& startClock,
     size_t currentIt, size_t totalIt) {
   time_t elapsedTime;

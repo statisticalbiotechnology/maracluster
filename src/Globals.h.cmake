@@ -22,6 +22,8 @@
 #include <iostream>
 #include <ctime>
 
+#include <boost/filesystem.hpp>
+
 namespace maracluster {
 
 class Globals {
@@ -29,9 +31,16 @@ class Globals {
   static unsigned int VERB; 
   
   static bool fileExists(const std::string& fileName);
-  static bool fileIsEmpty(const std::string& fileName);
+  static bool fileIsEmpty(const std::string& fileName);  
+  static std::string getFilename(const std::string& filepath);
+  static std::string getDirectory(const std::string& filepath);
+  static std::string getOutputFile(const std::string& filepath, 
+                                   const std::string& outputFolder, 
+                                   const std::string& newExtension);
+  static void createDirectory(const boost::filesystem::path& dirPath);
+  
   static void reportProgress(time_t& startTime, clock_t& startClock,
-    size_t currentIt, size_t totalIt);
+                             size_t currentIt, size_t totalIt);
 };
 
 } /* namespace maracluster */

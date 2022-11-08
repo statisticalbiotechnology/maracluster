@@ -28,7 +28,7 @@ void SpectrumFiles::convertToDat(
     std::cerr << "Converting input files to .dat binary format" << std::endl;
   }
   
-  SpectrumFiles::createDirectory(datFolder_);
+  Globals::createDirectory(datFolder_);
   
   std::vector<std::string> spectrumFNs = fileList.getFilePaths();
 #pragma omp parallel for schedule(dynamic, 1)                
@@ -282,9 +282,9 @@ void SpectrumFiles::loadDatFiles(
     std::vector<Spectrum>& localSpectra,
     std::vector<ScanInfo>& scanInfos,
     std::vector<ScanIdExtended>& scanTitles) {
-  std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
-  std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
-  std::string scanTitleFN = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
+  std::string datFile = Globals::getOutputFile(spectrumFN, datFolder_, ".dat");
+  std::string scanInfoFile = Globals::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
+  std::string scanTitleFN = Globals::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
   if (!boost::filesystem::exists(datFile) || !boost::filesystem::exists(scanInfoFile)) {
     std::stringstream ss;
     ss << "(SpectrumFiles.cpp) missing dat file " << datFile
@@ -317,9 +317,9 @@ void SpectrumFiles::loadDatFiles(
 void SpectrumFiles::convertAndWriteDatFiles(
     SpectrumFileList& fileList,
     const std::string& spectrumFN) {
-  std::string datFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".dat");
-  std::string scanInfoFile = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
-  std::string scanTitleFN = SpectrumFiles::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
+  std::string datFile = Globals::getOutputFile(spectrumFN, datFolder_, ".dat");
+  std::string scanInfoFile = Globals::getOutputFile(spectrumFN, datFolder_, ".scan_info.dat");
+  std::string scanTitleFN = Globals::getOutputFile(spectrumFN, datFolder_, ".scan_titles.txt");
   if (boost::filesystem::exists(datFile) && boost::filesystem::exists(scanInfoFile)) {
     return;
   }
@@ -409,36 +409,6 @@ void SpectrumFiles::writePeakCounts(PeakCounts& peakCountsAccumulated,
   
   if (Globals::VERB > 2) {
     std::cerr << "Finished writing peak counts to file" << std::endl;
-  }
-}
-
-std::string SpectrumFiles::getDirectory(const std::string& filepath) {
-  unsigned found = filepath.find_last_of("/\\");
-  return filepath.substr(0,found);
-}
-
-std::string SpectrumFiles::getFilename(const std::string& filepath) {
-  unsigned found = filepath.find_last_of("/\\");
-  return filepath.substr(found+1);
-}
-
-std::string SpectrumFiles::getOutputFile(const std::string& filepath, 
-    const std::string& outputFolder, const std::string& newExtension) {
-  std::string filename = getFilename(filepath);
-  unsigned found = filename.find_last_of(".");
-  return outputFolder + "/" + filename.substr(0,found) + newExtension;
-}
-
-void SpectrumFiles::createDirectory(const boost::filesystem::path& dirPath) {
-  if (boost::filesystem::exists(dirPath)) return;
-  
-  boost::system::error_code returnedError;
-  boost::filesystem::create_directories(dirPath, returnedError );
-  if (!boost::filesystem::exists(dirPath)) {
-    std::stringstream ss;
-    ss << "(SpectrumFiles.cpp) error creating folder " << dirPath 
-       << " (" << returnedError.message() << ")" << std::endl;
-    throw MyException(ss);
   }
 }
 

@@ -140,13 +140,6 @@ class SpectrumFiles {
     std::vector<Spectrum>& localSpectra,
     std::vector<ScanInfo>& scanInfos,
     std::vector<ScanIdExtended>& scanTitles);
-  
-  static std::string getFilename(const std::string& filepath);
-  static std::string getDirectory(const std::string& filepath);
-  static std::string getOutputFile(const std::string& filepath, 
-                                   const std::string& outputFolder, 
-                                   const std::string& newExtension);
-  static void createDirectory(const boost::filesystem::path& dirPath);
 
 };
 

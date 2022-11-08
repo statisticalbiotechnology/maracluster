@@ -670,27 +670,13 @@ int MaRaCluster::run() {
   if (!spectrumOutFN_.empty()) {
     boost::filesystem::path spectrumOutPath (spectrumOutFN_);
     boost::filesystem::path spectrumOutFolder = spectrumOutPath.parent_path();
-    if (!spectrumOutFolder.empty() && !boost::filesystem::exists(spectrumOutFolder)) {
-      boost::system::error_code returnedError;
-      boost::filesystem::create_directories( spectrumOutFolder, returnedError );
-      
-      if (!boost::filesystem::exists(spectrumOutFolder)) {
-        std::cerr << "Error: could not create output directory at " << outputFolder_ << std::endl;
-        return EXIT_FAILURE;
-      }
+    if (!spectrumOutFolder.empty()) {
+      Globals::createDirectory(spectrumOutFolder);
     }
   }
   
   boost::filesystem::path rootPath (outputFolder_);
-  if (!boost::filesystem::exists(rootPath)) {
-    boost::system::error_code returnedError;
-    boost::filesystem::create_directories( rootPath, returnedError );
-    
-    if (!boost::filesystem::exists(rootPath)) {
-      std::cerr << "Error: could not create output directory at " << outputFolder_ << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
+  Globals::createDirectory(rootPath);
   
   switch (mode_) {
     case BATCH: {
