@@ -10,7 +10,7 @@ If you prefer to compile from source, or are running on a different operating sy
 
 ### Example
 
-An example, including spectrum files and a shell script, can be downloaded from http://kaell.org/files/maracluster_sample.zip.
+An example, including spectrum files and a shell script, can be downloaded from [Zenodo](https://zenodo.org/records/15724167/files/maracluster_sample.zip?download=1).
 
 ### Graphical User Interface (GUI)
 
