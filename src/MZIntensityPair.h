@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cstdint>
 
 #include "pwiz/data/msdata/MSData.hpp"
 

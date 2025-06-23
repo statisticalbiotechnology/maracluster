@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <numeric>
 #include <boost/foreach.hpp>
+#include <cstdint>
+
 #include "pwiz/data/msdata/MSData.hpp"
 #include "pwiz/data/msdata/MSDataFile.hpp"
 #include "pwiz/data/common/cv.hpp"

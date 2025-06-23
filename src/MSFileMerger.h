@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <map>
 #include <cstdio>
+#include <cstdint>
 
 #include "pwiz/data/msdata/MSDataFile.hpp"
 #include "pwiz/data/msdata/MSDataMerger.hpp"

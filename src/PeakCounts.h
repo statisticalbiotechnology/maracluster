@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include <cstdint>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
