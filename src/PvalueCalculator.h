@@ -36,6 +36,7 @@ Adapted from https://code.google.com/p/in-silico-mass-fingerprinting/
 #include <cstdlib>
 #include <stdexcept>
 
+#include <boost/assert.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 

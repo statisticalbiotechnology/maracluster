@@ -43,7 +43,7 @@ if [[ $(rpm -q --queryformat '%{VERSION}' centos-release) < 8 ]]; then
   pre="scl enable devtoolset-7 --"
 fi
 
-if [ ! -d ${build_dir}/tools/proteowizard ]; then
+if [ ! -f ${build_dir}/tools/pwiz_successful.txt ]; then
   ${pre} ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 

@@ -41,7 +41,9 @@ CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is neede
 mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
-if [ ! -d ${build_dir}/tools/proteowizard ]; then
+#-----Install ProteoWziard-------
+
+if [ ! -f ${build_dir}/tools/pwiz_successful.txt ]; then
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
 

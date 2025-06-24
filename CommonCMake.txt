@@ -104,9 +104,9 @@ else()
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
-  add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+  add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 else()
-  add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
+  add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=1)
 endif()
 
 if(MINGW OR WIN32 OR APPLE)
