@@ -20,7 +20,7 @@ jobs:
 #    - name: test
 #      run: cd ../my_build/maracluster && sudo make install && make test ARGS="-V"
     - name: Upload packages
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: ubuntu-packages
         path: ../my_rel
@@ -37,7 +37,7 @@ jobs:
     - name: configure_and_make
       run: ./admin/builders/fedora64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
     - name: Upload packages
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: fedora-packages
         path: ../my_rel
@@ -54,7 +54,7 @@ jobs:
     - name: configure_and_make
       run: ./admin/builders/centos64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
     - name: Upload packages
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: centos-packages
         path: ../my_rel
@@ -71,7 +71,7 @@ jobs:
     - name: configure_and_make
       run: ./admin/builders/tarball64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
     - name: Upload packages
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: tarball-packages
         path: ../my_rel
@@ -85,7 +85,7 @@ jobs:
     - name: configure_and_make
       run: admin/builders/osx64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
     - name: Upload packages
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: osx-packages
         path: ../my_rel
@@ -106,7 +106,7 @@ jobs:
         ECHO %base_dir%
         CALL maracluster\admin\builders\nativew64_build.bat -s %base_dir% -r %base_dir%\my_rel -b %base_dir%\my_build -g
     - name: Upload packages
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: win64-packages
         path: ..\my_rel
@@ -117,7 +117,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/rel-')
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
     - run : |
         ls -R
         mkdir packages
