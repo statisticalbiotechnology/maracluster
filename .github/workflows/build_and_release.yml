@@ -44,10 +44,8 @@ jobs:
 
   build-centos:
     runs-on: ubuntu-latest
-    container: 'quay.io/centoshyperscale/centos:stream8'
+    container: 'rockylinux:8'
     steps:
-    - name: install tar
-      run: dnf install -y tar
     - uses: actions/checkout@v2
     - name: preinstall
       run: dnf install -y sudo scl-utils wget make
