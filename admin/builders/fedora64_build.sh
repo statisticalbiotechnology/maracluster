@@ -35,10 +35,6 @@ CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is neede
 mkdir -p ${build_dir}/tools
 cd ${build_dir}/tools
 
-ls /usr/lib64/libstdc++.*
-ls /usr/lib64/libm.*
-ls /usr/lib64/libc.*
-
 if [ ! -f ${build_dir}/tools/pwiz_successful.txt ]; then
   ${src_dir}/maracluster/admin/builders/install_proteowizard.sh ${build_dir}/tools
 fi
