@@ -46,8 +46,6 @@ jobs:
     runs-on: ubuntu-latest
     container: 'quay.io/centoshyperscale/centos:stream8'
     steps:
-    - name: install dnf
-      run: microdnf install -y dnf
     - name: install tar
       run: dnf install -y tar
     - uses: actions/checkout@v2
