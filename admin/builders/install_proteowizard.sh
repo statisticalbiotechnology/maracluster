@@ -1,6 +1,3 @@
-# exit on error
-set -e
-
 tools_dir=$1
 
 # change directory to the <build_dir>/tools directory
@@ -60,6 +57,13 @@ echo "Building ProteoWizard and Boost, this may take some time.."
                 libraries \
                 > ../pwiz_installation.log 2>&1
 
+status=$?
+if [ $status -ne 0 ]; then
+    echo "❌ Build failed. Showing log:"
+    cat ../pwiz_installation.log
+    exit $status
+fi
+
 # manually copy some libraries and headers used by maracluster but not by proteowizard
 find build-*-x86_64/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
 find build-*-x86_64/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -I{} cp {} ../lib
@@ -68,7 +72,6 @@ rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  librar
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
 rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_86_0/boost/ ../include/boost
 
-cat ../pwiz_installation.log
 ls ../lib
 
 # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
