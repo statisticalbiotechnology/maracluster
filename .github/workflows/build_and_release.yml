@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: apt update && apt -y install sudo wget rsync g++ make cmake
+      run: apt update && apt -y install sudo wget rsync g++ make cmake lbzip2
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make
@@ -65,7 +65,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: apt update && apt -y install sudo wget rsync g++ make cmake
+      run: apt update && apt -y install sudo wget rsync g++ make cmake lbzip2
     - name: create_dirs
       run: mkdir -p ../my_rel ../my_build
     - name: configure_and_make
