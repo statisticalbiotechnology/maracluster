@@ -31,7 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: dnf install -y wget rsync make gcc-c++ glibc-devel
+      run: dnf install -y wget rsync make gcc-c++ glibc-devel glibc-static libstdc++-static
     - name: create_dirs
       run: mkdir -p my_rel my_build
     - name: configure_and_make
