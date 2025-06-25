@@ -6,6 +6,8 @@ cd ${tools_dir}
 echo "Download source code for ProteoWizard from their TeamCity server"
 wget --no-check-certificate --no-verbose -O bt81.xml https://proteowizard.sourceforge.io/releases/bt81.xml
 # without-tv: without tests and vendor reader
+grep 'without-tv' bt81.xml
+grep 'without-tv-' bt81.xml
 read BUILD_ID FILE_NAME < <(grep 'without-tv' bt81.xml | sed -n 's/.*id:\([0-9]*\)\/artifacts\/content\/\(.*\.tar\.bz2\).*/\1 \2/p')
 
 if [ ! -f ${tools_dir}/${FILE_NAME} ]; then
@@ -27,15 +29,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 echo "Building ProteoWizard and Boost, this may take some time.."
-
-ls /__w/maracluster
-ls /__w/maracluster/my_build
-ls /__w/maracluster/my_build/tools
-ls /__w/maracluster/my_build/tools/proteowizard
-ls /__w/maracluster/my_build/tools/proteowizard/libraries
-ls /__w/maracluster/my_build/tools/proteowizard/libraries/boost-build
-ls /__w/maracluster/my_build/tools/proteowizard/libraries/boost-build/src
-ls /__w/maracluster/my_build/tools/proteowizard/libraries/boost-build/src/engine
 
 # if you have more than 4GB of memory available, you could try to use more than 2 cores to speed things up
 # add -d2 flag to get verbose output with compiler and linker commands
