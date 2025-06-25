@@ -28,6 +28,15 @@ fi
 
 echo "Building ProteoWizard and Boost, this may take some time.."
 
+ls /__w/maracluster
+ls /__w/maracluster/my_build
+ls /__w/maracluster/my_build/tools
+ls /__w/maracluster/my_build/tools/proteowizard
+ls /__w/maracluster/my_build/tools/proteowizard/libraries
+ls /__w/maracluster/my_build/tools/proteowizard/libraries/boost-build
+ls /__w/maracluster/my_build/tools/proteowizard/libraries/boost-build/src
+ls /__w/maracluster/my_build/tools/proteowizard/libraries/boost-build/src/engine
+
 # if you have more than 4GB of memory available, you could try to use more than 2 cores to speed things up
 # add -d2 flag to get verbose output with compiler and linker commands
 ./quickbuild.sh ${toolset} -j2 --prefix=../ \
