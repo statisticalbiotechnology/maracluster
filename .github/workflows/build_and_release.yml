@@ -46,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     container: 'quay.io/centoshyperscale/centos:stream8'
     steps:
+    - name: install tar
+      run: yum install -y tar
     - uses: actions/checkout@v2
     - name: preinstall
       run: yum install -y sudo scl-utils wget make
