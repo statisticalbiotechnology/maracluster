@@ -111,6 +111,37 @@ jobs:
         name: win64-packages
         path: ..\my_rel
 
+  pre-release:
+    runs-on: ubuntu-latest
+    needs: [build-ubuntu, build-centos, build-fedora, build-tarball, build-osx, build-win64]
+    if: always()
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+
+      - name: Package artifacts
+        run: |
+          mkdir -p packages
+          for dir in ubuntu-packages centos-packages fedora-packages tarball-packages osx-packages win64-packages; do
+            if [ -d "$dir" ]; then
+              case "$dir" in
+                *osx*|*win64*) zip -j -r "packages/${dir%*-packages}.zip" "$dir"/* ;;
+                *) tar -czvf "packages/${dir%*-packages}.tar.gz" -C "$dir" $(ls "$dir") ;;
+              esac
+            fi
+          done
+
+      - name: Upload binaries to ci-build-latest pre-release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: packages/*
+          tag: ci-build-latest
+          overwrite: true
+          file_glob: true
+          prerelease: true
+
   release:
     runs-on: ubuntu-latest
     needs: [build-ubuntu, build-centos, build-fedora, build-tarball, build-osx, build-win64]
