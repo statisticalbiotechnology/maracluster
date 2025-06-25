@@ -1,6 +1,3 @@
-# exit on error
-set -e
-
 tools_dir=$1
 
 # change directory to the <build_dir>/tools directory
@@ -9,7 +6,8 @@ cd ${tools_dir}
 echo "Download source code for ProteoWizard from their TeamCity server"
 wget --no-check-certificate --no-verbose -O bt81.xml https://proteowizard.sourceforge.io/releases/bt81.xml
 # without-tv: without tests and vendor reader
-read BUILD_ID FILE_NAME < <(grep 'without-tv' bt81.xml | sed -n 's/.*id:\([0-9]*\)\/artifacts\/content\/\(.*\.tar\.bz2\).*/\1 \2/p')
+# the bt81.xml is formatted to contain all content on a single line, so we use a regex that matches the filename until .tar.bz2 but before the closing xml tag ("[^<]*")
+read BUILD_ID FILE_NAME < <(sed -n 's/.*id:\([0-9]*\)\/artifacts\/content\/\(pwiz-src-without-tv-[^<]*\.tar\.bz2\).*/\1 \2/p' bt81.xml)
 
 if [ ! -f ${tools_dir}/${FILE_NAME} ]; then
   wget --no-check-certificate --no-verbose -O ${FILE_NAME} https://mc-tca-01.s3.us-west-2.amazonaws.com/ProteoWizard/bt81/${BUILD_ID}/${FILE_NAME}
@@ -60,6 +58,13 @@ echo "Building ProteoWizard and Boost, this may take some time.."
                 libraries \
                 > ../pwiz_installation.log 2>&1
 
+status=$?
+if [ $status -ne 0 ]; then
+    echo "❌ Build failed. Showing log:"
+    cat ../pwiz_installation.log
+    exit $status
+fi
+
 # manually copy some libraries and headers used by maracluster but not by proteowizard
 find build-*-x86_64/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
 find build-*-x86_64/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -I{} cp {} ../lib
@@ -68,7 +73,6 @@ rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  librar
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
 rsync -ap --include "*/" --include '*.ipp' --exclude '*' libraries/boost_1_86_0/boost/ ../include/boost
 
-cat ../pwiz_installation.log
 ls ../lib
 
 # the boost libraries' naming convention does not always work well with cmake, so we force a more simple naming convention
