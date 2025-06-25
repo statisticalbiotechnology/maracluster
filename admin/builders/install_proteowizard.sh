@@ -6,9 +6,8 @@ cd ${tools_dir}
 echo "Download source code for ProteoWizard from their TeamCity server"
 wget --no-check-certificate --no-verbose -O bt81.xml https://proteowizard.sourceforge.io/releases/bt81.xml
 # without-tv: without tests and vendor reader
-grep 'without-tv' bt81.xml
-grep 'without-tv-' bt81.xml
-read BUILD_ID FILE_NAME < <(grep 'without-tv' bt81.xml | sed -n 's/.*id:\([0-9]*\)\/artifacts\/content\/\(.*\.tar\.bz2\).*/\1 \2/p')
+# the bt81.xml is formatted to contain all content on a single line, so we use a regex that matches the filename until .tar.bz2 but before the closing xml tag ("[^<]*")
+read BUILD_ID FILE_NAME < <(sed -n 's/.*id:\([0-9]*\)\/artifacts\/content\/\(pwiz-src-without-tv-[^<]*\.tar\.bz2\).*/\1 \2/p' bt81.xml)
 
 if [ ! -f ${tools_dir}/${FILE_NAME} ]; then
   wget --no-check-certificate --no-verbose -O ${FILE_NAME} https://mc-tca-01.s3.us-west-2.amazonaws.com/ProteoWizard/bt81/${BUILD_ID}/${FILE_NAME}
