@@ -27,20 +27,20 @@ jobs:
 
   build-fedora:
     runs-on: ubuntu-latest
-    container: 'fedora:35'
+    container: 'fedora:41'
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: dnf install -y wget rsync make
+      run: dnf install -y wget rsync make gcc-c++ glibc-devel
     - name: create_dirs
-      run: mkdir -p ../my_rel ../my_build
+      run: mkdir -p my_rel my_build
     - name: configure_and_make
-      run: ./admin/builders/fedora64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
+      run: ./admin/builders/fedora64_build.sh -s `pwd`/.. -r `pwd`/my_rel -b `pwd`/my_build -g
     - name: Upload packages
       uses: actions/upload-artifact@v4
       with:
         name: fedora-packages
-        path: ../my_rel
+        path: my_rel
 
   build-centos:
     runs-on: ubuntu-latest
