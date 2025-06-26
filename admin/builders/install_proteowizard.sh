@@ -19,12 +19,10 @@ fi
 cd proteowizard
 
 # undo position independent code fix introduced here: https://github.com/ProteoWizard/pwiz/pull/1980
-sed -i 's/ -no-pie -fno-pie//g' Jamroot.jam
-
-
-toolset=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  toolset="toolset=clang"
+if [[ "$OSTYPE" == "darwin" ]]; then
+    sed -i '' 's/ -no-pie -fno-pie//g' Jamroot.jam
+else
+    sed -i 's/ -no-pie -fno-pie//g' Jamroot.jam
 fi
 
 echo "Building ProteoWizard and Boost, this may take some time.."
