@@ -57,9 +57,11 @@ if [ $status -ne 0 ]; then
     echo "❌ Build failed with status $status. Showing log:"
     cat ../pwiz_installation.log
     exit $status
+else
+    echo "✅ Build succeeded."
 fi
 
-ls
+echo "Updating Proteowizard and Boost libraries and include files."
 
 # manually copy some libraries and headers used by maracluster but not by proteowizard
 find build-*/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
@@ -87,3 +89,4 @@ tar -xzf boost_unordered.tar.gz
 rsync -ap --include "*/" --include "*.hpp" --include '*.ipp' --exclude '*' unordered-boost-1.86.0/include/boost/ include/boost
 
 touch pwiz_successful.txt
+echo "✅ Update libraries and include files succeeded."
