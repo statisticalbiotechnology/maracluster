@@ -44,22 +44,20 @@ setlocal enabledelayedexpansion
 :: Macro to download a file using PowerShell
 :downloadfile
 echo Downloading %1 to %2
-PowerShell -Command ^
-  "$wc = New-Object System.Net.WebClient; ^
-   $wc.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'; ^
-   [Net.ServicePointManager]::SecurityProtocol = 'Tls12'; ^
-   $wc.DownloadFile('%1', '%2')"
+PowerShell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = 'Tls12'; (New-Object Net.WebClient).Headers.Add('User-Agent', 'Mozilla/5.0'); (New-Object Net.WebClient).DownloadFile('%1', '%2')"
 exit /B
+
 
 :: Macro to extract BUILD_ID and FILE_NAME using PowerShell regex
 :extractbuildinfo
 for /f "tokens=1,2 delims=|" %%A in ('PowerShell -Command ^
   "$content = Get-Content -Raw ''bt81.xml''; ^
    if ($content -match ''id:(\d+)/artifacts/content/(pwiz-src-without-t-[^<]+?\.tar\.bz2)'') { ^
-     Write-Output \"$($matches[1])|$($matches[2])\" }"' ^
+     Write-Host \"$($matches[1])|$($matches[2])\" }"' ^
 ) do (
-    set "PWIZ_BUILD_ID=%%A"
-    set "PWIZ_FILE_NAME=%%B"
+    set PWIZ_BUILD_ID=%%A
+    set PWIZ_FILE_NAME=%%B
 )
+
 exit /B
 
