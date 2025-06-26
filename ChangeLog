@@ -1,3 +1,8 @@
+v1.04.1
+* Updated all GH action builds to recent OS versions
+* Fixed missing source file pointers in merged files (#25)
+* Update link to sample dataset in ReadMe.md
+
 v1.04
 * Added --addSpecIds flag which adds a column to the output files with the scan id/title (#26)
 * Fixed parsing of scan number for mgf files (#22)
