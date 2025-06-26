@@ -84,14 +84,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: create_dirs
-      run: mkdir -p ../my_rel ../my_build
+      run: mkdir -p my_rel my_build
     - name: configure_and_make
-      run: admin/builders/osx64_build.sh -s `pwd`/.. -r `pwd`/../my_rel -b `pwd`/../my_build -g
+      run: admin/builders/osx64_build.sh -s `pwd`/.. -r `pwd`/my_rel -b `pwd`/my_build -g
     - name: Upload packages
       uses: actions/upload-artifact@v4
       with:
         name: osx-packages
-        path: ../my_rel
+        path: my_rel
 
   build-win64:
     runs-on: windows-latest

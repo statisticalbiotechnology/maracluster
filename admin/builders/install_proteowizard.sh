@@ -19,11 +19,7 @@ fi
 cd proteowizard
 
 # undo position independent code fix introduced here: https://github.com/ProteoWizard/pwiz/pull/1980
-if [[ "$OSTYPE" == "darwin" ]]; then
-    sed -i '' 's/ -no-pie -fno-pie//g' Jamroot.jam
-else
-    sed -i 's/ -no-pie -fno-pie//g' Jamroot.jam
-fi
+sed -i.bak 's/ -no-pie -fno-pie//g' Jamroot.jam
 
 echo "Building ProteoWizard and Boost, this may take some time.."
 
@@ -58,7 +54,7 @@ echo "Building ProteoWizard and Boost, this may take some time.."
 
 status=$?
 if [ $status -ne 0 ]; then
-    echo "❌ Build failed. Showing log:"
+    echo "❌ Build failed with status $status. Showing log:"
     cat ../pwiz_installation.log
     exit $status
 fi
