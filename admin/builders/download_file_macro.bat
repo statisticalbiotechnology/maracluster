@@ -1,3 +1,6 @@
+@echo off
+goto :eof
+
 :: Macro to download a file using curl or PowerShell
 :downloadfile
 SET URL=%~1
