@@ -1,8 +1,4 @@
-@echo off
-goto :eof
-
-:: Macro to download a file using curl or PowerShell
-:downloadfile
+:: download a file using curl or PowerShell
 SET URL=%~1
 SET OUT=%~2
 
@@ -13,4 +9,3 @@ IF %ERRORLEVEL%==0 (
 ) ELSE (
     PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%URL%','%OUT%')"
 )
-EXIT /B

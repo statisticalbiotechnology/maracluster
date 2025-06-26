@@ -11,8 +11,6 @@
 
 @echo off
 
-call %~dp0\download_file_macro.bat >NUL
-
 set SRC_DIR=%~dp0..\..\..\
 set BUILD_DIR=%SRC_DIR%\build\win32
 set RELEASE_DIR=%SRC_DIR%\release\win32
@@ -52,7 +50,7 @@ if not exist "%RELEASE_DIR%" (md "%RELEASE_DIR%")
 set ZIP_DIR=%INSTALL_DIR%\%ZIP_BASE%
 if not exist "%ZIP_DIR%" (
   echo Downloading and installing 7-Zip
-  call :downloadfile %ZIP_URL% %INSTALL_DIR%\7zip.exe
+  call %~dp0\download_file.bat %ZIP_URL% %INSTALL_DIR%\7zip.exe
   "%INSTALL_DIR%\7zip.exe" /S /D=%ZIP_DIR%
 )
 set ZIP_EXE="%ZIP_DIR%\7z.exe"
@@ -60,7 +58,7 @@ set ZIP_EXE="%ZIP_DIR%\7z.exe"
 set CMAKE_DIR=%INSTALL_DIR%\%CMAKE_BASE%
 if not exist "%CMAKE_DIR%" (
   echo Downloading and installing CMake
-  call :downloadfile %CMAKE_URL% %INSTALL_DIR%\cmake.zip
+  call %~dp0\download_file.bat %CMAKE_URL% %INSTALL_DIR%\cmake.zip
   %ZIP_EXE% x "%INSTALL_DIR%\cmake.zip" -o"%INSTALL_DIR%" -aoa -xr!doc > NUL
 )
 set CMAKE_EXE="%CMAKE_DIR%\bin\cmake.exe"
@@ -72,11 +70,11 @@ if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
     ::: use multiple cores with jom instead of single-core nmake :::
     echo Downloading Jom
-    call :downloadfile %JOM_URL% %INSTALL_DIR%\jom.zip
+    call %~dp0\download_file.bat %JOM_URL% %INSTALL_DIR%\jom.zip
     %ZIP_EXE% x "%INSTALL_DIR%\jom.zip" -o"%INSTALL_DIR%\jom" -aoa > NUL
     
     echo Downloading Qt base
-    call :downloadfile %QT_URL% %INSTALL_DIR%\qt.zip
+    call %~dp0\download_file.bat %QT_URL% %INSTALL_DIR%\qt.zip
     %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa > NUL
     
     cd /D "%QT_DIR%"
@@ -99,7 +97,7 @@ if not "%NO_GUI%" == "true" (
 set NSIS_DIR=%INSTALL_DIR%\nsis
 if not exist "%NSIS_DIR%" (
   echo Downloading and installing NSIS installer
-  call :downloadfile "%NSIS_URL%" %INSTALL_DIR%\nsis.exe
+  call %~dp0\download_file.bat "%NSIS_URL%" %INSTALL_DIR%\nsis.exe
   "%INSTALL_DIR%\nsis.exe" /S /D=%INSTALL_DIR%\nsis
 )
 setlocal

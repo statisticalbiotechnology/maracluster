@@ -1,5 +1,3 @@
-call %~dp0\download_file_macro.bat >NUL
-
 ::: Centralized place for urls and files for all windows builders ...
 ::: please do not change compression type in urls, since decompression is
 ::: hardcoded in the respective buiding scripts
@@ -17,7 +15,7 @@ set CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v%CMAKE_VERSION
 ::: https://teamcity.labkey.org/viewType.html?buildTypeId=bt81 :::
 ::: without-t = without tests :::
 set PWIZ_VERSION_URL=https://proteowizard.sourceforge.io/releases/bt81.xml
-call :downloadfile %PWIZ_VERSION_URL% bt81.xml
+call %~dp0\download_file.bat %PWIZ_VERSION_URL% bt81.xml
 call :extractbuildinfo
 echo ✅ PWIZ_BUILD_ID: %PWIZ_BUILD_ID%
 echo ✅ PWIZ_FILE_NAME: %PWIZ_FILE_NAME%

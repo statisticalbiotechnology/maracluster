@@ -1,8 +1,6 @@
-call %~dp0\download_file_macro.bat >NUL
-
 set BUILD_TARGET=%1
 
-call :downloadfile https://github.com/microsoft/vswhere/releases/download/2.8.4/vswhere.exe vswhere.exe
+call %~dp0\download_file.bat https://github.com/microsoft/vswhere/releases/download/2.8.4/vswhere.exe vswhere.exe
 for /f "usebackq tokens=*" %%i in (`.\vswhere.exe -legacy -latest  -property installationPath`) do (
   set MSVC_INSTALL_DIR=%%i
 )
