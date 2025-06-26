@@ -51,7 +51,7 @@ jobs:
       run: |
         dnf install -y dnf-plugins-core
         dnf config-manager --set-enabled powertools
-        dnf install -y sudo scl-utils wget make glibc-static
+        dnf install -y sudo scl-utils wget make glibc-static libstdc++-static
     - name: create_dirs
       run: mkdir -p my_rel my_build
     - name: configure_and_make
