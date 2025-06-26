@@ -57,7 +57,7 @@ set ZIP_DIR=%INSTALL_DIR%\%ZIP_BASE%
 if not exist "%ZIP_DIR%" (
   echo Downloading and installing 7-Zip
   call :downloadfile %ZIP_URL% %INSTALL_DIR%\7zip.exe
-  "%INSTALL_DIR%\7zip.exe" /S /D=%INSTALL_DIR%\7zip
+  "%INSTALL_DIR%\7zip.exe" /S /D=%ZIP_DIR%
 )
 set ZIP_EXE="%ZIP_DIR%\7z.exe"
 

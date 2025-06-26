@@ -3,8 +3,8 @@
 ::: hardcoded in the respective buiding scripts
 
 ::: 7-zip
-set ZIP_BASE=7zi
-set ZIP_URL=https://sourceforge.net/projects/sevenzip/files/7-Zip/24.09/7z2409-x64.exe/download
+set ZIP_BASE=7zip
+set ZIP_URL=https://sourceforge.net/projects/sevenzip/files/7-Zip/24.09/7z2409.exe/download
 
 ::: CMake
 set CMAKE_VERSION=3.23.1
