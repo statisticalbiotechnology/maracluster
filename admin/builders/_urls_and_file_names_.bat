@@ -1,4 +1,4 @@
-call download_file_macro.bat >NUL
+call %~dp0\download_file_macro.bat >NUL
 
 ::: Centralized place for urls and files for all windows builders ...
 ::: please do not change compression type in urls, since decompression is

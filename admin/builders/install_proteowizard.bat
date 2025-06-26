@@ -1,4 +1,4 @@
-call download_file_macro.bat >NUL
+call %~dp0\download_file_macro.bat >NUL
 
 set BUILD_TARGET=%1
 if "%BUILD_TARGET%" == "32bit" (

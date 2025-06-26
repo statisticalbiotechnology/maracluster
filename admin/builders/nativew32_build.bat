@@ -11,7 +11,7 @@
 
 @echo off
 
-call download_file_macro.bat >NUL
+call %~dp0\download_file_macro.bat >NUL
 
 set SRC_DIR=%~dp0..\..\..\
 set BUILD_DIR=%SRC_DIR%\build\win32
