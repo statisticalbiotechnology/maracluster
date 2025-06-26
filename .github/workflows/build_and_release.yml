@@ -48,7 +48,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: preinstall
-      run: dnf install -y sudo scl-utils wget make
+      run: dnf install -y sudo scl-utils wget make glibc-static
     - name: create_dirs
       run: mkdir -p my_rel my_build
     - name: configure_and_make
