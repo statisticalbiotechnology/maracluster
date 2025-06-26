@@ -13,14 +13,15 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 @echo off
-echo %~dp0
+
 set SRC_DIR=%~dp0..\..\..\
+set SCRIPT_DIR=%~dp0
 set BUILD_DIR=%SRC_DIR%\build\win64
 set RELEASE_DIR=%SRC_DIR%\release\win64
 set BUILD_TYPE=Release
 set NO_GUI=false
 set VENDOR=false
-echo %~dp0
+
 :parse
 IF "%~1"=="" GOTO endparse
 IF "%~1"=="-s" (set SRC_DIR=%~2)
@@ -35,33 +36,28 @@ GOTO parse
 del "%BUILD_DIR%\maracluster\mar*.exe" >nul 2>&1
 del "%BUILD_DIR%\maracluster-vendor-support\mar*.exe" >nul 2>&1
 del "%BUILD_DIR%\maracluster-gui\mar*.exe" >nul 2>&1
-echo %~dp0
+
 call %SRC_DIR%\maracluster\admin\builders\_init_msvc_.bat 64bit
 if %ERRORLEVEL% NEQ 0 (
   EXIT /B %ERRORLEVEL%
 )
-echo %~dp0
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::::: START INSTALL DEPENDENCIES ::::::::::::::::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-echo %~dp0
-
 setlocal
 
 call %SRC_DIR%\maracluster\admin\builders\_urls_and_file_names_.bat
-echo %~dp0
 
 set INSTALL_DIR=%BUILD_DIR%\tools
 if not exist "%INSTALL_DIR%" (md "%INSTALL_DIR%")
 if not exist "%RELEASE_DIR%" (md "%RELEASE_DIR%")
 
-echo %~dp0
 set ZIP_DIR=%INSTALL_DIR%\%ZIP_BASE%
 if not exist "%ZIP_DIR%" (
   echo Downloading and installing 7-Zip
-  echo %~dp0
-  call %~dp0\download_file.bat %ZIP_URL% %INSTALL_DIR%\7zip.exe
+  call %SCRIPT_DIR%\download_file.bat %ZIP_URL% %INSTALL_DIR%\7zip.exe
   "%INSTALL_DIR%\7zip.exe" /S /D=%ZIP_DIR%
 )
 set ZIP_EXE="%ZIP_DIR%\7z.exe"
@@ -69,7 +65,7 @@ set ZIP_EXE="%ZIP_DIR%\7z.exe"
 set CMAKE_DIR=%INSTALL_DIR%\%CMAKE_BASE%
 if not exist "%CMAKE_DIR%" (
   echo Downloading and installing CMake
-  call %~dp0\download_file.bat %CMAKE_URL% %INSTALL_DIR%\cmake.zip
+  call %SCRIPT_DIR%\download_file.bat %CMAKE_URL% %INSTALL_DIR%\cmake.zip
   %ZIP_EXE% x "%INSTALL_DIR%\cmake.zip" -o"%INSTALL_DIR%" -aoa -xr!doc > NUL
 )
 set CMAKE_EXE="%CMAKE_DIR%\bin\cmake.exe"
@@ -81,11 +77,11 @@ if not "%NO_GUI%" == "true" (
   if not exist "%INSTALL_DIR%\Qt-dynamic" (
     ::: use multiple cores with jom instead of single-core nmake :::
     echo Downloading Jom
-    call %~dp0\download_file.bat %JOM_URL% %INSTALL_DIR%\jom.zip
+    call %SCRIPT_DIR%\download_file.bat %JOM_URL% %INSTALL_DIR%\jom.zip
     %ZIP_EXE% x "%INSTALL_DIR%\jom.zip" -o"%INSTALL_DIR%\jom" -aoa > NUL
     
     echo Downloading Qt base
-    call %~dp0\download_file.bat %QT_URL% %INSTALL_DIR%\qt.zip
+    call %SCRIPT_DIR%\download_file.bat %QT_URL% %INSTALL_DIR%\qt.zip
     %ZIP_EXE% x "%INSTALL_DIR%\qt.zip" -o"%INSTALL_DIR%" -aoa > NUL
     
     cd /D "%QT_DIR%"
@@ -108,7 +104,7 @@ if not "%NO_GUI%" == "true" (
 set NSIS_DIR=%INSTALL_DIR%\nsis
 if not exist "%NSIS_DIR%" (
   echo Downloading and installing NSIS installer
-  call %~dp0\download_file.bat "%NSIS_URL%" %INSTALL_DIR%\nsis.exe
+  call %SCRIPT_DIR%\download_file.bat "%NSIS_URL%" %INSTALL_DIR%\nsis.exe
   "%INSTALL_DIR%\nsis.exe" /S /D=%INSTALL_DIR%\nsis
 )
 setlocal
