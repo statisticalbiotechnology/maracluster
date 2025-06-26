@@ -25,25 +25,29 @@ if [[ ! -d /Applications/XCode.app ]]
     exit 1
 fi
 
-package_manager_installed=true
-if [[ -d /opt/local/var/macports ]]
-  then
-    echo "[ Package manager ] : MacPorts "
+package_manager_installed=false
+if [[ -d /opt/local/var/macports ]]; then
+    echo "[ Package manager ] : MacPorts"
     package_manager="sudo port"
     other_packages="gnutar wget coreutils libomp cmake"
-elif [[ -f ${HOME}/bin/brew ]]
-  then
-    echo "[ Package manager ] : Homebrew "
-    package_manager=$HOME/bin/brew
-    other_packages="gnu-tar wget coreutils libomp cmake"
-elif [[ -f /usr/local/bin/brew ]]
-  then
-    echo "[ Package manager ] : Homebrew "
-    package_manager="brew"
-    ${package_manager} update || true # brew.rb raises an error on the vagrant box, just ignore it
-    other_packages="gnu-tar wget coreutils libomp cmake"
+    package_manager_installed=true
 else
-    package_manager_installed=false
+    brew_paths=(
+        "$HOME/bin/brew"
+        "/opt/homebrew/bin/brew"
+        "/usr/local/bin/brew"
+    )
+
+    for path in "${brew_paths[@]}"; do
+        if [[ -x "$path" ]]; then
+            echo "[ Package manager ] : Homebrew"
+            package_manager="$path"
+            other_packages="gnu-tar wget coreutils libomp cmake"
+            "$package_manager" update || true
+            package_manager_installed=true
+            break
+        fi
+    done
 fi
 
 if [ "$package_manager_installed" == false ]
