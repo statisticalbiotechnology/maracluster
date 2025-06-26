@@ -39,25 +39,22 @@ set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS%203/3.11/nsis-3.11
 
 EXIT /B
 
-setlocal enabledelayedexpansion
-
-:: Macro to download a file using PowerShell
+:: Macro to download a file using curl or PowerShell
 :downloadfile
-echo Downloading %1 to %2
-PowerShell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = 'Tls12'; (New-Object Net.WebClient).Headers.Add('User-Agent', 'Mozilla/5.0'); (New-Object Net.WebClient).DownloadFile('%1', '%2')"
-exit /B
-
+where curl >nul 2>&1
+IF %ERRORLEVEL%==0 (
+    curl -L "%~1" -o "%~2"
+) ELSE (
+    PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
+)
+EXIT /B
 
 :: Macro to extract BUILD_ID and FILE_NAME using PowerShell regex
 :extractbuildinfo
-for /f "tokens=1,2 delims=|" %%A in ('PowerShell -Command ^
-  "$content = Get-Content -Raw ''bt81.xml''; ^
-   if ($content -match ''id:(\d+)/artifacts/content/(pwiz-src-without-t-[^<]+?\.tar\.bz2)'') { ^
-     Write-Host \"$($matches[1])|$($matches[2])\" }"' ^
-) do (
-    set PWIZ_BUILD_ID=%%A
-    set PWIZ_FILE_NAME=%%B
-)
-
-exit /B
-
+::: Step 1: Run PowerShell and output extracted strings to temp files
+PowerShell "$content = Get-Content -Raw 'bt81.xml'; if ($content -match 'id:(\d+)/artifacts/content/(pwiz-src-without-t-[^<]+?\.tar\.bz2)') { $matches[1] | Out-File -Encoding ASCII 'build_id.tmp' }"
+PowerShell "$content = Get-Content -Raw 'bt81.xml'; if ($content -match 'id:(\d+)/artifacts/content/(pwiz-src-without-t-[^<]+?\.tar\.bz2)') { $matches[2] | Out-File -Encoding ASCII 'file_name.tmp' }"
+::: Step 2: Read from the temp files into batch variables
+set /p PWIZ_BUILD_ID=<build_id.tmp
+set /p PWIZ_FILE_NAME=<file_name.tmp
+EXIT /B
