@@ -81,6 +81,8 @@ jobs:
 
   build-osx:
     runs-on: macos-latest
+    env:
+      JAVA_HOME: ""
     steps:
     - uses: actions/checkout@v2
     - name: create_dirs
