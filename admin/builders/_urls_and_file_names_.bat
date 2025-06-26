@@ -25,9 +25,9 @@ set PWIZ_URL=https://mc-tca-01.s3.us-west-2.amazonaws.com/ProteoWizard/bt81/%PWI
 set BOOST_BASE=boost_1_86_0
 set ZLIB_BASE=zlib-1.2.3
 
-::: Boost asio library
+::: Boost asio library (note the additional % before %20 to prevent interpretation as a variable)
 set BOOST_ASIO_BASE=boost_asio_1_30_2
-set BOOST_ASIO_URL=https://sourceforge.net/projects/asio/files/asio/1.30.2%20(Stable)/%BOOST_ASIO_BASE%.zip/download
+set BOOST_ASIO_URL=https://sourceforge.net/projects/asio/files/asio/1.30.2%%20(Stable)/%BOOST_ASIO_BASE%.zip/download
 
 ::: Boost unordered library
 set BOOST_UNORDERED_BASE=unordered-boost-1.86.0
@@ -38,8 +38,8 @@ set QT_BASE=qtbase-opensource-src-5.9.9
 set QT_URL=https://download.qt.io/archive/qt/5.9/5.9.9/submodules/%QT_BASE%.zip
 set JOM_URL=http://download.qt.io/official_releases/jom/jom_1_1_3.zip
 
-::: NSIS
-set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS%203/3.11/nsis-3.11-setup.exe/download
+::: NSIS (note the additional % before %20 to prevent interpretation as a variable)
+set NSIS_URL=https://sourceforge.net/projects/nsis/files/NSIS%%203/3.11/nsis-3.11-setup.exe/download
 
 EXIT /B
 
