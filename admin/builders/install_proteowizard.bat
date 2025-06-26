@@ -112,5 +112,11 @@ EXIT /B
 
 
 :downloadfile
-PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
+echo Downloading %1 to %2
+where curl >nul 2>&1
+IF %ERRORLEVEL%==0 (
+    curl -L "%~1" -o "%~2"
+) ELSE (
+    PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
+)
 EXIT /B

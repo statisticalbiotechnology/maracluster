@@ -41,6 +41,7 @@ EXIT /B
 
 :: Macro to download a file using curl or PowerShell
 :downloadfile
+echo Downloading %1 to %2
 where curl >nul 2>&1
 IF %ERRORLEVEL%==0 (
     curl -L "%~1" -o "%~2"
@@ -48,6 +49,7 @@ IF %ERRORLEVEL%==0 (
     PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
 )
 EXIT /B
+
 
 :: Macro to extract BUILD_ID and FILE_NAME using PowerShell regex
 :extractbuildinfo
