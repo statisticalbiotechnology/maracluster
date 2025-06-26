@@ -108,7 +108,7 @@ jobs:
       run: |
         SET base_dir=%cd%
         ECHO %base_dir%
-        CALL maracluster\admin\builders\nativew64_build.bat -s %base_dir%\.. -r %base_dir%\my_rel -b %base_dir%\my_build -g
+        CALL admin\builders\nativew64_build.bat -s %base_dir%\.. -r %base_dir%\my_rel -b %base_dir%\my_build -g
     - name: Upload packages
       uses: actions/upload-artifact@v4
       with:
