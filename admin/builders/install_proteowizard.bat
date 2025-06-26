@@ -28,6 +28,7 @@ if not exist "%PWIZ_DIR%\lib" (
                 pwiz/data/msdata//pwiz_data_msdata ^
                 pwiz/data/msdata//pwiz_data_msdata_version ^
                 pwiz/data/msdata/mz5//pwiz_data_msdata_mz5 ^
+                pwiz/data/msdata/mzmlb//pwiz_data_msdata_mzmlb ^
                 pwiz/data/proteome//pwiz_data_proteome ^
                 pwiz/utility/chemistry//pwiz_utility_chemistry ^
                 pwiz/utility/minimxml//pwiz_utility_minimxml ^
@@ -106,6 +107,10 @@ if not exist "%PWIZ_DIR%\lib" (
   call :downloadfile "%BOOST_ASIO_URL%" %INSTALL_DIR%\boost_asio.zip
   %ZIP_EXE% x "%INSTALL_DIR%\boost_asio.zip" -o"%INSTALL_DIR%" -aoa > NUL
   PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_86_0' -Recurse -Force"
+
+  call :downloadfile "%BOOST_UNORDERED_URL%" %INSTALL_DIR%\boost_unordered.zip
+  %ZIP_EXE% x "%INSTALL_DIR%\boost_unordered.zip" -o"%INSTALL_DIR%" -aoa > NUL
+  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_UNORDERED_BASE%\include\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_86_0' -Recurse -Force"
 )
 
 EXIT /B
