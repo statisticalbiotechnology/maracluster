@@ -111,7 +111,7 @@ jobs:
         CD ..
         SET src_dir=%cd%
         ECHO %src_dir%
-        CALL maracluster\admin\builders\nativew64_build.bat -s %src_dir% -r %base_dir%\my_rel -b %base_dir%\my_build -g
+        CALL maracluster\admin\builders\nativew64_build.bat -s %src_dir% -r %base_dir%\my_rel -b %src_dir%\my_build -g
     - name: Upload packages
       uses: actions/upload-artifact@v4
       with:
