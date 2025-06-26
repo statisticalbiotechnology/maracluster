@@ -29,7 +29,7 @@ fi
 
 rm -f $build_dir/{maracluster,maracluster-gui}/mar*.rpm
 
-sudo yum install -y gcc gcc-c++ rpm-build cmake rsync
+sudo dnf install -y gcc gcc-c++ rpm-build cmake rsync
 CMAKE_BINARY=cmake # this can be overridden if a newer version of cmake is needed
 
 mkdir -p ${build_dir}/tools
@@ -38,8 +38,8 @@ cd ${build_dir}/tools
 # we need gcc >= 5 to compile ProteoWizard, since they use the c++14 flag
 pre=""
 if [[ $(rpm -q --queryformat '%{VERSION}' centos-release) < 8 ]]; then
-  sudo yum install -y centos-release-scl
-  sudo yum install -y devtoolset-7-gcc*
+  sudo dnf install -y centos-release-scl
+  sudo dnf install -y devtoolset-7-gcc*
   pre="scl enable devtoolset-7 --"
 fi
 
@@ -51,7 +51,7 @@ fi
 
 if [ "$no_gui" != true ] ; then
   # patchelf is available from Ubuntu 16.04, install from source otherwise
-  sudo yum install -y patchelf || missing_patchelf=true
+  sudo dnf install -y patchelf || missing_patchelf=true
   if [ "$missing_patchelf" == true ] ; then
     if [ ! -d ${build_dir}/tools/patchelf-0.8 ]; then
       wget --no-check-certificate http://nixos.org/releases/patchelf/patchelf-0.8/patchelf-0.8.tar.bz2
@@ -62,7 +62,7 @@ if [ "$no_gui" != true ] ; then
     fi
   fi
   
-  sudo yum install -y mesa-libGL-devel libicu-devel freetype-devel
+  sudo dnf install -y mesa-libGL-devel libicu-devel freetype-devel
   ${pre} source ${src_dir}/maracluster/admin/builders/install_qt.sh ${build_dir}/tools
   
   # the child process in devtoolset-7 does not export the CMAKE_BINARY variable from install_qt.sh, so set it again to be safe

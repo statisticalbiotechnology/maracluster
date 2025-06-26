@@ -90,6 +90,12 @@ if(UNIX)
           set(LINUX_NAME "CentOS_${CMAKE_MATCH_1}")  
           set(CPACK_GENERATOR "RPM")      
         endif(LINUX_ISSUE MATCHES "CentOS")
+        # Rocky Linux case
+        if(LINUX_ISSUE MATCHES "Rocky")
+          string(REGEX MATCH "release ([0-9]+\\.[0-9]+)" ROCKY_LINUX "${LINUX_ISSUE}")      
+          set(LINUX_NAME "Rocky Linux ${CMAKE_MATCH_1}")  
+          set(CPACK_GENERATOR "RPM")      
+        endif(LINUX_ISSUE MATCHES "Rocky")
         # Ubuntu case
         if(LINUX_ISSUE MATCHES "Ubuntu")
           string(REGEX MATCH "buntu ([0-9]+\\.[0-9]+)" UBUNTU "${LINUX_ISSUE}")
