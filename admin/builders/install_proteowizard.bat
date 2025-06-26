@@ -1,3 +1,5 @@
+call download_file_macro.bat >NUL
+
 set BUILD_TARGET=%1
 if "%BUILD_TARGET%" == "32bit" (
   set ADDRESS_MODEL=32
@@ -113,15 +115,4 @@ if not exist "%PWIZ_DIR%\lib" (
   PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_UNORDERED_BASE%\include\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_86_0' -Recurse -Force"
 )
 
-EXIT /B
-
-
-:downloadfile
-echo Downloading %1 to %2
-where curl >nul 2>&1
-IF %ERRORLEVEL%==0 (
-    curl -L "%~1" -o "%~2"
-) ELSE (
-    PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
-)
 EXIT /B

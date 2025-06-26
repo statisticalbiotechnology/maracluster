@@ -14,6 +14,8 @@
 
 @echo off
 
+call download_file_macro.bat >NUL
+
 set SRC_DIR=%~dp0..\..\..\
 set BUILD_DIR=%SRC_DIR%\build\win64
 set RELEASE_DIR=%SRC_DIR%\release\win64
@@ -183,17 +185,6 @@ if not "%NO_GUI%" == "true" (
 cd /D "%SRC_DIR%"
 
 EXIT /B %exit_code%
-
-
-:downloadfile
-echo Downloading %1 to %2
-where curl >nul 2>&1
-IF %ERRORLEVEL%==0 (
-    curl -L "%~1" -o "%~2"
-) ELSE (
-    PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
-)
-EXIT /B
 
 
 :copytorelease
