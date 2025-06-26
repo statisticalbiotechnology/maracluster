@@ -19,13 +19,7 @@ fi
 cd proteowizard
 
 # undo position independent code fix introduced here: https://github.com/ProteoWizard/pwiz/pull/1980
-sed -i 's/ -no-pie -fno-pie//g' Jamroot.jam
-
-
-toolset=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  toolset="toolset=clang"
-fi
+sed -i.bak 's/ -no-pie -fno-pie//g' Jamroot.jam
 
 echo "Building ProteoWizard and Boost, this may take some time.."
 
@@ -60,14 +54,18 @@ echo "Building ProteoWizard and Boost, this may take some time.."
 
 status=$?
 if [ $status -ne 0 ]; then
-    echo "❌ Build failed. Showing log:"
+    echo "❌ Build failed with status $status. Showing log:"
     cat ../pwiz_installation.log
     exit $status
+else
+    echo "✅ Build succeeded."
 fi
 
+echo "Updating Proteowizard and Boost libraries and include files."
+
 # manually copy some libraries and headers used by maracluster but not by proteowizard
-find build-*-x86_64/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
-find build-*-x86_64/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -I{} cp {} ../lib
+find build-*/ -type f | grep -i libboost_regex-.*\.a$ | xargs -I{} cp {} ../lib
+find build-*/ -type f | grep -i libboost_program_options-.*\.a$ | xargs -I{} cp {} ../lib
 
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*"  libraries/zlib-1.2.3/ ../include
 rsync -ap --include "*/" --include "*.h" --include "*.hpp" --exclude "*" libraries/boost_aux/boost/ ../include/boost
@@ -91,3 +89,4 @@ tar -xzf boost_unordered.tar.gz
 rsync -ap --include "*/" --include "*.hpp" --include '*.ipp' --exclude '*' unordered-boost-1.86.0/include/boost/ include/boost
 
 touch pwiz_successful.txt
+echo "✅ Update libraries and include files succeeded."

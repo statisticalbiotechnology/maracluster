@@ -1,7 +1,7 @@
 #############################################################################
 # NAME AND VERSION
 ###############################################################################
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 if(APPLE)
   # https://gitlab.kitware.com/cmake/cmake/issues/19067
