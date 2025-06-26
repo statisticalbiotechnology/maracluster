@@ -11,7 +11,7 @@ set PWIZ_DIR=%INSTALL_DIR%\proteowizard
 if not exist "%PWIZ_DIR%\lib" (
   echo Downloading and installing ProteoWizard
   if not exist "%PWIZ_DIR%" (
-    call :downloadfile %PWIZ_URL% %INSTALL_DIR%\pwiz.tar.bz2
+    call %~dp0\download_file.bat %PWIZ_URL% %INSTALL_DIR%\pwiz.tar.bz2
     if not exist "%INSTALL_DIR%\pwiz.tar" (
       %ZIP_EXE% x "%INSTALL_DIR%\pwiz.tar.bz2" -o"%INSTALL_DIR%" -aoa > NUL
     )
@@ -28,6 +28,7 @@ if not exist "%PWIZ_DIR%\lib" (
                 pwiz/data/msdata//pwiz_data_msdata ^
                 pwiz/data/msdata//pwiz_data_msdata_version ^
                 pwiz/data/msdata/mz5//pwiz_data_msdata_mz5 ^
+                pwiz/data/msdata/mzmlb//pwiz_data_msdata_mzmlb ^
                 pwiz/data/proteome//pwiz_data_proteome ^
                 pwiz/utility/chemistry//pwiz_utility_chemistry ^
                 pwiz/utility/minimxml//pwiz_utility_minimxml ^
@@ -103,14 +104,13 @@ if not exist "%PWIZ_DIR%\lib" (
   for /r pwiz %%x in (*.hpp, *.h) do copy "%%x" include\ /Y > NUL
   
   ::: copy the boost::asio library, which is not included by the ProteoWizard boost tar but is needed for maracluster
-  call :downloadfile "%BOOST_ASIO_URL%" %INSTALL_DIR%\boost_asio.zip
+  call %~dp0\download_file.bat "%BOOST_ASIO_URL%" %INSTALL_DIR%\boost_asio.zip
   %ZIP_EXE% x "%INSTALL_DIR%\boost_asio.zip" -o"%INSTALL_DIR%" -aoa > NUL
-  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_76_0' -Recurse -Force"
+  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_ASIO_BASE%\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_86_0' -Recurse -Force"
+
+  call %~dp0\download_file.bat "%BOOST_UNORDERED_URL%" %INSTALL_DIR%\boost_unordered.zip
+  %ZIP_EXE% x "%INSTALL_DIR%\boost_unordered.zip" -o"%INSTALL_DIR%" -aoa > NUL
+  PowerShell "Copy-Item -Path '%INSTALL_DIR%\%BOOST_UNORDERED_BASE%\include\boost' -Destination '%PWIZ_DIR%\libraries\boost_1_86_0' -Recurse -Force"
 )
 
-EXIT /B
-
-
-:downloadfile
-PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
 EXIT /B

@@ -1,6 +1,6 @@
 set BUILD_TARGET=%1
 
-call :downloadfile https://github.com/microsoft/vswhere/releases/download/2.8.4/vswhere.exe vswhere.exe
+call %~dp0\download_file.bat https://github.com/microsoft/vswhere/releases/download/2.8.4/vswhere.exe vswhere.exe
 for /f "usebackq tokens=*" %%i in (`.\vswhere.exe -legacy -latest  -property installationPath`) do (
   set MSVC_INSTALL_DIR=%%i
 )
@@ -59,8 +59,3 @@ if not defined DevEnvDir (
 )
 
 EXIT /B %ERRORLEVEL%
-
-:downloadfile
-echo Downloading %1 to %2
-PowerShell "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11, tls'; (new-object System.Net.WebClient).DownloadFile('%1','%2')"
-EXIT /B
